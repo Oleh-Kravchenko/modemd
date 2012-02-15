@@ -13,22 +13,22 @@ typedef void* modem_t;
 
 typedef struct
 {
-	/// номер порта
+    /// номер порта
     uint8_t port[8];
 
-	/// индификатор производителя
+    /// индификатор производителя
     uint16_t id_vendor;
 
-	/// индификатор продукта
+    /// индификатор продукта
     uint16_t id_product;
 
-	/// имя производителя
+    /// имя производителя
     uint8_t manufacturer[256];
 
-	/// имя продукта
+    /// имя продукта
     uint8_t product[256];
 
-	DIR *sysfs_dir;
+    DIR *sysfs_dir;
 } modem_info_t;
 
 typedef void* modem_event_handler_t;
