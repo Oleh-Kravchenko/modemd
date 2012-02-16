@@ -3,8 +3,8 @@ ifndef JMKE_ENV_INCLUDED
   include $(JMK_ROOT)/jmk/env_root.mak
 endif
 
-JMK_SUBDIRS+=libcellulard
-JMK_SUBDIRS+=cellulard_cli
+JMK_SUBDIRS+=lib
+JMK_SUBDIRS+=cli
 
 
 #JMK_INTERNAL_HEADERS+=mgt_utils.h serial.h default.h sierra_utils.h 3g_profile.h

@@ -1,157 +1,10 @@
 #include <stdio.h>
-#include <fcntl.h>
+#include <libgen.h>
 #include <unistd.h>
-#include <termios.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <string.h>
-
-#include "modem.h"
-
-#define CELLULARD_SOCKET_NAME "/var/run/cellulard.ctl"
-
-#include <stdio.h>
-#include <dirent.h>
-#include <string.h>
-
-#include <sys/types.h>
-#include <regex.h>
-#include <stdlib.h>
-
-/*-------------------------------------------------------------------------*/
-
-char* file_get_contents(const char *filename, char* s, const int size)
-{
-    FILE *f;
-    char* res;
-
-    if(!(f = fopen(filename, "r")))
-        return(0);
-
-    res = fgets(s, size, f);
-
-    fclose(f);
-
-    int rn = strlen(res);
-
-    /* removing eof */
-    if(rn && (res[rn - 1] == '\n' || res[rn - 1] == '\n'))
-        res[rn - 1] = 0;
-
-    return(res);
-}
-
-/*-------------------------------------------------------------------------*/
-
-int file_get_contents_hex(const char* filename)
-{
-    char hex[256];
-    int res = 0;
-
-    if(file_get_contents(filename, hex, sizeof(hex)))
-        sscanf(hex, "%x", &res);
-
-    return(res);
-}
-
-/*-------------------------------------------------------------------------*/
-
-modem_info_t* modem_find_first(void)
-{
-    modem_info_t* res;
-    DIR *sysfs_dir;
-    struct dirent *sysfs_item;
-    regex_t reg;
-    int reg_res;
-    char path[256];
-
-    if(!(sysfs_dir = opendir("/sys/bus/usb/devices/")))
-        goto failed_open;
-
-    while((sysfs_item = readdir(sysfs_dir)))
-    {
-        // имя каталога должно быть в таком формате BUS-DEV
-        regcomp(&reg, "^[0-9]-[0-9]$", 0);
-        reg_res = regexec(&reg, sysfs_item->d_name, 0, NULL, 0);
-        regfree(&reg);
-
-        if(reg_res != 0)
-            continue;
-
-        if(!(res = malloc(sizeof(modem_info_t))))
-            goto exit;
-
-        // читаем индфикаторы и имя ус-ва
-        strncpy(res->port, sysfs_item->d_name, sizeof(res->port) - 1);
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/manufacturer", sysfs_item->d_name);
-        file_get_contents(path, res->manufacturer, sizeof(res->manufacturer));
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/product", sysfs_item->d_name);
-        file_get_contents(path, res->product, sizeof(res->product));
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idVendor", sysfs_item->d_name);
-        res->id_vendor = file_get_contents_hex(path);
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idProduct", sysfs_item->d_name);
-        res->id_product = file_get_contents_hex(path);
-
-        res->sysfs_dir = sysfs_dir;
-
-        return(res);
-    }
-
-exit:
-    closedir(sysfs_dir);
-
-failed_open:
-    return(NULL);
-}
-
-/*-------------------------------------------------------------------------*/
-
-modem_info_t* modem_find_next(modem_info_t* modem)
-{
-    struct dirent *sysfs_item;
-    regex_t reg;
-    int reg_res;
-    char path[256];
-
-    while((sysfs_item = readdir(modem->sysfs_dir)))
-    {
-        // имя каталога должно быть в таком формате BUS-DEV
-        regcomp(&reg, "^[0-9]-[0-9]$", 0);
-        reg_res = regexec(&reg, sysfs_item->d_name, 0, NULL, 0);
-        regfree(&reg);
-
-        if(reg_res != 0)
-            continue;
-
-        // читаем индфикаторы и имя ус-ва
-        strncpy(modem->port, sysfs_item->d_name, sizeof(modem->port) - 1);
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/manufacturer", sysfs_item->d_name);
-        file_get_contents(path, modem->manufacturer, sizeof(modem->manufacturer));
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/product", sysfs_item->d_name);
-        file_get_contents(path, modem->product, sizeof(modem->product));
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idVendor", sysfs_item->d_name);
-        modem->id_vendor = file_get_contents_hex(path);
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idProduct", sysfs_item->d_name);
-        modem->id_product = file_get_contents_hex(path);
-
-        return(modem);
-    }
-
-    closedir(modem->sysfs_dir);
-    free(modem);
-
-    return(NULL);
-}
 
 /*-------------------------------------------------------------------------*/
 
@@ -162,85 +15,149 @@ const char help[] =
 	"-p - pid file path (default: /var/run/%s.pid)\n"
 	"-l - log to file\n"
 	"-e - log to syslog\n"
-	"-d - daemonize\n"
-	;
+	"-d - daemonize\n";
 
 /*-------------------------------------------------------------------------*/
 
-/*    modem_info_t *modem;
+char srv_sock_path[256];
+char srv_pid_path[256];
+char srv_basename[256];
 
-    modem = modem_find_first();
+char srv_filelog[256] = {0};
+int srv_syslog = 0;
+int srv_daemonize = 0;
+int srv_terminate = 0;
 
-    while(modem)
-    {
-        printf("%s %04hx:%04hx %s %s\n", modem->port, modem->id_vendor, modem->id_product, modem->manufacturer, modem->product);
+/*-------------------------------------------------------------------------*/
 
-        modem = modem_find_next(modem);
-    }
-*/
-
-int main(int argc, char** argv)
+int analyze_parameters(int argc, char** argv)
 {
+    int param;
 
-/*-------------------------------------------------------------------------*/
+    /* receiving default parameters */
+    strncpy(srv_basename, basename(argv[0]), sizeof(srv_basename) - 1);
+    snprintf(srv_sock_path, sizeof(srv_sock_path), "/var/run/%s.ctl", srv_basename);
+    snprintf(srv_pid_path, sizeof(srv_pid_path), "/var/run/%s.pid", srv_basename);
 
-    int param/*, i*/;
-
-    char srv_sock_path[256];
-    char srv_pid_path[256];
-
-    snprintf(srv_sock_path, sizeof(srv_sock_path), "/var/run/%s.ctl", argv[0]);
-    snprintf(srv_pid_path, sizeof(srv_pid_path), "/var/run/%s.pid", argv[0]);
-
-    while((param = getopt(argc, argv, "c:h")) != -1)
+    /* analyze command line */
+    while((param = getopt(argc, argv, "hs:p:l:ed")) != -1)
     {
         switch(param)
         {
-            case 'c':
+            case 'h':
+                printf(help, srv_basename, srv_basename, srv_basename);
+                return(1);
+            case 's':
                 strncpy(srv_sock_path, optarg, sizeof(srv_sock_path) - 1);
                 break;
-            case 'h':
-//                printf(help, argv[0]);
-                return(0);
+            case 'p':
+                strncpy(srv_pid_path, optarg, sizeof(srv_pid_path) - 1);
+                break;
+            case 'l':
+                strncpy(srv_filelog, optarg, sizeof(srv_filelog) - 1);
+                break;
+            case 'e':
+                srv_syslog = 1;
+                break;
+            case 'd':
+                srv_daemonize = 1;
+                break;
             default: /* '?' */
-//                printf(help, argv[0]);
-                return(1);
+                printf(help, srv_basename, srv_basename, srv_basename);
+                return(-1);
         }
     }
 
-/*
-    puts("Hello world!\n");
+    return(0);
+}
 
-    struct sockaddr_un sunaddr, sockaddr_client;
-    int sock = -1, sock_client = -1;
+/*-------------------------------------------------------------------------*/
 
+int srv_run(void)
+{
+    struct sockaddr_un sa_bind;
+    struct sockaddr_un sa_client;
+    socklen_t sa_client_len;
+    int sock_client = -1;
+    int sock = -1;
+    int res = 0;
+
+    /* creating socket server */
     if((sock = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0)
-        return sock;
-
-    memset(&sunaddr, 0, sizeof(sunaddr));
-
-    sunaddr.sun_family = AF_LOCAL;
-    strncpy(sunaddr.sun_path, (char*)CELLULARD_SOCKET_NAME, sizeof(sunaddr.sun_path) - 1);
-
-    if(bind(sock, (struct sockaddr *)&sunaddr, sizeof(sunaddr)))
     {
-        close(sock);
-        sock = -1;
+        res = -1;
+        goto err_socket;
     }
 
-    listen(sock, 1);
+    /* filling address */
+    memset(&sa_bind, 0, sizeof(sa_bind));
+    sa_bind.sun_family = AF_LOCAL;
+    strncpy(sa_bind.sun_path, srv_sock_path, sizeof(sa_bind.sun_path) - 1);
 
-    socklen_t sockaddr_client_len = sizeof(sockaddr_client);
-
-    while((sock_client = accept(sock, (struct sockaddr*) &sockaddr_client, &sockaddr_client_len)))
+    if(bind(sock, (struct sockaddr *)&sa_bind, sizeof(sa_bind)))
     {
-        printf("==== %d\n", sockaddr_client_len);
-        send(sock_client, "hi", 3, 0);
+        res = -1;
+        goto err_bind;
+    }
+
+    if(listen(sock, 1))
+    {
+        res = -1;
+        goto err_listen;
+    }
+
+    sa_client_len = sizeof(sa_client);
+
+    /* processing connections */
+    while(!srv_terminate && (sock_client = accept(sock, (struct sockaddr*)&sa_client, &sa_client_len)) > 0)
+    {
+        puts("Connected");
+
+        send(sock_client, "test", 5, 0);
+
         close(sock_client);
+
+        sa_client_len = sizeof(sa_client);
     }
 
+err_listen:
+    unlink(srv_sock_path);
+
+err_bind:
     close(sock);
 
-*/
+err_socket:
+    return(res);
+}
+
+/*-------------------------------------------------------------------------*/
+
+int main(int argc, char** argv)
+{
+    int res;
+
+    if((res = analyze_parameters(argc, argv)))
+        return(res);
+
+    /* show configuration */
+    printf(
+        "   Basename: %s\n"
+        "Socket file: %s\n"
+        "   PID file: %s\n"
+        "   File log: %s\n"
+        "     Syslog: %s\n"
+        "  Daemonize: %s\n\n",
+        srv_basename,
+        srv_sock_path,
+        srv_pid_path,
+        *srv_filelog ? srv_filelog : "No",
+        srv_syslog ? "Yes" : "No",
+        srv_daemonize ? "Yes" : "No"
+    );
+
+    /* run socket server */
+    if(srv_run())
+        perror(srv_basename);
+
     return 0;
 }
