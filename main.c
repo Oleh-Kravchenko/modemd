@@ -1,10 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <libgen.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <pthread.h>
+
+#include "thread.h"
 
 /*-------------------------------------------------------------------------*/
 
@@ -73,6 +77,40 @@ int analyze_parameters(int argc, char** argv)
 
 /*-------------------------------------------------------------------------*/
 
+int proccess_connection(int sock)
+{
+    cellulard_thread_t *priv_data;
+    pthread_attr_t attr;
+    pthread_t thread;
+    int res = 0;
+
+    /* allocate memory for private data */
+    if(!(priv_data = (cellulard_thread_t*)malloc(sizeof(*priv_data))))
+    {
+        res = -1;
+        goto err_malloc;
+    }
+
+    memset(priv_data, 0, sizeof(*priv_data));
+    priv_data->sock = sock;
+
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
+    /* creating thread */
+    res = pthread_create(&thread, &attr, ThreadWrapper, priv_data);
+
+    pthread_attr_destroy(&attr);
+
+    if(res)
+        free(priv_data);
+
+err_malloc:
+    return(res);
+}
+
+/*-------------------------------------------------------------------------*/
+
 int srv_run(void)
 {
     struct sockaddr_un sa_bind;
@@ -111,12 +149,15 @@ int srv_run(void)
     /* processing connections */
     while(!srv_terminate && (sock_client = accept(sock, (struct sockaddr*)&sa_client, &sa_client_len)) > 0)
     {
-        puts("Connected");
+        /* create thread for connection */
+        if((res = proccess_connection(sock_client)))
+        {
+            perror(NULL);
 
-        send(sock_client, "test", 5, 0);
+            close(sock_client);
+        }
 
-        close(sock_client);
-
+        /* and wait another connection */
         sa_client_len = sizeof(sa_client);
     }
 

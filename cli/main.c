@@ -1,14 +1,15 @@
 #include <stdio.h>
 #include <libgen.h>
 #include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
+#include <string.h>
+#include <stdlib.h>
 
-#define CELLULARD_NAME "cellulard"
+#include "modem/modem.h"
+#include "../lib/rpc.h"
 
 /*-------------------------------------------------------------------------*/
+
+#define CELLULARD_NAME "modemd"
 
 const char help[] =
 	"Usage: %s [-h] [-s SOCKET]\n"
@@ -65,47 +66,25 @@ int main(int argc, char** argv)
         srv_sock_path
     );
 
-
-
-
-
-
-
-
-
-    struct sockaddr_un sa_bind;
-    char buf[0xffff];
-    int buf_recv;
-    int sock = -1;
-
-    /* creating socket client */
-    if((sock = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0)
+    if(modem_init(srv_sock_path) == 0)
     {
-        res = -1;
-        goto err_socket;
+        modem_info_t *modem;
+
+        modem = modem_find_first();
+
+        while(modem)
+        {
+            printf("%s %04hx:%04hx %s %s\n", modem->port, modem->id_vendor, modem->id_product, modem->manufacturer, modem->product);
+
+            free(modem);
+
+            modem = modem_find_next();
+        }
+
+        modem_cleanup();
     }
+    else
+        perror(*argv);
 
-    /* filling address */
-    memset(&sa_bind, 0, sizeof(sa_bind));
-    sa_bind.sun_family = AF_LOCAL;
-    strncpy(sa_bind.sun_path, srv_sock_path, sizeof(sa_bind.sun_path) - 1);
-
-    if(connect(sock, (struct sockaddr*)&sa_bind, sizeof(sa_bind)))
-    {
-        perror(argv[0]);
-        goto err_connect;
-    }
-
-    while((buf_recv = recv(sock, buf, sizeof(buf), 0)) > 0)
-    {
-        puts(buf);
-
-        break;
-    }
-
-err_connect:
-    close(sock);
-
-err_socket:
     return 0;
 }

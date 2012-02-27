@@ -13,10 +13,8 @@ JMK_SUBDIRS+=cli
 JMK_TARGET=cellulard
 JMK_RAMDISK_BIN_FILES+=$(JMK_TARGET)
 
-JMK_INTERNAL_HEADERS+=modem.h
-JMK_O_OBJS=main.o
+JMK_LIBS+=$(JMKE_BUILDDIR)/pkg/util/libmgt_client.a $(OPENRG_LIBS) $(MGT_LIBS) __local_pthread
 
-JMK_LIBS+=$(JMKE_BUILDDIR)/pkg/util/libmgt_client.a $(OPENRG_LIBS) $(MGT_LIBS)
-
+JMK_O_OBJS=main.o thread.o lib/libcellulard.o lib/modem.o lib/functions.o lib/rpc.o
 
 $(call JMKE_INCLUDE_RULES)
