@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -59,8 +60,8 @@ void modem_cleanup(void)
 
 modem_info_t* modem_find_first(void)
 {
-    packet_t *p;
     modem_info_t* res = NULL;
+    packet_t *p;
 
     p = malloc(sizeof(*p));
     p->hdr.type = TYPE_QUERY;
@@ -91,8 +92,8 @@ modem_info_t* modem_find_first(void)
 
 modem_info_t* modem_find_next(void)
 {
-    packet_t *p;
     modem_info_t* res = NULL;
+    packet_t *p;
 
     p = malloc(sizeof(*p));
     p->hdr.type = TYPE_QUERY;

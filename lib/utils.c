@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 /*-------------------------------------------------------------------------*/
 
@@ -35,4 +36,11 @@ int file_get_contents_hex(const char* filename)
         sscanf(hex, "%x", &res);
 
     return(res);
+}
+
+/*-------------------------------------------------------------------------*/
+
+int its_modem(uint16_t vendor, uint16_t product)
+{
+    return(vendor == 0x1199 && product == 0x68a3);
 }

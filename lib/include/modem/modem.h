@@ -17,10 +17,10 @@ modem_info_t* modem_find_next(void);
 
 int modem_timeout_setup(int timeout);
 
-#if 0
 /***************************************************************************
  * Modem                                                                   *
  **************************************************************************/
+#if 0
 modem_t* modem_open_by_iface(const char* iface);
 
 modem_t* modem_open_by_port(const char* port);

@@ -6,15 +6,13 @@ endif
 JMK_SUBDIRS+=lib
 JMK_SUBDIRS+=cli
 
-
-#JMK_INTERNAL_HEADERS+=mgt_utils.h serial.h default.h sierra_utils.h 3g_profile.h
-#JMK_EXPORT_HEADERS+=dev_sierra_directip.h
-
-JMK_TARGET=cellulard
+JMK_TARGET=modemd
 JMK_RAMDISK_BIN_FILES+=$(JMK_TARGET)
 
-JMK_LIBS+=$(JMKE_BUILDDIR)/pkg/util/libmgt_client.a $(OPENRG_LIBS) $(MGT_LIBS) __local_pthread
+JMK_CFLAGS+=-I$(JMK_ROOT)/pkg/modemd/lib/include
 
-JMK_O_OBJS=main.o thread.o lib/libcellulard.o lib/modem.o lib/functions.o lib/rpc.o
+JMK_O_OBJS+=main.o thread.o
+
+JMK_LIBS+=$(JMKE_BUILDDIR)/pkg/modemd/lib/libmodem_int.a __local_pthread
 
 $(call JMKE_INCLUDE_RULES)

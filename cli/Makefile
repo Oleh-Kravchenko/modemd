@@ -3,11 +3,13 @@ ifndef JMKE_ENV_INCLUDED
   include $(JMK_ROOT)/jmk/env_root.mak
 endif
 
-JMK_TARGET=cellulard_cli
+JMK_TARGET=modem_cli
 JMK_RAMDISK_BIN_FILES+=$(JMK_TARGET)
 
-JMK_O_OBJS=main.o
+JMK_CFLAGS+=-I$(JMK_ROOT)/pkg/modemd/lib/include
 
-JMK_LIBS+=$(JMKE_BUILDDIR)/pkg/util/libmgt_client.a $(OPENRG_LIBS) $(MGT_LIBS) ../lib/libcellulard.a
+JMK_O_OBJS+=main.o
+
+JMK_LIBS+=$(JMKE_BUILDDIR)/pkg/modemd/lib/libmodem.so
 
 $(call JMKE_INCLUDE_RULES)
