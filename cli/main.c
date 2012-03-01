@@ -68,17 +68,27 @@ int main(int argc, char** argv)
 
     if(modem_init(srv_sock_path) == 0)
     {
-        modem_info_t *modem;
+        modem_info_t *mi;
+        modem_t* modem;
+        char imei[0x100];
 
-        modem = modem_find_first();
+        mi = modem_find_first();
 
-        while(modem)
+        while(mi)
         {
-            printf("%s %04hx:%04hx %s %s\n", modem->port, modem->id_vendor, modem->id_product, modem->manufacturer, modem->product);
+            printf("%s %04hx:%04hx %s %s\n", mi->port, mi->id_vendor, mi->id_product, mi->manufacturer, mi->product);
 
-            free(modem);
+            if(modem = modem_open_by_port(mi->port))
+            {
+                if(modem_get_imei(modem, imei, sizeof(imei)))
+                    printf("IMIE: %s\n\n", imei);
 
-            modem = modem_find_next();
+                modem_close(modem);
+            }
+
+            free(mi);
+
+            mi = modem_find_next();
         }
 
         modem_cleanup();

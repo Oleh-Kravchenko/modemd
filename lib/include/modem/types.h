@@ -21,13 +21,13 @@ typedef struct
     char product[256];
 } __attribute__((__packed__)) modem_info_t;
 
-#if 0
 
 /*------------------------------------------------------------------------*/
 
-typedef void* modem_event_t;
-
 typedef void* modem_t;
+
+#if 0
+typedef void* modem_event_t;
 
 typedef void* modem_event_handler_t;
 

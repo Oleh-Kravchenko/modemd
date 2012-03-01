@@ -119,3 +119,25 @@ modem_info_t* modem_find_next(void)
 
     return(res);
 }
+
+/*-------------------------------------------------------------------------*/
+
+modem_t* modem_open_by_port(const char* port)
+{
+    return((modem_t*)1);
+}
+
+/*-------------------------------------------------------------------------*/
+
+void modem_close(modem_t* modem)
+{
+}
+
+/*-------------------------------------------------------------------------*/
+
+char* modem_get_imei(modem_t* modem, char* imei, int len)
+{
+    strncpy(imei, "012626000027332", len);
+    
+    return(imei);
+}

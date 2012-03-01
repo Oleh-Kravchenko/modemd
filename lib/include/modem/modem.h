@@ -7,29 +7,69 @@
  * Initialization                                                          *
  **************************************************************************/
 
+/**
+ * @brief initialize library
+ * @param socket_path path to the local socket
+ * @return zero, if successful
+ *
+ * Must be called only once per program.
+ */
 int modem_init(const char* socket_path);
 
+/** deinitialize library */
 void modem_cleanup(void);
 
+/**
+ * @brief return first modem
+ * @return pointer to modem_info_t, zero if no modem detected
+ *
+ * The result must be function free()
+ */
 modem_info_t* modem_find_first(void);
 
+/**
+ * @brief return next modem
+ * @return pointer to modem_info_t, zero if no modem left
+ *
+ * The result must be function free()
+ */
 modem_info_t* modem_find_next(void);
-
-int modem_timeout_setup(int timeout);
 
 /***************************************************************************
  * Modem                                                                   *
  **************************************************************************/
-#if 0
-modem_t* modem_open_by_iface(const char* iface);
 
+/**
+ * @brief open modem by port and return handle
+ * @param port port name
+ * @return modem handle 
+ *
+ * Modem handle must be close by modem_close()
+ */
 modem_t* modem_open_by_port(const char* port);
+
+/**
+ * @brief close modem handle
+ * @param modem handle
+ */
+void modem_close(modem_t* modem);
+
+/**
+ * @brief return IMEI of modem
+ * @param modem handle
+ * @param imei buffer
+ * @param len length of imei buffer
+ * @return if successful, return imei buffer. otherwise 0
+ */
+char* modem_get_imei(modem_t* modem, char* imei, int len);
+
+#if 0
+
+modem_t* modem_open_by_iface(const char* iface);
 
 int modem_reset_hw(modem_t* modem);
 
 int modem_reset_sw(modem_t* modem);
-
-void modem_close(modem_t* modem);
 
 int modem_set_pin(modem_t* modem, const char* pin);
 
@@ -40,8 +80,6 @@ int modem_change_pin_code(modem_t* modem, const char* pin, const char* new_pin);
 int modem_sim_is_ready(modem_t* modem);
 
 char* modem_get_imsi(modem_t* modem, char* imsi, int len);
-
-char* modem_get_imei(modem_t* modem, char* imei, int len);
 
 char* modem_get_hni(modem_t* modem, char* hni, int len);
 
@@ -62,6 +100,7 @@ void modem_unregister_event_handler_callback(modem_t* modem, modem_event_handler
 /***************************************************************************
  * DATA SESSION                                                            *
  **************************************************************************/
+
 int modem_max_number_of_data_profiles(modem_t* modem);
 
 int modem_data_profile_setup(modem_t* modem, int slot, modem_data_profile_t* profile);
