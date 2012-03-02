@@ -17,7 +17,7 @@ void* ThreadWrapper(void* prm)
 {
     cellulard_thread_t* priv = prm;
     modem_info_t *modem;
-    packet_t *p;
+    rpc_packet_t *p;
 
     while((p = rpc_recv(priv->sock)))
     {

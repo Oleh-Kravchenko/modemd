@@ -8,7 +8,7 @@
 
 /*-------------------------------------------------------------------------*/
 
-int rpc_send(int sock, packet_t *p)
+int rpc_send(int sock, rpc_packet_t *p)
 {
     int res, sended;
 
@@ -52,9 +52,9 @@ err:
 
 /*-------------------------------------------------------------------------*/
 
-packet_t* rpc_recv(int sock)
+rpc_packet_t* rpc_recv(int sock)
 {
-    packet_t* res;
+    rpc_packet_t* res;
     int recved;
 
     if(!(res = malloc(sizeof(*res))))
@@ -112,7 +112,7 @@ exit:
 
 /*-------------------------------------------------------------------------*/
 
-void rpc_free(packet_t *p)
+void rpc_free(rpc_packet_t *p)
 {
     free(p->func);
     free(p->data);
@@ -121,7 +121,7 @@ void rpc_free(packet_t *p)
 
 /*-------------------------------------------------------------------------*/
 
-void rpc_print(packet_t *p)
+void rpc_print(rpc_packet_t *p)
 {
 /*
     int i;

@@ -8,7 +8,7 @@
 typedef enum {
     TYPE_QUERY = 0,
     TYPE_RESPONSE
-} __attribute__((__packed__)) proto_type_t;
+} __attribute__((__packed__)) rpc_packet_type_t;
 
 /*-------------------------------------------------------------------------*/
 
@@ -17,7 +17,7 @@ typedef struct
     struct
     {
         /** type of packet */
-        proto_type_t type;
+        rpc_packet_type_t type;
 
         /** length of function name */
         uint8_t func_len;
@@ -31,31 +31,37 @@ typedef struct
 
     /** data */
     uint8_t* data;
-} __attribute__((__packed__)) packet_t;
+} __attribute__((__packed__)) rpc_packet_t;
 
 /*-------------------------------------------------------------------------*/
 
-int rpc_send(int sock, packet_t *p);
+/**
+ * @brief receive packet over socket
+ * @param sock socket
+ * @param p socket
+ * @return Sended bytes of packet
+ */
+int rpc_send(int sock, rpc_packet_t *p);
 
 /**
  * @brief receive packet over socket
  * @param sock socket
  * @return packet
  *
- * Must be called rpc_free() for packet.
+ * Packet must be free by function rpc_free()
  */
-packet_t* rpc_recv(int sock);
+rpc_packet_t* rpc_recv(int sock);
 
 /**
  * @brief free memory used by packet
  * @param p packet
  */
-void rpc_free(packet_t *p);
+void rpc_free(rpc_packet_t *p);
 
 /**
  * @brief printing packet to stdout
  * @param p packet
  */
-void rpc_print(packet_t *p);
+void rpc_print(rpc_packet_t *p);
 
 #endif /* _CELLULARD_RPC_H */
