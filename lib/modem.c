@@ -165,3 +165,76 @@ char* modem_get_imei(modem_t* modem, char* imei, int len)
     
     return(imei);
 }
+
+int modem_get_channel_activity(modem_t* modem,int *failure)
+{
+//	*failure = eRegistrationStatus;
+//    return eRegistrationFailure == eERR_NO_ERROR;
+
+	*failure = 2; //eERR_NO_RESPONSE;
+	return 0; //fail
+}
+
+int modem_set_new_params(modem_t* modem)
+{
+// CLteSierra::InitiateParametersReset()
+	return 1; //success
+}
+
+int modem_start_available_networks_scan(modem_t* modem)
+{
+	// CLteSierra::StartAvailableNetworksScan()
+	return 1; //success
+}
+
+int modem_networks_scan_is_running(modem_t* modem)
+{
+	// return CCellCore::bNetworksScanIsRunning
+	return 0;
+}
+
+int modem_get_registration_status(modem_t* modem)
+{
+	//return CCellCore::eRegistrationStatus
+	return 1; //eREGISTERED_HOME
+}
+
+int modem_get_signal_quality(modem_t* modem,int *dBm)
+{
+	//return CCellCore::GetSignalQuality( int *dBm )
+	*dBm = -1;
+	return 0; //CSQ_NOT_KNOWN
+}
+
+int modem_change_pin(modem_t* modem,char* old_pin,char* new_pin)
+{
+	//CCellCore::ChangePIN()
+	 return 0; //OK
+}
+
+char* modem_get_imsi(modem_t* modem,char *imsi,int len)
+{
+	//pszIMSIString
+    strncpy(imsi, "255071040257705", len);
+    return(imsi);
+}
+
+char* modem_get_operator_name(modem_t* modem,char *operator,int len)
+{
+	//CCellEngine::GetOperatorName()
+	strncpy(operator, "Kyivstar", len);
+    return(operator);
+}
+
+time_t modem_get_network_time_date(modem_t* modem,int wait_answer)
+{
+	//CLteSierra::GetNetworkTimeDate
+   return 0;
+}
+
+char* modem_get_network_type(modem_t* modem,char *network_type,int len)
+{
+	//CLteSierra::GetNetworkType()
+	strncpy(network_type, "LTE", len);
+    return(network_type);
+}

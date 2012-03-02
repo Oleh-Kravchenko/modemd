@@ -1,7 +1,7 @@
 #ifndef __MODEM_H
 #define __MODEM_H
 
-#include "modem/types.h"
+#include <types.h>
 
 /***************************************************************************
  * Initialization                                                          *
@@ -62,6 +62,18 @@ void modem_close(modem_t* modem);
  * @return if successful, return imei buffer. otherwise 0
  */
 char* modem_get_imei(modem_t* modem, char* imei, int len);
+
+int modem_get_channel_activity(modem_t* modem,int *failure);
+int modem_set_new_params(modem_t* modem);
+int modem_start_available_networks_scan(modem_t* modem);
+int modem_networks_scan_is_running(modem_t* modem);
+int modem_get_registration_status(modem_t* modem);
+int modem_get_signal_quality(modem_t* modem,int *dBm);
+int modem_change_pin(modem_t* modem,char* old_pin,char* new_pin);
+char* modem_get_imsi(modem_t* modem,char *imsi,int len);
+char* modem_get_operator_name(modem_t* modem,char *operator,int len);
+time_t modem_get_network_time_date(modem_t* modem,int wait_answer);
+char* modem_get_network_type(modem_t* modem,char *network_type,int len);
 
 #if 0
 
