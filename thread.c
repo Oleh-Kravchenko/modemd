@@ -11,56 +11,60 @@
 #include "lib/rpc.h"
 #include "lib/modem_int.h"
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
 void* ThreadWrapper(void* prm)
 {
     cellulard_thread_t* priv = prm;
-    modem_info_t *modem;
-    rpc_packet_t *p;
+    modem_info_t *mi;
+    rpc_packet_t *p_in = NULL, *p_out = NULL;
 
-    while((p = rpc_recv(priv->sock)))
+    while((p_in = rpc_recv(priv->sock)))
     {
-        rpc_print(p);
+        rpc_print(p_in);
 
-        if(p->hdr.type != TYPE_QUERY)
+        if(p_in->hdr.type != TYPE_QUERY)
         {
-            rpc_free(p);
+            rpc_free(p_in);
             continue;
         }
 
-        if(strcmp(p->func, "modem_find_first") == 0)
+        if(strcmp(p_in->func, "modem_find_first") == 0)
         {
-            modem = modem_find_first(&priv->dir);
+            mi = modem_find_first(&priv->dir);
 
-            p->hdr.type = TYPE_RESPONSE;
-
-            if(modem)
+            if(mi)
             {
-                p->data = (uint8_t*)modem;
-                p->hdr.data_len = sizeof(*modem);
+                p_out = rpc_create(TYPE_RESPONSE, "modem_find_first", (uint8_t*)mi, sizeof(*mi));
 
-                printf("%s %04hx:%04hx %s %s\n", modem->port, modem->id_vendor, modem->id_product, modem->manufacturer, modem->product);
+                printf("%s %04hx:%04hx %s %s\n", mi->port, mi->id_vendor, mi->id_product, mi->manufacturer, mi->product);
             }
+            else
+                p_out = rpc_create(TYPE_RESPONSE, "modem_find_first", 0, 0);
+             
+            free(mi);
         }
-        else if(strcmp(p->func, "modem_find_next") == 0)
+        else if(strcmp(p_in->func, "modem_find_next") == 0)
         {
-            modem = modem_find_next(&priv->dir);
+            mi = modem_find_next(&priv->dir);
 
-            p->hdr.type = TYPE_RESPONSE;
-
-            if(modem)
+            if(mi)
             {
-                p->data = (uint8_t*)modem;
-                p->hdr.data_len = sizeof(*modem);
+                p_out = rpc_create(TYPE_RESPONSE, "modem_find_next", (uint8_t*)mi, sizeof(*mi));
 
-                printf("%s %04hx:%04hx %s %s\n", modem->port, modem->id_vendor, modem->id_product, modem->manufacturer, modem->product);
+                printf("%s %04hx:%04hx %s %s\n", mi->port, mi->id_vendor, mi->id_product, mi->manufacturer, mi->product);
             }
+            else
+                p_out = rpc_create(TYPE_RESPONSE, "modem_find_next", 0, 0);
+
+            free(mi);
         }
 
-        rpc_send(priv->sock, p);
-        rpc_print(p);
-        rpc_free(p);
+        rpc_send(priv->sock, p_out);
+        rpc_print(p_out);
+
+        rpc_free(p_in);
+        rpc_free(p_out);
     }
 
     /* cleanup resources */
