@@ -133,6 +133,8 @@ modem_info_t* modem_find_first_res_unpack(rpc_packet_t* p)
         res = malloc(sizeof(*res));
         memcpy(res, p->data, sizeof(*res));
     }
+
+    return(res);
 }
 
 /*------------------------------------------------------------------------*/

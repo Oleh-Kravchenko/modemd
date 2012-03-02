@@ -3,14 +3,14 @@
 
 #include <stdint.h>
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
 typedef enum {
     TYPE_QUERY = 0,
     TYPE_RESPONSE
 } __attribute__((__packed__)) rpc_packet_type_t;
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
 typedef struct
 {
@@ -33,7 +33,23 @@ typedef struct
     uint8_t* data;
 } __attribute__((__packed__)) rpc_packet_t;
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
+
+typedef rpc_packet_t* (*rpc_function_t)(rpc_packet_t*);
+
+/*------------------------------------------------------------------------*/
+
+/**
+ * @brief create and return pointer for packet
+ * @param type type of packet
+ * @param funcname function name
+ * @param data pointer to data buffer
+ * @param data_len length of data
+ * @return if successeful pointer to packet
+ *
+ * Result must be free by function free()
+ */
+rpc_packet_t* rpc_create(rpc_packet_type_t type, const char* funcname, uint8_t* data, uint16_t data_len);
 
 /**
  * @brief receive packet over socket

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdint.h>
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
 char* file_get_contents(const char *filename, char* s, const int size)
 {
@@ -25,7 +25,7 @@ char* file_get_contents(const char *filename, char* s, const int size)
     return(res);
 }
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
 int file_get_contents_hex(const char* filename)
 {
@@ -38,7 +38,7 @@ int file_get_contents_hex(const char* filename)
     return(res);
 }
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
 int its_modem(uint16_t vendor, uint16_t product)
 {
