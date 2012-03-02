@@ -7,7 +7,7 @@
 #include "modem/modem.h"
 #include "../lib/rpc.h"
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
 #define CELLULARD_NAME "modemd"
 
@@ -16,11 +16,11 @@ const char help[] =
 	"-h - show this help\n"
 	"-s - file socket path (default: /var/run/%s.ctl)\n";
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
 char srv_sock_path[256];
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
 int analyze_parameters(int argc, char** argv)
 {
@@ -49,7 +49,7 @@ int analyze_parameters(int argc, char** argv)
     return(0);
 }
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
 int main(int argc, char** argv)
 {
@@ -78,7 +78,7 @@ int main(int argc, char** argv)
         {
             printf("%s %04hx:%04hx %s %s\n", mi->port, mi->id_vendor, mi->id_product, mi->manufacturer, mi->product);
 
-            if(modem = modem_open_by_port(mi->port))
+            if((modem = modem_open_by_port(mi->port)))
             {
                 if(modem_get_imei(modem, imei, sizeof(imei)))
                     printf("IMIE: %s\n\n", imei);
