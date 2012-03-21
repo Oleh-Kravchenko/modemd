@@ -7,8 +7,11 @@ INCLUDE_DIRECTORIES(lib/include)
 SET(PROJECT_SOURCES
 lib/include/modem/modem.h
 lib/include/modem/types.h
+mc7700.c
 thread.c
 thread.h
+queue.c
+queue.h
 main.c
 )
 

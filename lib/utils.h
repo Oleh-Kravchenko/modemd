@@ -25,4 +25,14 @@ int file_get_contents_hex(const char* filename);
  */
 int its_modem(uint16_t vendor, uint16_t product);
 
+/**
+ * @brief open serial device
+ * @param portname port name
+ * @param flags flags (O_RDONLY, O_WRONLY, or O_RDWR), see man open
+ * @return -1 if an error occurred
+ */
+int serial_open(const char* portname, int flags);
+
+char* modem_get_at_port_name(const char* port, char* tty, int tty_len);
+
 #endif /* __THREAD_H */

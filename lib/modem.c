@@ -104,7 +104,7 @@ void modem_cleanup(void)
         p->hdr.func_len = strlen(#funcname);                               \
         p->func = (char*)malloc(p->hdr.func_len);                          \
         memcpy(p->func, #funcname, p->hdr.func_len);                       \
-        funcname##_prm_unpack(p, __VA_ARGS__);                             \
+        p = funcname##_prm_pack(__VA_ARGS__);                              \
         rpc_send(sock, p);                                                 \
         rpc_free(p);                                                       \
                                                                            \
@@ -120,7 +120,10 @@ void modem_cleanup(void)
 /*------------------------------------------------------------------------*/
 
 RPC_FUNCTION_VOID(modem_info_t*, modem_find_first)
+
 RPC_FUNCTION_VOID(modem_info_t*, modem_find_next)
+
+/*RPC_FUNCTION(modem_t*, modem_open_by_port, const char* port)*/
 
 /*------------------------------------------------------------------------*/
 
@@ -148,7 +151,32 @@ modem_info_t* modem_find_next_res_unpack(rpc_packet_t* p)
 
 modem_t* modem_open_by_port(const char* port)
 {
-    return((modem_t*)1);
+	rpc_packet_t* p;
+	modem_t* res = NULL;
+
+	/* build packet and send it */
+	p = (rpc_packet_t*)malloc(sizeof(*p));
+	memset((void*)p, 0, sizeof(*p));
+	p->hdr.type = TYPE_QUERY;
+	p->hdr.func_len = strlen(__func__);
+	p->func = (char*)malloc(p->hdr.func_len);
+	memcpy(p->func, __func__, p->hdr.func_len);
+	p->hdr.data_len = strlen(port);
+	p->data = malloc(p->hdr.data_len);
+	memcpy(p->data, port, p->hdr.data_len);
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv(sock);
+//	res = modem_open_by_port_res_unpack(p);
+	rpc_free(p);
+
+	/* returning result */
+	return((int)*p->data);
+#if 0
+	return((modem_t*)1);
+#endif
 }
 
 /*------------------------------------------------------------------------*/
@@ -161,8 +189,27 @@ void modem_close(modem_t* modem)
 
 char* modem_get_imei(modem_t* modem, char* imei, int len)
 {
-    strncpy(imei, "012626000027332", len);
-    
+	rpc_packet_t* p;
+
+	/* build packet and send it */
+	p = (rpc_packet_t*)malloc(sizeof(*p));
+	memset((void*)p, 0, sizeof(*p));
+	p->hdr.type = TYPE_QUERY;
+	p->hdr.func_len = strlen(__func__);
+	p->func = (char*)malloc(p->hdr.func_len);
+	memcpy(p->func, __func__, p->hdr.func_len);
+	p->hdr.data_len = 0;
+	p->data = NULL;
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv(sock);
+//	res = modem_open_by_port_res_unpack(p);
+    strncpy(imei, p->data, (p->hdr.data_len > len ? len : p->hdr.data_len) - 1);
+
+	rpc_free(p);
+
     return(imei);
 }
 

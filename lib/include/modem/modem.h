@@ -1,7 +1,7 @@
 #ifndef __MODEM_H
 #define __MODEM_H
 
-#include <types.h>
+#include "modem/types.h"
 
 /***************************************************************************
  * Initialization                                                          *
@@ -87,11 +87,17 @@ int modem_set_pin(modem_t* modem, const char* pin);
 
 int modem_set_pin_puk(modem_t* modem, const char* pin, const char* puk);
 
+int modem_change_pin_code(modem_t* modem, const char* pin, const char* new_pin);
+
 int modem_sim_is_ready(modem_t* modem);
+
+char* modem_get_imsi(modem_t* modem, char* imsi, int len);
 
 char* modem_get_hni(modem_t* modem, char* hni, int len);
 
 char* modem_get_operator_hni(modem_t* modem, char* hni, int len);
+
+char* modem_get_operator_name(modem_t* modem, char* operator_name, int len);
 
 /***************************************************************************
  * EVENT                                                                   *

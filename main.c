@@ -2,13 +2,21 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <unistd.h>
+#include <signal.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <pthread.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <termios.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "thread.h"
+#include "queue.h"
+#include "mc7700.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -173,6 +181,13 @@ err_socket:
 
 /*------------------------------------------------------------------------*/
 
+void on_sigterm(int prm)
+{
+	srv_terminate = 1;
+}
+
+/*------------------------------------------------------------------------*/
+
 int main(int argc, char** argv)
 {
     int res;
@@ -195,6 +210,9 @@ int main(int argc, char** argv)
         srv_syslog ? "Yes" : "No",
         srv_daemonize ? "Yes" : "No"
     );
+
+/*    signal(SIGTERM, on_sigterm);
+    signal(SIGINT, on_sigterm);*/
 
     /* run socket server */
     if(srv_run())

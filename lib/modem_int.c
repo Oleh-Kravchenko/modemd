@@ -12,17 +12,6 @@
 
 /*------------------------------------------------------------------------*/
 
-
-typedef struct
-{
-    char name[0xff];
-
-    rpc_function_t func;
-} rpc_function_info_t;
-
-
-/*------------------------------------------------------------------------*/
-
 modem_info_t* modem_find_first(DIR **dir)
 {
     modem_info_t* res;

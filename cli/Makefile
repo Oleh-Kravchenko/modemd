@@ -4,12 +4,11 @@ ifndef JMKE_ENV_INCLUDED
 endif
 
 JMK_TARGET=modem_cli
-JMK_RAMDISK_BIN_FILES+=$(JMK_TARGET)
+JMK_RAMDISK_BIN_FILES=$(JMK_TARGET)
 
-JMK_CFLAGS+=-I$(JMK_ROOT)/pkg/modemd/lib/include
+JMK_O_OBJS=main.o
 
-JMK_O_OBJS+=main.o
+JMK_LIBS=$(JMKE_BUILDDIR)/pkg/modemd/lib/libmodem.so
 
-JMK_LIBS+=$(JMKE_BUILDDIR)/pkg/modemd/lib/libmodem.so
-
+include $(JMK_ROOT)/pkg/modemd/modemd.mak
 $(call JMKE_INCLUDE_RULES)

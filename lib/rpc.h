@@ -35,10 +35,6 @@ typedef struct
 
 /*------------------------------------------------------------------------*/
 
-typedef rpc_packet_t* (*rpc_function_t)(rpc_packet_t*);
-
-/*------------------------------------------------------------------------*/
-
 /**
  * @brief create and return pointer for packet
  * @param type type of packet
@@ -79,5 +75,16 @@ void rpc_free(rpc_packet_t *p);
  * @param p packet
  */
 void rpc_print(rpc_packet_t *p);
+
+/*
+
+               client                |         network         |                   server
+                                     |                         |
+              /---- pack parameters; | ----------------------> | unpack parameters; ----\
+function ----+                       |                         |                         +---- function
+              \---- unpack results;  | <---------------------- |     pack results;  ----/
+                                     |                         |
+
+*/
 
 #endif /* _CELLULARD_RPC_H */
