@@ -17,7 +17,7 @@
 
 /*------------------------------------------------------------------------*/
 
-#define THREAD_WAIT 2
+#define THREAD_WAIT 1
 
 /*------------------------------------------------------------------------*/
 
@@ -51,7 +51,7 @@ void* mc7700_thread_write(void* prm)
 		/* resolve pointer to query */
 		query = (mc7700_query_t*)*((mc7700_query_t**)buf);
 		
-		printf("%s:%d %s() query->query = %s\n", __FILE__, __LINE__, __func__, query->query);
+		printf("%s:%d %s() query->query = %s", __FILE__, __LINE__, __func__, query->query);
 
 		write(priv->fd, query->query, strlen(query->query));
 
@@ -71,8 +71,10 @@ void* mc7700_thread_read(void* prm)
     thread_queue_t *priv = prm;
     struct pollfd p = {priv->fd, POLLIN, 0};
     char buf[0xffff];
-    int buf_len, i, res, received = 0;
+    int buf_len = 0, i, res, received = 0;
 	char* s;
+	regex_t re;
+	int re_res;
 
     while(!priv->terminate)
     {
@@ -81,44 +83,50 @@ void* mc7700_thread_read(void* prm)
 
         if(res > 0 && p.revents & POLLIN && !received)
         {
-            buf_len = read(priv->fd, buf, sizeof(buf) - 1);
+            buf_len += read(priv->fd, buf + buf_len, sizeof(buf) - buf_len - 1);
 
             if(buf_len > 0)
             {
 				buf[buf_len] = 0;
 
 				if(strncmp(query->query, buf, buf_len) == 0)
+					printf("%s:%d %s() Allowed echo commands is detected!\n", __FILE__, __LINE__, __func__);
+
+				printf("==== [%s]\n", buf);
+				
+				regcomp(&re, query->answer_reg, REG_EXTENDED);
+				query->n_subs = re.re_nsub + 1;
+				query->re_subs = malloc(sizeof(regmatch_t) * query->n_subs);
+				re_res = regexec(&re, buf, query->n_subs, query->re_subs, 0);
+
+				if(re_res)
 				{
-					printf("==== Type ATE0 to disable echo...\n");
+					free(query->re_subs);
+					query->re_subs = NULL;
+
 					continue;
 				}
 
-                query->answer = realloc(query->answer, buf_len + 1);
+				regfree(&re);
+
+				received = 1;
+
+				query->answer = realloc(query->answer, buf_len + 1);
                 strncpy(query->answer, buf, buf_len + 1);
-
-				if((s = strstr(query->answer, query->answer_reg)))
-				{
-					/* reply received */
-					received = 1;
-					*s = 0;
-				}
-
-				printf("%s:%d %s() query->answer = %s\n", __FILE__, __LINE__, __func__, query->answer);
             }
         }
         else
 		{
 			if(query)
 			{
-				printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
-
+				/* reporting about reply */
 				pthread_mutex_lock(&query->cond_m);
 				pthread_cond_signal(&query->cond);
 				pthread_mutex_unlock(&query->cond_m);
-				query = NULL;
 			}
 
-			printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
+			query = NULL;
+			buf_len = 0;
 
 			/* notify writing thread */
             pthread_mutex_lock(&mutex_mc7700);
@@ -178,24 +186,26 @@ void mc7700_destroy(void)
 
 /*------------------------------------------------------------------------*/
 
-mc7700_query_t* mc7700_query_create(const char* query, const char* answer_reg)
+mc7700_query_t* mc7700_query_create(const char* q, const char* reply_re)
 {
 	mc7700_query_t* res;
 
 	if(!(res = malloc(sizeof(*res))))
 		goto err;
 
-	if(!(res->query = malloc(strlen(query) + 1)))
+	if(!(res->query = malloc(strlen(q) + 1)))
 		goto err_q;
 
-	strncpy(res->query, query, strlen(query) + 1);
+	strncpy(res->query, q, strlen(q) + 1);
 
-	if(!(res->answer_reg = malloc(strlen(answer_reg) + 1)))
+	if(!(res->answer_reg = malloc(strlen(reply_re) + 1)))
 		goto err_a;
 
-	strncpy(res->answer_reg, answer_reg, strlen(answer_reg) + 1);
+	strncpy(res->answer_reg, reply_re, strlen(reply_re) + 1);
 
 	res->answer = NULL;
+	res->re_subs = NULL;
+	res->n_subs = 0;
 
 	pthread_cond_init(&res->cond, NULL);
 	pthread_mutex_init(&res->cond_m, NULL);
@@ -216,21 +226,17 @@ exit:
 
 /*------------------------------------------------------------------------*/
 
-int mc7700_query_proccess(queue_t* q, mc7700_query_t* query)
+int mc7700_query_execute(queue_t* queue, mc7700_query_t* query)
 {
 	int res;
 
-	if((res = queue_add(q, &query, sizeof(mc7700_query_t**))))
+	if((res = queue_add(queue, &query, sizeof(mc7700_query_t**))))
 		goto err;
-
-	printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
 
 	/* wait for processing */
 	pthread_mutex_lock(&query->cond_m);
 	pthread_cond_wait(&query->cond, &query->cond_m);
 	pthread_mutex_unlock(&query->cond_m);
-
-	printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
 
 err:
 	return(res);
@@ -238,12 +244,13 @@ err:
 
 /*------------------------------------------------------------------------*/
 
-void mc7700_query_destroy(mc7700_query_t* query)
+void mc7700_query_destroy(mc7700_query_t* q)
 {
-	free(query->answer);
-	free(query->answer_reg);
-	free(query->query);
-	pthread_cond_destroy(&query->cond);
-	pthread_mutex_destroy(&query->cond_m);
-	free(query);
+	free(q->answer);
+	free(q->answer_reg);
+	free(q->query);
+	pthread_cond_destroy(&q->cond);
+	pthread_mutex_destroy(&q->cond_m);
+	free(q->re_subs);
+	free(q);
 }

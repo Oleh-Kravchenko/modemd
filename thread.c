@@ -105,12 +105,20 @@ rpc_packet_t* modem_close(cellulard_thread_t* priv, rpc_packet_t* p)
 
 rpc_packet_t* modem_get_imei(cellulard_thread_t* priv, rpc_packet_t* p)
 {
+	rpc_packet_t *res = NULL;
 	mc7700_query_t *q;
-	rpc_packet_t *res;
 
-	q = mc7700_query_create("AT+CGSN\r\n", "OK\r\n");
-	mc7700_query_proccess(thread_priv.q, q);
-	res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)q->answer, strlen(q->answer));
+	q = mc7700_query_create("AT+CGSN\r\n", "\r\n([0-9]+)\r\n\r\nOK\r\n");
+	mc7700_query_execute(thread_priv.q, q);
+
+	/* cutting IMEI number from the reply */
+	if(q->n_subs)
+		res = rpc_create(
+			TYPE_RESPONSE, __func__,
+			(uint8_t*)q->answer + q->re_subs[1].rm_so,
+			q->re_subs[1].rm_eo - q->re_subs[1].rm_so
+		);
+
 	mc7700_query_destroy(q);
 
     return(res);

@@ -1,6 +1,8 @@
 #ifndef __MC7700_H
 #define __MC7700_H
 
+#include <regex.h>
+
 #include "queue.h"
 
 typedef struct {
@@ -22,6 +24,10 @@ typedef struct mc7700_query_s{
 
 	char* answer_reg;
 
+	int n_subs;
+
+	regmatch_t *re_subs;
+
 	char* answer;
 
 	pthread_cond_t cond;
@@ -34,7 +40,7 @@ typedef struct mc7700_query_s{
 
 mc7700_query_t* mc7700_query_create(const char* query, const char* answer_reg);
 
-int mc7700_query_proccess(queue_t* q, mc7700_query_t* query);
+int mc7700_query_execute(queue_t* q, mc7700_query_t* query);
 
 void mc7700_query_destroy(mc7700_query_t* query);
 
