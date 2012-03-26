@@ -152,7 +152,6 @@ modem_info_t* modem_find_next_res_unpack(rpc_packet_t* p)
 modem_t* modem_open_by_port(const char* port)
 {
 	rpc_packet_t* p;
-	modem_t* res = NULL;
 
 	/* build packet and send it */
 	p = (rpc_packet_t*)malloc(sizeof(*p));
@@ -184,7 +183,6 @@ modem_t* modem_open_by_port(const char* port)
 void modem_close(modem_t* modem)
 {
 	rpc_packet_t* p;
-	modem_t* res = NULL;
 
 	/* build packet and send it */
 	p = (rpc_packet_t*)malloc(sizeof(*p));
@@ -222,8 +220,10 @@ char* modem_get_imei(modem_t* modem, char* imei, int len)
 
 	/* receive result and unpack it */
 	p = rpc_recv(sock);
-//	res = modem_open_by_port_res_unpack(p);
-    strncpy(imei, (const char*)p->data, (p->hdr.data_len > len ? len : p->hdr.data_len) - 1);
+
+	len = (p->hdr.data_len > len ? len : p->hdr.data_len);
+	strncpy(imei, (const char*)p->data, len);
+	imei[len] = 0;
 
 	rpc_free(p);
 

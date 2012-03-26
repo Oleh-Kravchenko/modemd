@@ -41,6 +41,7 @@ static char srv_filelog[256] = {0};
 static int srv_syslog = 0;
 static int srv_daemonize = 0;
 static int srv_terminate = 0;
+static int sock = -1;
 
 /*------------------------------------------------------------------------*/
 
@@ -128,7 +129,6 @@ int srv_run(void)
     socklen_t sa_client_len;
     int sock_client = -1;
 	struct timeval tv = {5, 0};
-    int sock = -1;
     int res = 0;
     fd_set rfds;
 
@@ -210,6 +210,7 @@ void on_sigterm(int prm)
 {
 	printf("SIGTERM %d\n", prm);
 	srv_terminate = 1;
+	close(sock);
 }
 
 /*------------------------------------------------------------------------*/
@@ -237,8 +238,8 @@ int main(int argc, char** argv)
         srv_daemonize ? "Yes" : "No"
     );
 
-/*    signal(SIGTERM, on_sigterm);
-    signal(SIGINT, on_sigterm); */
+    signal(SIGTERM, on_sigterm);
+    signal(SIGINT, on_sigterm);
 
     /* run socket server */
     if(srv_run())

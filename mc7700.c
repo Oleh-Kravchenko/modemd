@@ -2,12 +2,14 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <fcntl.h>
 #include <string.h>
 #include <termios.h>
 #include <poll.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <regex.h>
 
 #include "queue.h"
 #include "mc7700.h"
@@ -15,7 +17,7 @@
 
 /*------------------------------------------------------------------------*/
 
-#define THREAD_WAIT 1
+#define THREAD_WAIT 2
 
 /*------------------------------------------------------------------------*/
 
@@ -37,8 +39,6 @@ void* mc7700_thread_write(void* prm)
 	size_t buf_len;
 	void* buf;
 
-	printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
-
 	while(!priv->terminate)
  	{
 		/* receive pointer to query */
@@ -59,8 +59,6 @@ void* mc7700_thread_write(void* prm)
 		pthread_mutex_lock(&mutex_mc7700);
 		pthread_cond_wait(&priv->processed, &mutex_mc7700);
 		pthread_mutex_unlock(&mutex_mc7700);
-
-		printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
 	}
 
 	return(NULL);
@@ -73,23 +71,37 @@ void* mc7700_thread_read(void* prm)
     thread_queue_t *priv = prm;
     struct pollfd p = {priv->fd, POLLIN, 0};
     char buf[0xffff];
-    int buf_len, i, res;
+    int buf_len, i, res, received = 0;
+	char* s;
 
     while(!priv->terminate)
     {
-		printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
+		if(!received)
+			res = poll(&p, 1, THREAD_WAIT * 1000);
 
-		res = poll(&p, 1, THREAD_WAIT * 1000);
-
-        if(res > 0 && p.revents & POLLIN)
+        if(res > 0 && p.revents & POLLIN && !received)
         {
             buf_len = read(priv->fd, buf, sizeof(buf) - 1);
 
             if(buf_len > 0)
             {
 				buf[buf_len] = 0;
-                query->answer = malloc(buf_len + 1);
+
+				if(strncmp(query->query, buf, buf_len) == 0)
+				{
+					printf("==== Type ATE0 to disable echo...\n");
+					continue;
+				}
+
+                query->answer = realloc(query->answer, buf_len + 1);
                 strncpy(query->answer, buf, buf_len + 1);
+
+				if((s = strstr(query->answer, query->answer_reg)))
+				{
+					/* reply received */
+					received = 1;
+					*s = 0;
+				}
 
 				printf("%s:%d %s() query->answer = %s\n", __FILE__, __LINE__, __func__, query->answer);
             }
@@ -112,6 +124,8 @@ void* mc7700_thread_read(void* prm)
             pthread_mutex_lock(&mutex_mc7700);
             pthread_cond_signal(&priv->processed);
             pthread_mutex_unlock(&mutex_mc7700);
+
+			received = 0;
 		}
     }
 

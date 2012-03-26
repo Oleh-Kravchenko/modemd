@@ -108,7 +108,7 @@ rpc_packet_t* modem_get_imei(cellulard_thread_t* priv, rpc_packet_t* p)
 	mc7700_query_t *q;
 	rpc_packet_t *res;
 
-	q = mc7700_query_create("AT+CGSN\r\n", "^.*OK$");
+	q = mc7700_query_create("AT+CGSN\r\n", "OK\r\n");
 	mc7700_query_proccess(thread_priv.q, q);
 	res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)q->answer, strlen(q->answer));
 	mc7700_query_destroy(q);

@@ -81,17 +81,17 @@ int main(int argc, char** argv)
             if((modem = modem_open_by_port(mi->port)))
             {
                 if(modem_get_imei(modem, imei, sizeof(imei)))
-                    printf("IMIE: %s\n\n", imei);
+                    printf("IMIE: [%s]\n", imei);
 
 /*				sleep(10); */
 
                 if(modem_get_imei(modem, imei, sizeof(imei)))
-                    printf("IMIE: %s\n\n", imei);
+                    printf("IMIE: [%s]\n", imei);
 
 /*				sleep(10); */
 
                 if(modem_get_imei(modem, imei, sizeof(imei)))
-                    printf("IMIE: %s\n\n", imei);
+                    printf("IMIE: [%s]\n", imei);
 
 				modem_close(modem);
             }
