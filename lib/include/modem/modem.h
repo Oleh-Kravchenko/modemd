@@ -63,6 +63,7 @@ void modem_close(modem_t* modem);
  */
 char* modem_get_imei(modem_t* modem, char* imei, int len);
 
+#if 0
 int modem_get_channel_activity(modem_t* modem,int *failure);
 int modem_set_new_params(modem_t* modem);
 int modem_start_available_networks_scan(modem_t* modem);
@@ -74,8 +75,6 @@ char* modem_get_imsi(modem_t* modem,char *imsi,int len);
 char* modem_get_operator_name(modem_t* modem,char *operator,int len);
 time_t modem_get_network_time_date(modem_t* modem,int wait_answer);
 char* modem_get_network_type(modem_t* modem,char *network_type,int len);
-
-#if 0
 
 modem_t* modem_open_by_iface(const char* iface);
 

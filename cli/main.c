@@ -3,9 +3,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <getopt.h>
 
 #include "modem/modem.h"
-#include "../lib/rpc.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -83,7 +83,17 @@ int main(int argc, char** argv)
                 if(modem_get_imei(modem, imei, sizeof(imei)))
                     printf("IMIE: %s\n\n", imei);
 
-                modem_close(modem);
+/*				sleep(10); */
+
+                if(modem_get_imei(modem, imei, sizeof(imei)))
+                    printf("IMIE: %s\n\n", imei);
+
+/*				sleep(10); */
+
+                if(modem_get_imei(modem, imei, sizeof(imei)))
+                    printf("IMIE: %s\n\n", imei);
+
+				modem_close(modem);
             }
 
             free(mi);

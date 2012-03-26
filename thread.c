@@ -5,17 +5,16 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
-       #include <sys/types.h>
-       #include <sys/stat.h>
-       #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "thread.h"
+#include "mc7700.h"
 #include "modem/types.h"
 #include "lib/rpc.h"
 #include "lib/modem_int.h"
 #include "lib/utils.h"
-#include "mc7700.h"
-
 
 /*------------------------------------------------------------------------*/
 
@@ -83,10 +82,8 @@ rpc_packet_t* modem_open_by_port(cellulard_thread_t* priv, rpc_packet_t* p)
 	memcpy(path, p->data, path_len);
 	path[path_len] = 0;
 
-	printf("==== %s\n", path);
-
 	modem_get_at_port_name(path, tty, sizeof(tty));
-	printf("==== %s\n", tty);
+	printf("==== %s -> %s\n", path, tty);
 
 	modem = mc7700_open(tty);
 
@@ -100,18 +97,23 @@ rpc_packet_t* modem_open_by_port(cellulard_thread_t* priv, rpc_packet_t* p)
 rpc_packet_t* modem_close(cellulard_thread_t* priv, rpc_packet_t* p)
 {
 	mc7700_destroy();
+
+	return(rpc_create(TYPE_RESPONSE, __func__, NULL, 0));
 }
 
 /*------------------------------------------------------------------------*/
 
 rpc_packet_t* modem_get_imei(cellulard_thread_t* priv, rpc_packet_t* p)
 {
-	printf("==== %s:%d %s()\n", __FILE__, __LINE__, __func__);
-#define _AT_CGSN "AT+CGSN\r\n"
-	queue_add(thread_priv.q, _AT_CGSN, strlen(_AT_CGSN));
-	printf("==== %s:%d %s()\n", __FILE__, __LINE__, __func__);
+	mc7700_query_t *q;
+	rpc_packet_t *res;
 
-    return(rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)"12345678", 8));
+	q = mc7700_query_create("AT+CGSN\r\n", "^.*OK$");
+	mc7700_query_proccess(thread_priv.q, q);
+	res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)q->answer, strlen(q->answer));
+	mc7700_query_destroy(q);
+
+    return(res);
 }
 
 /*------------------------------------------------------------------------*/
@@ -122,7 +124,7 @@ const rpc_function_info_t rpc_functions[] = {
     {"modem_open_by_port", modem_open_by_port},
     {"modem_close", modem_close},
     {"modem_get_imei", modem_get_imei},
-    {},
+    {0},
 };
 
 /*------------------------------------------------------------------------*/

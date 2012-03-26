@@ -173,7 +173,7 @@ modem_t* modem_open_by_port(const char* port)
 	rpc_free(p);
 
 	/* returning result */
-	return((int)*p->data);
+	return((modem_t*)p->data);
 #if 0
 	return((modem_t*)1);
 #endif
@@ -183,6 +183,23 @@ modem_t* modem_open_by_port(const char* port)
 
 void modem_close(modem_t* modem)
 {
+	rpc_packet_t* p;
+	modem_t* res = NULL;
+
+	/* build packet and send it */
+	p = (rpc_packet_t*)malloc(sizeof(*p));
+	memset((void*)p, 0, sizeof(*p));
+	p->hdr.type = TYPE_QUERY;
+	p->hdr.func_len = strlen(__func__);
+	p->func = (char*)malloc(p->hdr.func_len);
+	memcpy(p->func, __func__, p->hdr.func_len);
+	p->hdr.data_len = 0;
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv(sock);
+	rpc_free(p);
 }
 
 /*------------------------------------------------------------------------*/
@@ -206,7 +223,7 @@ char* modem_get_imei(modem_t* modem, char* imei, int len)
 	/* receive result and unpack it */
 	p = rpc_recv(sock);
 //	res = modem_open_by_port_res_unpack(p);
-    strncpy(imei, p->data, (p->hdr.data_len > len ? len : p->hdr.data_len) - 1);
+    strncpy(imei, (const char*)p->data, (p->hdr.data_len > len ? len : p->hdr.data_len) - 1);
 
 	rpc_free(p);
 

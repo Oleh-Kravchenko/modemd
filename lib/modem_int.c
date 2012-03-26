@@ -26,7 +26,7 @@ modem_info_t* modem_find_first(DIR **dir)
 
     while((sysfs_item = readdir(sysfs_dir)))
     {
-        // directory name must be in format BUS-DEV
+        /* directory name must be in format BUS-DEV */
         regcomp(&reg, "^[0-9]-[0-9]$", 0);
         reg_res = regexec(&reg, sysfs_item->d_name, 0, NULL, 0);
         regfree(&reg);
@@ -37,7 +37,7 @@ modem_info_t* modem_find_first(DIR **dir)
         if(!(res = malloc(sizeof(*res))))
             goto exit;
 
-        // read device name and id
+        /* read device name and id */
         snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idVendor", sysfs_item->d_name);
         res->id_vendor = file_get_contents_hex(path);
 
@@ -84,7 +84,7 @@ modem_info_t* modem_find_next(DIR **dir)
 
     while((sysfs_item = readdir(*dir)))
     {
-        // имя каталога должно быть в таком формате BUS-DEV
+        /* name if directory must be in BUS-DEV format */
         regcomp(&reg, "^[0-9]-[0-9]$", 0);
         reg_res = regexec(&reg, sysfs_item->d_name, 0, NULL, 0);
         regfree(&reg);
@@ -95,7 +95,7 @@ modem_info_t* modem_find_next(DIR **dir)
         if(!(res = malloc(sizeof(*res))))
             goto exit;
 
-        // read device name and id
+        /* read device name and id */
         snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idVendor", sysfs_item->d_name);
         res->id_vendor = file_get_contents_hex(path);
 

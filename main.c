@@ -13,6 +13,8 @@
 #include <termios.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <getopt.h>
+#include <sys/select.h>
 
 #include "thread.h"
 #include "queue.h"
@@ -31,14 +33,14 @@ const char help[] =
 
 /*------------------------------------------------------------------------*/
 
-char srv_sock_path[256];
-char srv_pid_path[256];
-char srv_basename[256];
+static char srv_sock_path[256];
+static char srv_pid_path[256];
+static char srv_basename[256];
 
-char srv_filelog[256] = {0};
-int srv_syslog = 0;
-int srv_daemonize = 0;
-int srv_terminate = 0;
+static char srv_filelog[256] = {0};
+static int srv_syslog = 0;
+static int srv_daemonize = 0;
+static int srv_terminate = 0;
 
 /*------------------------------------------------------------------------*/
 
@@ -125,8 +127,10 @@ int srv_run(void)
     struct sockaddr_un sa_client;
     socklen_t sa_client_len;
     int sock_client = -1;
+	struct timeval tv = {5, 0};
     int sock = -1;
     int res = 0;
+    fd_set rfds;
 
     /* creating socket server */
     if((sock = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0)
@@ -155,8 +159,29 @@ int srv_run(void)
     sa_client_len = sizeof(sa_client);
 
     /* processing connections */
-    while(!srv_terminate && (sock_client = accept(sock, (struct sockaddr*)&sa_client, &sa_client_len)) > 0)
+    while(!srv_terminate)
     {
+#if 0
+		FD_ZERO(&rfds);
+		FD_SET(sock, &rfds);
+
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
+
+		if(!(res = select(sock + 1, &rfds, NULL, NULL, &tv)))
+		{
+			printf("Wait more %d\n", srv_terminate);
+			continue;
+		}
+
+		if(!FD_ISSET(sock, &rfds))
+		{
+			printf("sig Wait more %d\n", srv_terminate);
+			continue;
+		}
+#endif
+		sock_client = accept(sock, (struct sockaddr*)&sa_client, &sa_client_len);
+
         /* create thread for connection */
         if((res = proccess_connection(sock_client)))
         {
@@ -183,6 +208,7 @@ err_socket:
 
 void on_sigterm(int prm)
 {
+	printf("SIGTERM %d\n", prm);
 	srv_terminate = 1;
 }
 
@@ -212,7 +238,7 @@ int main(int argc, char** argv)
     );
 
 /*    signal(SIGTERM, on_sigterm);
-    signal(SIGINT, on_sigterm);*/
+    signal(SIGINT, on_sigterm); */
 
     /* run socket server */
     if(srv_run())

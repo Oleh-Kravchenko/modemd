@@ -8,6 +8,7 @@ SET(PROJECT_SOURCES
 lib/include/modem/modem.h
 lib/include/modem/types.h
 mc7700.c
+mc7700.h
 thread.c
 thread.h
 queue.c

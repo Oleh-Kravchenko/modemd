@@ -1,5 +1,4 @@
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
 
 #include "queue.h"
 
@@ -14,7 +13,11 @@ queue_t* queue_create(void)
         res->first = NULL;
         res->last = NULL;
 
-		pthread_mutex_init(&res->mutex, NULL);
+		pthread_mutex_init(&res->lock, NULL);
+
+		pthread_mutex_init(&res->cond_lock, NULL);
+
+		pthread_cond_init(&res->cond, NULL);
     }
 
     return(res);
@@ -41,14 +44,18 @@ void queue_destroy(queue_t* q)
         free(j);
     }
 
-    pthread_mutex_destroy(&q->mutex);
+    pthread_mutex_destroy(&q->lock);
+    
+    pthread_mutex_destroy(&q->cond_lock);
+
+	pthread_cond_destroy(&q->cond);
 
     free(q);
 }
 
 /*------------------------------------------------------------------------*/
 
-int queue_add(queue_t* q, const char* data, size_t size)
+int queue_add(queue_t* q, const void* data, size_t size)
 {
     queue_item_t *i;
 	int res = 0;
@@ -64,7 +71,7 @@ int queue_add(queue_t* q, const char* data, size_t size)
     i->size = size;
 	i->next = NULL;
 
-	pthread_mutex_lock(&q->mutex);
+	pthread_mutex_lock(&q->lock);
 
 	/* add item to the list */
 	if(q->first)
@@ -78,7 +85,9 @@ int queue_add(queue_t* q, const char* data, size_t size)
 		q->last = i;
 	}
 
-	pthread_mutex_unlock(&q->mutex);
+	pthread_cond_signal(&q->cond);
+
+	pthread_mutex_unlock(&q->lock);
 
     goto exit;
 
@@ -94,12 +103,12 @@ exit:
 
 /*------------------------------------------------------------------------*/
 
-int queue_pop(queue_t* q, char** data, size_t* size)
+int queue_pop(queue_t* q, void** data, size_t* size)
 {
     queue_item_t *i;
 	int res = 0;
 
-	pthread_mutex_lock(&q->mutex);
+	pthread_mutex_lock(&q->lock);
 
 	if(!(i = q->first))
 	{
@@ -120,7 +129,34 @@ int queue_pop(queue_t* q, char** data, size_t* size)
 	free(i);
 
 err:
-	pthread_mutex_unlock(&q->mutex);
+	pthread_mutex_unlock(&q->lock);
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int queue_wait_pop(queue_t* q, int seconds, void** data, size_t* size)
+{
+	struct timespec timeout;
+	int res, mutex_res;
+
+	/* try pop message */
+	while((res = queue_pop(q, data, size)))
+	{
+		/* setup timeout */
+		timeout.tv_sec = time(NULL) + seconds;
+		timeout.tv_nsec = 0;
+
+		/* pop failed wait sec and try it again */
+		pthread_mutex_lock(&q->cond_lock);
+		mutex_res = pthread_cond_timedwait(&q->cond, &q->cond_lock, &timeout);
+		pthread_mutex_unlock(&q->cond_lock);
+
+		if(mutex_res)
+			/* if timeout exit */
+			break;
+	}
 
 	return(res);
 }

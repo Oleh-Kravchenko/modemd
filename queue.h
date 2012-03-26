@@ -2,9 +2,11 @@
 #define __QUEUE_H
 
 #include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct queue_item_s {
-    char *data;
+    void *data;
 
     size_t size;
 
@@ -14,11 +16,20 @@ typedef struct queue_item_s {
 /*------------------------------------------------------------------------*/
 
 typedef struct {
+	/* pointer to first item of queue */
     queue_item_t *first;
 
+	/* pointer to last item of queue */
     queue_item_t *last;
 
-    pthread_mutex_t mutex;
+    /** mutex for queue managment */
+    pthread_mutex_t lock;
+
+	/** mutex for wait condition queue population */
+    pthread_mutex_t cond_lock;
+
+	/** condition for wait queue population */
+	pthread_cond_t cond;
 } queue_t;
 
 /*------------------------------------------------------------------------*/
@@ -42,7 +53,7 @@ void queue_destroy(queue_t* q);
  * @param size size of data
  * @return 0 if successful
  **/
-int queue_add(queue_t* q, const char* data, size_t size);
+int queue_add(queue_t* q, const void* data, size_t size);
 
 /**
  * @brief pop data from the queue
@@ -53,6 +64,18 @@ int queue_add(queue_t* q, const char* data, size_t size);
  *
  * data must be freed by function free()
  */
-int queue_pop(queue_t* q, char** data, size_t* size);
+int queue_pop(queue_t* q, void** data, size_t* size);
+
+/**
+ * @brief pop data from the queue
+ * @param q queue
+ * @param sec timeout in seconds before give up
+ * @param data pointer to data
+ * @param size size of data
+ * @return 0 if successful
+ *
+ * data must be freed by function free()
+ */
+int queue_wait_pop(queue_t* q, int seconds, void** data, size_t* size);
 
 #endif /* __QUEUE_H */

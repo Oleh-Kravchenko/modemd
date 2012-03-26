@@ -5,19 +5,19 @@
 
 typedef struct
 {
-    /// port number
+    /** port number */
     char port[8];
 
-    /// vendor name
+    /** vendor name */
     uint16_t id_vendor;
 
-    /// product name
+    /** product name */
     uint16_t id_product;
 
-    /// manufacturer name
+    /** manufacturer name */
     char manufacturer[256];
 
-    /// product name
+    /** product name */
     char product[256];
 } __attribute__((__packed__)) modem_info_t;
 
@@ -61,16 +61,16 @@ typedef enum
 
 typedef struct
 {
-    /// APN
+    /** APN */
     char apn[101];
 
-    /// username
+    /** username */
     char username[33];
 
-    /// password
+    /** password */
     char password[33];
 
-    /// type of authrization (None, PAP, CHAP)
+    /** type of authrization (None, PAP, CHAP) */
     ppp_auth_protocol_t auth;
 } modem_data_profile_t;
 

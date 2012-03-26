@@ -1,16 +1,19 @@
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #include <termios.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <dirent.h>
 
 /*------------------------------------------------------------------------*/
 
 char* file_get_contents(const char *filename, char* s, const int size)
 {
-    FILE *f;
     char* res;
+    FILE *f;
+    int rn;
 
     if(!(f = fopen(filename, "r")))
         return(0);
@@ -19,7 +22,7 @@ char* file_get_contents(const char *filename, char* s, const int size)
 
     fclose(f);
 
-    int rn = strlen(res);
+    rn = strlen(res);
 
     /* removing eof */
     if(rn && (res[rn - 1] == '\n' || res[rn - 1] == '\n'))
@@ -30,10 +33,10 @@ char* file_get_contents(const char *filename, char* s, const int size)
 
 /*------------------------------------------------------------------------*/
 
-int file_get_contents_hex(const char* filename)
+unsigned int file_get_contents_hex(const char* filename)
 {
     char hex[256];
-    int res = 0;
+    unsigned int res = 0;
 
     if(file_get_contents(filename, hex, sizeof(hex)))
         sscanf(hex, "%x", &res);
@@ -45,7 +48,12 @@ int file_get_contents_hex(const char* filename)
 
 int its_modem(uint16_t vendor, uint16_t product)
 {
-    return(vendor == 0x1199 && product == 0x68a3);
+	int res;
+
+	res = vendor == 0x1199 && product == 0x68a3;
+	res += vendor == 0x12d1 && product == 0x1001;
+
+	return(res);
 }
 
 /*------------------------------------------------------------------------*/
@@ -55,7 +63,6 @@ int serial_open(const char* portname, int flags)
 	struct termios tp;
 	int port;
 
-	/* send up command to cns port */
 	port = open(portname, flags);
 
 	if(port < 0)
@@ -99,10 +106,10 @@ int serial_open(const char* portname, int flags)
 char* modem_get_at_port_name(const char* port, char* tty, int tty_len)
 {
 	uint16_t vendor, product;
+	char* at_port, *res = NULL;
+    struct dirent *item;
 	char path[0xff];
 	DIR *dir;
-    struct dirent *item;
-	char* at_port;
 
 	/* reading id's of modem */
 	snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idVendor", port);
@@ -111,23 +118,31 @@ char* modem_get_at_port_name(const char* port, char* tty, int tty_len)
 	snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idProduct", port);
 	product = file_get_contents_hex(path);
 
+	/* getting interface number */
 	if((vendor == 0x1199 && product == 0x68a3))
-	{
 		snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s:1.3/", port);
-		
-	    if(!(dir = opendir(path)));
-
-		while((item = readdir(dir)))
-		{
-			if((at_port = strstr(item->d_name, "ttyUSB")))
-			{
-				snprintf(tty, tty_len - 1, "/dev/%s", at_port);
-
-				return(tty);
-			}
-		}
-
-	}
+	else if((vendor == 0x12d1 && product == 0x1001))
+		snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s:1.0/", port);
 	else
-		return(NULL);
+		goto err;
+
+    if(!(dir = opendir(path)))
+		goto err;
+
+	/* getting tty name */
+	while((item = readdir(dir)))
+	{
+		if((at_port = strstr(item->d_name, "ttyUSB")))
+		{
+			snprintf(tty, tty_len - 1, "/dev/%s", at_port);
+
+			res = tty;
+			break;
+		}
+	}
+
+	closedir(dir);
+
+err:
+	return(res);
 }
