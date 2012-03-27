@@ -1,6 +1,8 @@
 #ifndef __MODEM_H
 #define __MODEM_H
 
+#include <time.h>
+
 #include "modem/types.h"
 
 /***************************************************************************
@@ -63,13 +65,16 @@ void modem_close(modem_t* modem);
  */
 char* modem_get_imei(modem_t* modem, char* imei, int len);
 
-#if 0
+int16_t modem_get_signal_quality(modem_t* modem);
+
+time_t modem_get_network_time(modem_t* modem);
+
+//#if 0
 int modem_get_channel_activity(modem_t* modem,int *failure);
 int modem_set_new_params(modem_t* modem);
 int modem_start_available_networks_scan(modem_t* modem);
 int modem_networks_scan_is_running(modem_t* modem);
 int modem_get_registration_status(modem_t* modem);
-int modem_get_signal_quality(modem_t* modem,int *dBm);
 int modem_change_pin(modem_t* modem,char* old_pin,char* new_pin);
 char* modem_get_imsi(modem_t* modem,char *imsi,int len);
 char* modem_get_operator_name(modem_t* modem,char *operator,int len);
@@ -102,11 +107,11 @@ char* modem_get_operator_name(modem_t* modem, char* operator_name, int len);
  * EVENT                                                                   *
  **************************************************************************/
 
-modem_event_t* modem_wait_event(modem_t* modem, modem_event_t* event, int timeout);
+//modem_event_t* modem_wait_event(modem_t* modem, modem_event_t* event, int timeout);
 
-int modem_register_event_handler_callback(modem_t* modem, modem_event_handler_t* event_handler);
+//int modem_register_event_handler_callback(modem_t* modem, modem_event_handler_t* event_handler);
 
-void modem_unregister_event_handler_callback(modem_t* modem, modem_event_handler_t* event_handler);
+//void modem_unregister_event_handler_callback(modem_t* modem, modem_event_handler_t* event_handler);
 
 /***************************************************************************
  * DATA SESSION                                                            *
@@ -114,9 +119,9 @@ void modem_unregister_event_handler_callback(modem_t* modem, modem_event_handler
 
 int modem_max_number_of_data_profiles(modem_t* modem);
 
-int modem_data_profile_setup(modem_t* modem, int slot, modem_data_profile_t* profile);
+//int modem_data_profile_setup(modem_t* modem, int slot, modem_data_profile_t* profile);
 
-modem_data_profile_t* modem_data_profile_read(modem_t* modem, int slot, modem_data_profile_t* profile);
+//modem_data_profile_t* modem_data_profile_read(modem_t* modem, int slot, modem_data_profile_t* profile);
 
 int modem_data_profile_clear(modem_t* modem, int slot);
 
@@ -125,6 +130,6 @@ int modem_data_profile_connect(modem_t* modem, int slot);
 void modem_data_profile_disconnect(modem_t* modem, int slot);
 
 int modem_data_profile_is_active(modem_t* modem, int slot);
-#endif /* 0 */
+//#endif /* 0 */
 
 #endif /* __MODEM_H */

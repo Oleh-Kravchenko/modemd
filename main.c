@@ -128,9 +128,11 @@ int srv_run(void)
     struct sockaddr_un sa_client;
     socklen_t sa_client_len;
     int sock_client = -1;
-	struct timeval tv = {5, 0};
     int res = 0;
+#if 0
+	struct timeval tv = {5, 0};
     fd_set rfds;
+#endif
 
     /* creating socket server */
     if((sock = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0)

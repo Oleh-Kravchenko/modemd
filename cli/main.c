@@ -54,6 +54,9 @@ int analyze_parameters(int argc, char** argv)
 int main(int argc, char** argv)
 {
     int res;
+	const struct tm* tm;
+	time_t t;
+	char dt[0x100];
 
     if((res = analyze_parameters(argc, argv)))
         return(res);
@@ -83,16 +86,13 @@ int main(int argc, char** argv)
                 if(modem_get_imei(modem, imei, sizeof(imei)))
                     printf("IMIE: [%s]\n", imei);
 
-/*				sleep(10); */
-
-                if(modem_get_imei(modem, imei, sizeof(imei)))
-                    printf("IMIE: [%s]\n", imei);
-
-/*				sleep(10); */
-
-                if(modem_get_imei(modem, imei, sizeof(imei)))
-                    printf("IMIE: [%s]\n", imei);
-
+				printf("Signal: %d dBm\n", modem_get_signal_quality(modem));
+				
+				t = modem_get_network_time(modem);
+				tm = gmtime(&t);
+				strftime(dt, sizeof(dt), "%Y.%m.%d %H:%M:%S", tm);
+				printf("Time: %s\n", asctime(tm));
+				
 				modem_close(modem);
             }
 

@@ -71,10 +71,10 @@ void* mc7700_thread_read(void* prm)
     thread_queue_t *priv = prm;
     struct pollfd p = {priv->fd, POLLIN, 0};
     char buf[0xffff];
-    int buf_len = 0, i, res, received = 0;
-	char* s;
+    int buf_len = 0, res = 0, received = 0;
 	regex_t re;
-	int re_res;
+	int re_res, i;
+	char re_err[0x100];
 
     while(!priv->terminate)
     {
@@ -92,7 +92,10 @@ void* mc7700_thread_read(void* prm)
 				if(strncmp(query->query, buf, buf_len) == 0)
 					printf("%s:%d %s() Allowed echo commands is detected!\n", __FILE__, __LINE__, __func__);
 
-				printf("==== [%s]\n", buf);
+				printf("(II) %d [", buf_len);
+				for(i = 0; i < buf_len; ++ i)
+					printf("%02x ", buf[i]);
+				printf("]\n");
 				
 				regcomp(&re, query->answer_reg, REG_EXTENDED);
 				query->n_subs = re.re_nsub + 1;
@@ -101,6 +104,11 @@ void* mc7700_thread_read(void* prm)
 
 				if(re_res)
 				{
+					regerror(re_res, &re, re_err, sizeof(re_err));
+
+					printf("(EE) %s\n", re_err);
+
+				
 					free(query->re_subs);
 					query->re_subs = NULL;
 
@@ -108,6 +116,8 @@ void* mc7700_thread_read(void* prm)
 				}
 
 				regfree(&re);
+
+				printf("(II) Matched\n");
 
 				received = 1;
 

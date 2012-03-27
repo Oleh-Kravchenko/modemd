@@ -230,6 +230,66 @@ char* modem_get_imei(modem_t* modem, char* imei, int len)
     return(imei);
 }
 
+/*------------------------------------------------------------------------*/
+
+int16_t modem_get_signal_quality(modem_t* modem)
+{
+	rpc_packet_t* p;
+	int32_t res = 0;
+
+	/* build packet and send it */
+	p = (rpc_packet_t*)malloc(sizeof(*p));
+	memset((void*)p, 0, sizeof(*p));
+	p->hdr.type = TYPE_QUERY;
+	p->hdr.func_len = strlen(__func__);
+	p->func = (char*)malloc(p->hdr.func_len);
+	memcpy(p->func, __func__, p->hdr.func_len);
+	p->hdr.data_len = 0;
+	p->data = NULL;
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv(sock);
+
+	if(p->hdr.data_len == sizeof(int16_t))
+		res = *((int16_t*)p->data);
+
+	rpc_free(p);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+time_t modem_get_network_time(modem_t* modem)
+{
+	rpc_packet_t* p;
+	time_t res = 0;
+
+	/* build packet and send it */
+	p = (rpc_packet_t*)malloc(sizeof(*p));
+	memset((void*)p, 0, sizeof(*p));
+	p->hdr.type = TYPE_QUERY;
+	p->hdr.func_len = strlen(__func__);
+	p->func = (char*)malloc(p->hdr.func_len);
+	memcpy(p->func, __func__, p->hdr.func_len);
+	p->hdr.data_len = 0;
+	p->data = NULL;
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv(sock);
+
+	if(p->hdr.data_len == sizeof(time_t))
+		res = *((time_t*)p->data);
+
+	rpc_free(p);
+
+    return(res);
+}
+
 int modem_get_channel_activity(modem_t* modem,int *failure)
 {
 //	*failure = eRegistrationStatus;
@@ -263,13 +323,6 @@ int modem_get_registration_status(modem_t* modem)
 	return 1; //eREGISTERED_HOME
 }
 
-int modem_get_signal_quality(modem_t* modem,int *dBm)
-{
-	//return CCellCore::GetSignalQuality( int *dBm )
-	*dBm = -1;
-	return 0; //CSQ_NOT_KNOWN
-}
-
 int modem_change_pin(modem_t* modem,char* old_pin,char* new_pin)
 {
 	//CCellCore::ChangePIN()
@@ -288,12 +341,6 @@ char* modem_get_operator_name(modem_t* modem,char *operator,int len)
 	//CCellEngine::GetOperatorName()
 	strncpy(operator, "Kyivstar", len);
     return(operator);
-}
-
-time_t modem_get_network_time_date(modem_t* modem,int wait_answer)
-{
-	//CLteSierra::GetNetworkTimeDate
-   return 0;
 }
 
 char* modem_get_network_type(modem_t* modem,char *network_type,int len)
