@@ -290,6 +290,68 @@ time_t modem_get_network_time(modem_t* modem)
     return(res);
 }
 
+/*------------------------------------------------------------------------*/
+
+char* modem_get_imsi(modem_t* modem,char *imsi, int len)
+{
+	rpc_packet_t* p;
+
+	/* build packet and send it */
+	p = (rpc_packet_t*)malloc(sizeof(*p));
+	memset((void*)p, 0, sizeof(*p));
+	p->hdr.type = TYPE_QUERY;
+	p->hdr.func_len = strlen(__func__);
+	p->func = (char*)malloc(p->hdr.func_len);
+	memcpy(p->func, __func__, p->hdr.func_len);
+	p->hdr.data_len = 0;
+	p->data = NULL;
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv(sock);
+
+	len = (p->hdr.data_len > len ? len : p->hdr.data_len);
+	strncpy(imsi, (const char*)p->data, len);
+	imsi[len] = 0;
+
+	rpc_free(p);
+
+    return(imsi);
+}
+
+/*------------------------------------------------------------------------*/
+
+char* modem_get_operator_name(modem_t *modem, char *operator, int len)
+{
+	rpc_packet_t* p;
+
+	/* build packet and send it */
+	p = (rpc_packet_t*)malloc(sizeof(*p));
+	memset((void*)p, 0, sizeof(*p));
+	p->hdr.type = TYPE_QUERY;
+	p->hdr.func_len = strlen(__func__);
+	p->func = (char*)malloc(p->hdr.func_len);
+	memcpy(p->func, __func__, p->hdr.func_len);
+	p->hdr.data_len = 0;
+	p->data = NULL;
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv(sock);
+
+	len = (p->hdr.data_len > len ? len : p->hdr.data_len);
+	strncpy(operator, (const char*)p->data, len);
+	operator[len] = 0;
+
+	rpc_free(p);
+
+    return(operator);
+}
+
+/*------------------------------------------------------------------------*/
+
 int modem_get_channel_activity(modem_t* modem,int *failure)
 {
 //	*failure = eRegistrationStatus;
@@ -327,20 +389,6 @@ int modem_change_pin(modem_t* modem,char* old_pin,char* new_pin)
 {
 	//CCellCore::ChangePIN()
 	 return 0; //OK
-}
-
-char* modem_get_imsi(modem_t* modem,char *imsi,int len)
-{
-	//pszIMSIString
-    strncpy(imsi, "255071040257705", len);
-    return(imsi);
-}
-
-char* modem_get_operator_name(modem_t* modem,char *operator,int len)
-{
-	//CCellEngine::GetOperatorName()
-	strncpy(operator, "Kyivstar", len);
-    return(operator);
 }
 
 char* modem_get_network_type(modem_t* modem,char *network_type,int len)

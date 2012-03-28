@@ -106,7 +106,7 @@ void* mc7700_thread_read(void* prm)
 				{
 					regerror(re_res, &re, re_err, sizeof(re_err));
 
-					printf("(EE) %s\n", re_err);
+					printf("(EE) %s <<%s>>\n", re_err, buf);
 
 				
 					free(query->re_subs);
@@ -121,7 +121,7 @@ void* mc7700_thread_read(void* prm)
 
 				received = 1;
 
-				query->answer = realloc(query->answer, buf_len + 1);
+				query->answer = malloc(buf_len + 1);
                 strncpy(query->answer, buf, buf_len + 1);
             }
         }
@@ -256,6 +256,9 @@ err:
 
 void mc7700_query_destroy(mc7700_query_t* q)
 {
+	if(!q)
+		return;
+
 	free(q->answer);
 	free(q->answer_reg);
 	free(q->query);

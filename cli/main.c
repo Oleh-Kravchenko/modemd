@@ -57,6 +57,7 @@ int main(int argc, char** argv)
 	const struct tm* tm;
 	time_t t;
 	char dt[0x100];
+	char operator[0x100];
 
     if((res = analyze_parameters(argc, argv)))
         return(res);
@@ -92,6 +93,8 @@ int main(int argc, char** argv)
 				tm = gmtime(&t);
 				strftime(dt, sizeof(dt), "%Y.%m.%d %H:%M:%S", tm);
 				printf("Time: %s\n", asctime(tm));
+
+				printf("Operator: %s\n", modem_get_operator_name(modem, operator, sizeof(operator)));
 				
 				modem_close(modem);
 //            }

@@ -14,6 +14,8 @@ thread.h
 queue.c
 queue.h
 main.c
+hardware.c
+hardware.h
 )
 
 ADD_EXECUTABLE(modemd ${PROJECT_SOURCES})
