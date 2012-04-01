@@ -81,10 +81,12 @@ void modem_info(const char* port)
 	if(!modem_get_signal_quality(modem, &sq))
 		printf("Signal: %d dBm, %d Level\n", sq.dbm, sq.level);
 
-	t = modem_get_network_time(modem);
-	tm = gmtime(&t);
-	strftime(dt, sizeof(dt), "%Y.%m.%d %H:%M:%S", tm);
-	printf("Modem time: [%s]\n", asctime(tm));
+	if(t = modem_get_network_time(modem))
+	{
+		tm = gmtime(&t);
+		strftime(dt, sizeof(dt), "%Y.%m.%d %H:%M:%S", tm);
+		printf("Modem time: [%s]\n", asctime(tm));
+	}
 
 	/* close modem */
 	modem_close(modem);
