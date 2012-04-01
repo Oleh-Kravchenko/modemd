@@ -11,4 +11,5 @@ JMK_O_OBJS=main.o
 JMK_LIBS=$(JMKE_BUILDDIR)/pkg/modemd/lib/libmodem.so
 
 include $(JMK_ROOT)/pkg/modemd/modemd.mak
+
 $(call JMKE_INCLUDE_RULES)
