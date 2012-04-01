@@ -170,7 +170,7 @@ void rpc_free(rpc_packet_t *p)
 
 void rpc_print(rpc_packet_t *p)
 {
-#ifdef _DEBUG
+//#ifdef __MODEMD_DEBUG
     int i;
 
     printf("==== %s %s(%d) data(%d) = [", p->hdr.type ? "Response" : "Query" , p->func, p->hdr.func_len, p->hdr.data_len);
@@ -178,5 +178,5 @@ void rpc_print(rpc_packet_t *p)
     for(i = 0; i < p->hdr.data_len; ++ i)
         printf(" %02x", p->data[i]);
     puts(" ]");
-#endif /* _DEBUG */
+//#endif
 }

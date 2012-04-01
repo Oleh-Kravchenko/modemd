@@ -41,17 +41,27 @@ void* mc7700_thread_write(void* prm)
 
 	while(!priv->terminate)
  	{
+#ifdef __MODEMD_DEBUG
+		printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
+#endif
+
 		/* receive pointer to query */
 		if(queue_wait_pop(priv->q, THREAD_WAIT, &buf, &buf_len))
 			continue;
 
 		if(buf_len != sizeof(void**))
+		{
+			free(buf);
 			continue;
+		}
 
 		/* resolve pointer to query */
 		query = (mc7700_query_t*)*((mc7700_query_t**)buf);
-		
+		free(buf);
+
+#ifdef __MODEMD_DEBUG
 		printf("%s:%d %s() query->query = %s", __FILE__, __LINE__, __func__, query->query);
+#endif
 
 		write(priv->fd, query->query, strlen(query->query));
 
@@ -73,30 +83,33 @@ void* mc7700_thread_read(void* prm)
     char buf[0xffff];
     int buf_len = 0, res = 0, received = 0;
 	regex_t re;
-	int re_res, i;
+	int re_res;
 	char re_err[0x100];
 
     while(!priv->terminate)
     {
 		if(!received)
-			res = poll(&p, 1, THREAD_WAIT * 1000);
+			res = poll(&p, 1, (THREAD_WAIT) * 1000);
 
         if(res > 0 && p.revents & POLLIN && !received)
         {
             buf_len += read(priv->fd, buf + buf_len, sizeof(buf) - buf_len - 1);
 
-            if(buf_len > 0)
+            if(buf_len > 0 && query)
             {
 				buf[buf_len] = 0;
 
+#ifdef __MODEMD_DEBUG
 				if(strncmp(query->query, buf, buf_len) == 0)
 					printf("%s:%d %s() Allowed echo commands is detected!\n", __FILE__, __LINE__, __func__);
+
+                int i;
 
 				printf("(II) %d [", buf_len);
 				for(i = 0; i < buf_len; ++ i)
 					printf("%02x ", buf[i]);
 				printf("]\n");
-				
+#endif
 				regcomp(&re, query->answer_reg, REG_EXTENDED);
 				query->n_subs = re.re_nsub + 1;
 				query->re_subs = malloc(sizeof(regmatch_t) * query->n_subs);
@@ -106,19 +119,21 @@ void* mc7700_thread_read(void* prm)
 				{
 					regerror(re_res, &re, re_err, sizeof(re_err));
 
+#ifdef __MODEMD_DEBUG
 					printf("(EE) %s <<%s>>\n", re_err, buf);
-
-				
+#endif
 					free(query->re_subs);
 					query->re_subs = NULL;
+					regfree(&re);
 
 					continue;
 				}
 
 				regfree(&re);
 
+#ifdef __MODEMD_DEBUG
 				printf("(II) Matched\n");
-
+#endif
 				received = 1;
 
 				query->answer = malloc(buf_len + 1);
@@ -133,17 +148,16 @@ void* mc7700_thread_read(void* prm)
 				pthread_mutex_lock(&query->cond_m);
 				pthread_cond_signal(&query->cond);
 				pthread_mutex_unlock(&query->cond_m);
-			}
 
-			query = NULL;
-			buf_len = 0;
+				buf_len = 0;
+				received = 0;
+				query = NULL;
+			}
 
 			/* notify writing thread */
             pthread_mutex_lock(&mutex_mc7700);
             pthread_cond_signal(&priv->processed);
             pthread_mutex_unlock(&mutex_mc7700);
-
-			received = 0;
 		}
     }
 

@@ -1,7 +1,19 @@
-#ifndef _CELLULARD_RPC_H
-#define _CELLULARD_RPC_H
+#ifndef __MODEMD_RPC_H
+#define __MODEMD_RPC_H
 
 #include <stdint.h>
+
+/***************************************************************************
+
+            client             |  network  |             server
+                               |           |
+                               |           |
+           /- pack parameters; | --------> | unpack parameters; -\
+function -+                    |           |                     +- function
+           \- unpack results;  | <-------- |     pack results;  -/
+                               |           |
+
+***************************************************************************/
 
 /*------------------------------------------------------------------------*/
 
@@ -76,15 +88,4 @@ void rpc_free(rpc_packet_t *p);
  */
 void rpc_print(rpc_packet_t *p);
 
-/*
-
-               client                |         network         |                   server
-                                     |                         |
-              /---- pack parameters; | ----------------------> | unpack parameters; ----\
-function ----+                       |                         |                         +---- function
-              \---- unpack results;  | <---------------------- |     pack results;  ----/
-                                     |                         |
-
-*/
-
-#endif /* _CELLULARD_RPC_H */
+#endif /* __MODEMD_RPC_H */

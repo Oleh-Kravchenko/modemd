@@ -3,6 +3,12 @@
 
 #include <stdint.h>
 
+/*------------------------------------------------------------------------*/
+
+typedef void* modem_t;
+
+/*------------------------------------------------------------------------*/
+
 typedef struct
 {
     /** port number */
@@ -21,12 +27,59 @@ typedef struct
     char product[256];
 } __attribute__((__packed__)) modem_info_t;
 
+/*------------------------------------------------------------------------*/
+
+typedef struct
+{
+    /* signal quality in dBm */
+    int16_t dbm;
+
+    /* signal level 1-5 */
+    uint8_t level;
+} __attribute__((__packed__)) modem_signal_quality_t;
 
 /*------------------------------------------------------------------------*/
 
-typedef void* modem_t;
+typedef enum
+{
+    PPP_NONE = 0,
+    PPP_PAP,
+    PPP_CHAP
+} __attribute__((__packed__)) ppp_auth_protocol_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef struct
+{
+    /** APN */
+    char apn[101];
+
+    /** username */
+    char username[33];
+
+    /** password */
+    char password[33];
+
+    /** type of authrization (None, PAP, CHAP) */
+    ppp_auth_protocol_t auth;
+} __attribute__((__packed__)) modem_data_profile_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef enum
+{
+	MODEM_NETWORK_REG_FAILED    = 0,
+	MODEM_NETWORK_REG_HOME,
+	MODEM_NETWORK_REG_SEARCHING,
+	MODEM_NETWORK_REG_DENIED,
+	MODEM_NETWORK_REG_UNKNOWN,
+	MODEM_NETWORK_REG_ROAMING
+} __attribute__((__packed__)) modem_network_reg_t;
+
+/*------------------------------------------------------------------------*/
 
 #if 0
+
 typedef void* modem_event_t;
 
 typedef void* modem_event_handler_t;
@@ -49,30 +102,6 @@ typedef enum
 } modem_event_type_t;
 
 /*------------------------------------------------------------------------*/
-
-typedef enum
-{
-    PPP_NONE = 0,
-    PPP_PAP,
-    PPP_CHAP
-} ppp_auth_protocol_t;
-
-/*------------------------------------------------------------------------*/
-
-typedef struct
-{
-    /** APN */
-    char apn[101];
-
-    /** username */
-    char username[33];
-
-    /** password */
-    char password[33];
-
-    /** type of authrization (None, PAP, CHAP) */
-    ppp_auth_protocol_t auth;
-} modem_data_profile_t;
 
 #endif /* 0 */
 

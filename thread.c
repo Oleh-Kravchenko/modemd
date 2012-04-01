@@ -20,13 +20,17 @@
 
 /*------------------------------------------------------------------------*/
 
+char *strptime(const char *s, const char *format, struct tm *tm);
+
+/*------------------------------------------------------------------------*/
+
 typedef rpc_packet_t* (*rpc_function_t)(cellulard_thread_t*, rpc_packet_t*);
 
 /*------------------------------------------------------------------------*/
 
 typedef struct
 {
-    char name[0xff];
+    char name[0x100];
 
     rpc_function_t func;
 } rpc_function_info_t;
@@ -39,15 +43,13 @@ rpc_packet_t* modem_find_first_packet(cellulard_thread_t* priv, rpc_packet_t* p)
     modem_info_t *mi;
     int mi_len = sizeof(*mi);
 
-    if((mi = modem_find_first(&priv->dir)))
-        printf("%s %04hx:%04hx %s %s\n", mi->port, mi->id_vendor, mi->id_product, mi->manufacturer, mi->product);
-	else
+    if(!(mi = modem_find_first(&priv->dir)))
 		mi_len = 0;
 
     res = rpc_create(TYPE_RESPONSE, "modem_find_first", (uint8_t*)mi, mi_len);
 
     free(mi);
-    
+
     return(res);
 }
 
@@ -59,9 +61,7 @@ rpc_packet_t* modem_find_next_packet(cellulard_thread_t* priv, rpc_packet_t* p)
     modem_info_t *mi;
     int mi_len = sizeof(*mi);
 
-    if((mi = modem_find_next(&priv->dir)))
-        printf("%s %04hx:%04hx %s %s\n", mi->port, mi->id_vendor, mi->id_product, mi->manufacturer, mi->product);
-	else
+    if(!(mi = modem_find_next(&priv->dir)))
 		mi_len = 0;
 
     res = rpc_create(TYPE_RESPONSE, "modem_find_next", (uint8_t*)mi, mi_len);
@@ -89,16 +89,19 @@ rpc_packet_t* modem_open_by_port(cellulard_thread_t* priv, rpc_packet_t* p)
 
 	while(!modem_get_at_port_name(path, tty, sizeof(tty)) && modem_wakeup_tries)
 	{
-        init_port(path);
+#ifdef __MODEMD_DEBUG
         printf("(II) Wait modem wakeup on port %s\n", path);
-        sleep(10);
+#endif
+        init_port(path);
+        sleep(20);
         -- modem_wakeup_tries;
 	}
 
     if(*tty)
     {
+#ifdef __MODEMD_DEBUG
     	printf("==== %s -> %s\n", path, tty);
-
+#endif
     	modem = mc7700_open(tty);
     }
 
@@ -127,7 +130,7 @@ rpc_packet_t* modem_get_imei(cellulard_thread_t* priv, rpc_packet_t* p)
 	mc7700_query_execute(thread_priv.q, q);
 
 	/* cutting IMEI number from the reply */
-	if(q->n_subs)
+	if(q->answer)
 		res = rpc_create(
 			TYPE_RESPONSE, __func__,
 			(uint8_t*)q->answer + q->re_subs[1].rm_so,
@@ -150,7 +153,7 @@ rpc_packet_t* modem_get_imsi(cellulard_thread_t* priv, rpc_packet_t* p)
 	mc7700_query_execute(thread_priv.q, q);
 
 	/* cutting IMEI number from the reply */
-	if(q->n_subs)
+	if(q->answer)
 		res = rpc_create(
 			TYPE_RESPONSE, __func__,
 			(uint8_t*)q->answer + q->re_subs[1].rm_so,
@@ -166,16 +169,17 @@ rpc_packet_t* modem_get_imsi(cellulard_thread_t* priv, rpc_packet_t* p)
 
 rpc_packet_t* modem_get_signal_quality(cellulard_thread_t* priv, rpc_packet_t* p)
 {
+	modem_signal_quality_t sq;
 	rpc_packet_t *res = NULL;
-	mc7700_query_t *q;
 	char rssi[16], ber[16];
-	int16_t signal;
+	mc7700_query_t *q;
+	int nrssi, nber;
 
 	q = mc7700_query_create("AT+CSQ\r\n", "\r\n\\+CSQ: ([0-9]+),([0-9]+)\r\n\r\nOK\r\n");
 	mc7700_query_execute(thread_priv.q, q);
 
 	/* cutting IMEI number from the reply */
-	if(q->n_subs)
+	if(q->answer)
 	{
 		memset(rssi, 0, sizeof(rssi));
 		memset(ber, 0, sizeof(ber));
@@ -183,14 +187,20 @@ rpc_packet_t* modem_get_signal_quality(cellulard_thread_t* priv, rpc_packet_t* p
 		memcpy(rssi, q->answer + q->re_subs[1].rm_so, q->re_subs[1].rm_eo - q->re_subs[1].rm_so);
 		memcpy(ber, q->answer + q->re_subs[2].rm_so, q->re_subs[2].rm_eo - q->re_subs[2].rm_so);
 
-		printf("rssi: %s ber: %s\n", rssi, ber);
-		signal = -113 + atoi(rssi) * 2;
+        nrssi = atoi(rssi);
+        nber = atoi(ber);
 
-		res = rpc_create(
-			TYPE_RESPONSE, __func__,
-			(uint8_t*)&signal,
-			sizeof(signal)
-		);
+        /* calculation dBm */
+        sq.dbm = (nrssi > 31) ? 0 : nrssi * 2 - 113;
+
+        /* calculation signal level */
+        sq.level = !!sq.dbm;
+        sq.level += (sq.dbm >= -95);
+        sq.level += (sq.dbm >= -85);
+        sq.level += (sq.dbm >= -73);
+        sq.level += (sq.dbm >= -65);
+
+		res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)&sq, sizeof(sq));
 	}
 
 	mc7700_query_destroy(q);
@@ -204,7 +214,7 @@ rpc_packet_t* modem_get_network_time(cellulard_thread_t* priv, rpc_packet_t* p)
 {
 	rpc_packet_t *res = NULL;
 	mc7700_query_t *q;
-	char dt[32];
+	char dt[24];
 	struct tm tm;
 	time_t t;
 
@@ -212,31 +222,17 @@ rpc_packet_t* modem_get_network_time(cellulard_thread_t* priv, rpc_packet_t* p)
 	mc7700_query_execute(thread_priv.q, q);
 
 	/* cutting TIME from the reply */
-	if(q->re_subs)
+	if(q->answer)
 	{
 		memset(dt, 0, sizeof(dt));
-//		memset(time, 0, sizeof(time));
-
 		memcpy(dt, q->answer + q->re_subs[1].rm_so, q->re_subs[1].rm_eo - q->re_subs[1].rm_so);
-//		memcpy(time, q->answer + q->re_subs[2].rm_so, q->re_subs[2].rm_eo - q->re_subs[2].rm_so);
-
-		memset(&tm, 0, sizeof(tm));
 		
 		/* parsing date and time */
-		//sscanf(dt,"%d/%d/%d\r\n%d:%d:%d", &tm.tm_year, &tm.tm_mon, &tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec);
-		char *strptime(const char *s, const char *format, struct tm *tm);
-
 		strptime(dt, "%Y/%m/%d\r\n%H:%M:%S", &tm);
 
 		t = mktime(&tm);
-		
-		printf("unix time stamp: %d\n", (int)t);
-		
-		res = rpc_create(
-			TYPE_RESPONSE, __func__,
-			(uint8_t*)&t,
-			sizeof(t)
-		);
+
+		res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)&t, sizeof(t));
 	}
 
 	mc7700_query_destroy(q);
@@ -258,11 +254,14 @@ rpc_packet_t* modem_get_operator_name(cellulard_thread_t* priv, rpc_packet_t* p)
 	res_ok = !!q->answer;
 	mc7700_query_destroy(q);
 
+	if(!res_ok)
+		return(res);
+
 	q = mc7700_query_create("AT+COPS?\r\n", "\r\n\\+COPS: [0-9],[0-9],\"(.+)\",[0-9]\r\n\r\nOK\r\n");
 	mc7700_query_execute(thread_priv.q, q);
 
 	/* cutting Operator name from the answer */
-	if(q->n_subs)
+	if(q->answer)
 		res = rpc_create(
 			TYPE_RESPONSE, __func__,
 			(uint8_t*)q->answer + q->re_subs[1].rm_so,
@@ -271,6 +270,61 @@ rpc_packet_t* modem_get_operator_name(cellulard_thread_t* priv, rpc_packet_t* p)
 
 	mc7700_query_destroy(q);
 
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+rpc_packet_t* modem_network_registration(cellulard_thread_t* priv, rpc_packet_t* p)
+{
+	modem_network_reg_t nr = MODEM_NETWORK_REG_UNKNOWN;
+	rpc_packet_t *res = NULL;
+	mc7700_query_t *q;
+	int nnr;
+
+#ifdef __HW_C1KMBR
+	q = mc7700_query_create("AT+CEREG?\r\n", "\r\n\\+CEREG: [0-9],([0-9])\r\n\r\nOK\r\n");
+#else
+	q = mc7700_query_create("AT+CREG?\r\n", "\r\n\\+CREG: [0-9],([0-9])\r\n\r\nOK\r\n");
+#endif /* __HW_C1KMBR */
+
+	mc7700_query_execute(thread_priv.q, q);
+
+	if(q->answer)
+	{
+		/* cutting registration status from the reply and check value */
+		/* fast ASCII digit conversion (char - 0x30) */
+		nnr = *(q->answer + q->re_subs[1].rm_so) - 0x30;
+		nr = (nnr >= 0 && nnr <= 5) ? nnr : MODEM_NETWORK_REG_UNKNOWN;
+	}
+
+	res = rpc_create(TYPE_RESPONSE, __func__, &nr, sizeof(nr));
+
+	mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+rpc_packet_t* modem_get_network_type(cellulard_thread_t* priv, rpc_packet_t* p)
+{
+	rpc_packet_t *res = NULL;
+	mc7700_query_t *q;
+
+	q = mc7700_query_create("AT*CNTI=0\r\n", "\r\n\\*CNTI: 0,(.+)\r\n\r\nOK\r\n");
+
+	mc7700_query_execute(thread_priv.q, q);
+
+	/* cutting Operator name from the answer */
+	if(q->answer)
+		res = rpc_create(
+			TYPE_RESPONSE, __func__,
+			(uint8_t*)q->answer + q->re_subs[1].rm_so,
+			q->re_subs[1].rm_eo - q->re_subs[1].rm_so
+		);
+
+	mc7700_query_destroy(q);
 
     return(res);
 }
@@ -287,6 +341,8 @@ const rpc_function_info_t rpc_functions[] = {
 	{"modem_get_network_time", modem_get_network_time},
 	{"modem_get_imsi", modem_get_imsi},
 	{"modem_get_operator_name", modem_get_operator_name},
+	{"modem_network_registration", modem_network_registration},
+	{"modem_get_network_type", modem_get_network_type},
     {{0, 0}},
 };
 
@@ -320,13 +376,14 @@ void* ThreadWrapper(void* prm)
 
 			p_out = rpc_func->func(priv, p_in);
 			
-			if(p_out)
-			{
-				rpc_send(priv->sock, p_out);
-				rpc_print(p_out);
-				rpc_free(p_out);
-			}
-	
+			if(!p_out)
+				/* function failed, create NULL result */
+				p_out = rpc_create(TYPE_RESPONSE, p_in->func, NULL, 0);
+
+			rpc_send(priv->sock, p_out);
+			rpc_print(p_out);
+			rpc_free(p_out);
+
 			break;
 		}
 

@@ -122,7 +122,7 @@ char* modem_get_at_port_name(const char* port, char* tty, int tty_len)
 	/* getting interface number */
 	if((vendor == 0x1199 && product == 0x68a3))
 		snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s:1.3/", port);
-	if((vendor == 0x1199 && product == 0x68a2))
+	else if((vendor == 0x1199 && product == 0x68a2))
 		snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s:1.3/", port);
 	else if((vendor == 0x12d1 && product == 0x1001))
 		snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s:1.0/", port);

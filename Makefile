@@ -8,7 +8,7 @@ JMK_SUBDIRS+=lib cli
 JMK_TARGET=modemd
 JMK_RAMDISK_BIN_FILES+=$(JMK_TARGET)
 
-JMK_CFLAGS_$(JMK_TARGET)=-D__HW_C1KMBR
+JMK_CFLAGS_$(JMK_TARGET)=-D__HW_C1KMBR -D__MODEMD_DEBUG
 
 JMK_O_OBJS=main.o thread.o mc7700.o queue.o lattice.o hardware.o
 

@@ -3,6 +3,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(libmodem)
 
 SET(PROJECT_SOURCES
+include/modem/modem_str.h
+modem_str.c
 rpc.c
 rpc.h
 )

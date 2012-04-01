@@ -5,6 +5,7 @@
 #include <errno.h>
 
 #include "modem/modem.h"
+#include "modem/modem_str.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -60,10 +61,7 @@ void modem_info(const char* port)
 {
     modem_signal_quality_t sq;
 	const struct tm* tm;
-	char oper[0x100];
-    char imei[0x100];
-    char imsi[0x100];
-	char dt[0x100];
+	char msg[0x100];
     modem_t* modem;
 	time_t t;
 
@@ -72,21 +70,25 @@ void modem_info(const char* port)
 		return;
 
 	/* show modem info */
-	printf("IMIE: [%s]\n", modem_get_imei(modem, imei, sizeof(imei)));
+	printf("IMIE: [%s]\n", modem_get_imei(modem, msg, sizeof(msg)));
 
-	printf("IMSI: [%s]\n", modem_get_imsi(modem, imsi, sizeof(imsi)));
+	printf("IMSI: [%s]\n", modem_get_imsi(modem, msg, sizeof(msg)));
 
-	printf("Operator: [%s]\n", modem_get_operator_name(modem, oper, sizeof(oper)));
+	printf("Operator: [%s]\n", modem_get_operator_name(modem, msg, sizeof(msg)));
+
+	printf("Network: [%s]\n", modem_get_network_type(modem, msg, sizeof(msg)));
 
 	if(!modem_get_signal_quality(modem, &sq))
 		printf("Signal: %d dBm, %d Level\n", sq.dbm, sq.level);
 
-	if(t = modem_get_network_time(modem))
+	if((t = modem_get_network_time(modem)))
 	{
 		tm = gmtime(&t);
-		strftime(dt, sizeof(dt), "%Y.%m.%d %H:%M:%S", tm);
-		printf("Modem time: [%s]\n", asctime(tm));
+		strftime(msg, sizeof(msg), "%Y.%m.%d %H:%M:%S", tm);
+		printf("Modem time: %s", asctime(tm));
 	}
+
+	printf("Registration: %s\n", str_network_registration(modem_network_registration(modem)));
 
 	/* close modem */
 	modem_close(modem);
