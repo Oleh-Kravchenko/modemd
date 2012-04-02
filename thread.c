@@ -90,7 +90,7 @@ rpc_packet_t* modem_open_by_port(cellulard_thread_t* priv, rpc_packet_t* p)
     while(!modem_get_at_port_name(port, tty, sizeof(tty)) && modem_wakeup_tries)
     {
 #ifdef __MODEMD_DEBUG
-        printf("(II) Wait modem wakeup on port %s\n", path);
+        printf("(II) Wait modem wakeup on port %s\n", port);
 #endif
         init_port(port);
         sleep(20);
@@ -100,7 +100,7 @@ rpc_packet_t* modem_open_by_port(cellulard_thread_t* priv, rpc_packet_t* p)
     if(*tty)
     {
 #ifdef __MODEMD_DEBUG
-        printf("==== %s -> %s\n", path, tty);
+        printf("==== %s -> %s\n", port, tty);
 #endif
         strncpy(priv->port, port, sizeof(priv->port) - 1);
         priv->port[sizeof(priv->port) - 1] = 0;
