@@ -42,9 +42,11 @@ int analyze_parameters(int argc, char** argv)
         {
             case 's':
                 strncpy(srv_sock_path, optarg, sizeof(srv_sock_path) - 1);
+                srv_sock_path[sizeof(srv_sock_path) - 1] = 0;
                 break;
             case 'p':
                 strncpy(srv_modem_port, optarg, sizeof(srv_modem_port) - 1);
+                srv_modem_port[sizeof(srv_modem_port) - 1] = 0;
                 break;
             default: /* '?' */
                 printf(help, argv[0], MODEMD_NAME);

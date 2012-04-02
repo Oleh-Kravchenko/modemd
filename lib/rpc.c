@@ -25,17 +25,18 @@ rpc_packet_t* rpc_create(rpc_packet_type_t type, const char* func, uint8_t* data
 
     /* function name */
     strncpy(res->func, func, res->hdr.func_len + 1);
+    res->func[res->hdr.func_len] = 0;
 
     if(data_len) /* data is required field */
     {
         if(!(res->data = malloc(data_len)))
             goto err_data;
-        
+
         memcpy(res->data, data, data_len);
     }
     else
         res->data = NULL;
-    
+
     goto exit;
 
 err_data:

@@ -51,6 +51,7 @@ int analyze_parameters(int argc, char** argv)
 
     /* receiving default parameters */
     strncpy(srv_basename, basename(argv[0]), sizeof(srv_basename) - 1);
+    srv_basename[sizeof(srv_basename) - 1] = 0;
     snprintf(srv_sock_path, sizeof(srv_sock_path), "/var/run/%s.ctl", srv_basename);
     snprintf(srv_pid_path, sizeof(srv_pid_path), "/var/run/%s.pid", srv_basename);
 
@@ -64,12 +65,15 @@ int analyze_parameters(int argc, char** argv)
                 return(1);
             case 's':
                 strncpy(srv_sock_path, optarg, sizeof(srv_sock_path) - 1);
+                srv_sock_path[sizeof(srv_sock_path) - 1] = 0;
                 break;
             case 'p':
                 strncpy(srv_pid_path, optarg, sizeof(srv_pid_path) - 1);
+                srv_pid_path[sizeof(srv_pid_path) - 1] = 0;
                 break;
             case 'l':
                 strncpy(srv_filelog, optarg, sizeof(srv_filelog) - 1);
+                srv_filelog[sizeof(srv_filelog) - 1] = 0;
                 break;
             case 'e':
                 srv_syslog = 1;
@@ -145,6 +149,7 @@ int srv_run(void)
     memset(&sa_bind, 0, sizeof(sa_bind));
     sa_bind.sun_family = AF_LOCAL;
     strncpy(sa_bind.sun_path, srv_sock_path, sizeof(sa_bind.sun_path) - 1);
+    sa_bind.sun_path[sizeof(sa_bind.sun_path) - 1] = 0;
 
     if(bind(sock, (struct sockaddr *)&sa_bind, sizeof(sa_bind)))
     {

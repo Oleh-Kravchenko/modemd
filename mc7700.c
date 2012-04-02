@@ -137,7 +137,8 @@ void* mc7700_thread_read(void* prm)
                 received = 1;
 
                 query->answer = malloc(buf_len + 1);
-                strncpy(query->answer, buf, buf_len + 1);
+                strncpy(query->answer, buf, buf_len );
+                query->answer[buf_len] = 0;
             }
         }
         else
@@ -221,11 +222,13 @@ mc7700_query_t* mc7700_query_create(const char* q, const char* reply_re)
         goto err_q;
 
     strncpy(res->query, q, strlen(q) + 1);
+    res->query[strlen(q)] = 0;
 
     if(!(res->answer_reg = malloc(strlen(reply_re) + 1)))
         goto err_a;
 
     strncpy(res->answer_reg, reply_re, strlen(reply_re) + 1);
+    res->answer_reg[strlen(reply_re)] = 0;
 
     res->answer = NULL;
     res->re_subs = NULL;

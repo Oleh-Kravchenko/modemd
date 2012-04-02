@@ -34,6 +34,7 @@ modem_info_t* usb_device_info(const char* port)
     file_get_contents(path, res->product, sizeof(res->product));
 
     strncpy(res->port, port, sizeof(res->port) - 1);
+    res->port[sizeof(res->port) - 1] = 0;
 
 err:
     return(res);

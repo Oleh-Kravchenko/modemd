@@ -30,6 +30,7 @@ int modem_init(const char* socket_path)
     memset(&sa_srv, 0, sizeof(sa_srv));
     sa_srv.sun_family = AF_LOCAL;
     strncpy(sa_srv.sun_path, socket_path, sizeof(sa_srv.sun_path) - 1);
+    sa_srv.sun_path[sizeof(sa_srv.sun_path) - 1] = 0;
 
     /* connecting */
     if(connect(sock, (struct sockaddr*)&sa_srv, sizeof(sa_srv)))
@@ -199,10 +200,10 @@ char* modem_get_imei(modem_t* modem, char* imei, int len)
     /* receive result and unpack it */
     p = rpc_recv(sock);
 
-    if(p)
+    if(p && strcmp(p->func, __func__) == 0)
     {
         len = (p->hdr.data_len > len ? len : p->hdr.data_len);
-        strncpy(imei, (const char*)p->data, len);
+        memcpy(imei, (const char*)p->data, len);
         imei[len] = 0;
 
         rpc_free(p);
@@ -235,7 +236,7 @@ int modem_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
     /* receive result and unpack it */
     p = rpc_recv(sock);
 
-    if(p && p->hdr.data_len == sizeof(*sq))
+    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len == sizeof(*sq))
     {
         memcpy(sq, p->data, sizeof(*sq));
         res = 0;
@@ -268,7 +269,7 @@ time_t modem_get_network_time(modem_t* modem)
     /* receive result and unpack it */
     p = rpc_recv(sock);
 
-    if(p && p->hdr.data_len == sizeof(time_t))
+    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len == sizeof(time_t))
         res = *((time_t*)p->data);
 
     rpc_free(p);
@@ -297,10 +298,10 @@ char* modem_get_imsi(modem_t* modem,char *imsi, int len)
     /* receive result and unpack it */
     p = rpc_recv(sock);
 
-    if(p)
+    if(p && strcmp(p->func, __func__) == 0)
     {
         len = (p->hdr.data_len > len ? len : p->hdr.data_len);
-        strncpy(imsi, (const char*)p->data, len);
+        memcpy(imsi, (const char*)p->data, len);
         imsi[len] = 0;
 
         rpc_free(p);
@@ -332,10 +333,10 @@ char* modem_get_operator_name(modem_t *modem, char *oper, int len)
     /* receive result and unpack it */
     p = rpc_recv(sock);
 
-    if(p)
+    if(p && strcmp(p->func, __func__) == 0)
     {
         len = (p->hdr.data_len > len ? len : p->hdr.data_len);
-        strncpy(oper, (const char*)p->data, len);
+        memcpy(oper, (const char*)p->data, len);
         oper[len] = 0;
 
         rpc_free(p);
@@ -367,10 +368,10 @@ char* modem_get_network_type(modem_t* modem, char *network, int len)
     /* receive result and unpack it */
     p = rpc_recv(sock);
 
-    if(p)
+    if(p && strcmp(p->func, __func__) == 0)
     {
         len = (p->hdr.data_len > len ? len : p->hdr.data_len);
-        strncpy(network, (const char*)p->data, len);
+        memcpy(network, (const char*)p->data, len);
         network[len] = 0;
 
         rpc_free(p);
