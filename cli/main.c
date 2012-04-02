@@ -18,12 +18,14 @@ const char help[] =
     "Usage: %s [-h] [-s SOCKET] [-p PORT]\n"
     "-h - show this help\n"
     "-s - file socket path (default: /var/run/%s.ctl)\n"
+	"-l - show all modems\n"
     "-p - modem port, for example 1-1\n";
 
 /*------------------------------------------------------------------------*/
 
-static char srv_sock_path[0x100];
-static char srv_modem_port[0x100];
+static char opt_sock_path[0x100];
+static char opt_modem_port[0x100];
+static int opt_show_modems = 0;
 
 /*------------------------------------------------------------------------*/
 
@@ -32,22 +34,28 @@ int analyze_parameters(int argc, char** argv)
     int param;
 
     /* receiving default parameters */
-    snprintf(srv_sock_path, sizeof(srv_sock_path), "/var/run/%s.ctl", MODEMD_NAME);
-    *srv_modem_port = 0;
+    snprintf(opt_sock_path, sizeof(opt_sock_path), "/var/run/%s.ctl", MODEMD_NAME);
+    *opt_modem_port = 0;
 
     /* analyze command line */
-    while((param = getopt(argc, argv, "hs:p:")) != -1)
+    while((param = getopt(argc, argv, "hs:p:l")) != -1)
     {
         switch(param)
         {
             case 's':
-                strncpy(srv_sock_path, optarg, sizeof(srv_sock_path) - 1);
-                srv_sock_path[sizeof(srv_sock_path) - 1] = 0;
+                strncpy(opt_sock_path, optarg, sizeof(opt_sock_path) - 1);
+                opt_sock_path[sizeof(opt_sock_path) - 1] = 0;
                 break;
+
             case 'p':
-                strncpy(srv_modem_port, optarg, sizeof(srv_modem_port) - 1);
-                srv_modem_port[sizeof(srv_modem_port) - 1] = 0;
+                strncpy(opt_modem_port, optarg, sizeof(opt_modem_port) - 1);
+                opt_modem_port[sizeof(opt_modem_port) - 1] = 0;
                 break;
+
+            case 'l':
+                opt_show_modems = 1;
+                break;
+
             default: /* '?' */
                 printf(help, argv[0], MODEMD_NAME);
                 return(1);
@@ -61,6 +69,7 @@ int analyze_parameters(int argc, char** argv)
 
 void modem_info(const char* port)
 {
+    modem_firmware_version_t fw_info;
     modem_signal_quality_t sq;
     const struct tm* tm;
     char msg[0x100];
@@ -72,7 +81,7 @@ void modem_info(const char* port)
         return;
 
     /* show modem info */
-    printf("IMIE: [%s]\n", modem_get_imei(modem, msg, sizeof(msg)));
+    printf("IMEI: [%s]\n", modem_get_imei(modem, msg, sizeof(msg)));
 
     printf("IMSI: [%s]\n", modem_get_imsi(modem, msg, sizeof(msg)));
 
@@ -92,9 +101,14 @@ void modem_info(const char* port)
 
     printf("Registration: %s\n", str_network_registration(modem_network_registration(modem)));
 
+    if(modem_get_firmware_version(modem, &fw_info))
+        printf("Firmware: %s, Release: %d\n", fw_info.firmware, (int)fw_info.release);
+
     /* close modem */
     modem_close(modem);
 }
+
+/*------------------------------------------------------------------------*/
 
 int main(int argc, char** argv)
 {
@@ -108,21 +122,21 @@ int main(int argc, char** argv)
     printf(
         "   Basename: %s\n"
         "Socket file: %s\n\n",
-        argv[0], srv_sock_path
+        argv[0], opt_sock_path
     );
 
     /* initialize modem library */
-    if(modem_init(srv_sock_path))
+    if(modem_init(opt_sock_path))
     {
         perror(*argv);
         res = errno;
         goto exit;
     }
 
-    if(*srv_modem_port)
+    if(*opt_modem_port)
     {
         /* show modem info by port and exit */
-        modem_info(srv_modem_port);
+        modem_info(opt_modem_port);
         goto exit;
     }
 
