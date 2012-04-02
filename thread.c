@@ -370,15 +370,13 @@ rpc_packet_t* modem_get_fw_version(cellulard_thread_t* priv, rpc_packet_t* p)
     char release[0x100];
     struct tm tm;
 
-    q = mc7700_query_create("AT+CGMR\r\n", "\r\n(.*) ([0-9,/]+ [0-9,:]+)\r\n\r\nOK\r\n");
+    q = mc7700_query_create("AT+CGMR\r\n", "\r\n.*(SWI.*) .* .* ([0-9,/]+ [0-9,:]+)\r\n\r\nOK\r\n");
 
     mc7700_query_execute(thread_priv.q, q);
 
     /* cutting Operator name from the answer */
     if(q->answer)
     {
-        printf("!!!! [%s]\n", q->answer);
-
         memcpy(firmware, q->answer + q->re_subs[1].rm_so, q->re_subs[1].rm_eo - q->re_subs[1].rm_so);
         firmware[q->re_subs[1].rm_eo - q->re_subs[1].rm_so] = 0;
 
@@ -388,9 +386,6 @@ rpc_packet_t* modem_get_fw_version(cellulard_thread_t* priv, rpc_packet_t* p)
         /* create result */
         strncpy(fw_info.firmware, firmware, sizeof(fw_info.firmware) - 1);
         fw_info.firmware[sizeof(fw_info.firmware) - 1] = 0;
-
-        printf("++++ [%s]\n", firmware);
-        printf("++++ [%s]\n", release);
 
         /* parsing date and time */
         strptime(release, "%Y/%m/%d\r\n%H:%M:%S", &tm);
