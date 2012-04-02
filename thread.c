@@ -334,6 +334,33 @@ rpc_packet_t* modem_get_network_type(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
+rpc_packet_t* modem_change_pin(cellulard_thread_t* priv, rpc_packet_t* p)
+{
+    modem_change_pin_t *pc = (modem_change_pin_t*)p->data;
+    rpc_packet_t *res = NULL;
+    mc7700_query_t *q;
+    char cmd[0x100];
+
+    if(p->hdr.data_len != sizeof(*pc))
+        return(res);
+
+    snprintf(cmd, sizeof(cmd), "AT+CPWD=\"SC\",\"%s\",\"%s\"\r\n", pc->old_pin, pc->new_pin);
+
+    q = mc7700_query_create(cmd, "\r\nOK\r\n");
+
+    mc7700_query_execute(thread_priv.q, q);
+
+    /* cutting Operator name from the answer */
+    if(q->answer)
+        res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)q->answer, strlen(q->answer));
+
+    mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
 const rpc_function_info_t rpc_functions[] = {
     {"modem_find_first", modem_find_first_packet},
     {"modem_find_next", modem_find_next_packet},
@@ -346,6 +373,7 @@ const rpc_function_info_t rpc_functions[] = {
     {"modem_get_operator_name", modem_get_operator_name},
     {"modem_network_registration", modem_network_registration},
     {"modem_get_network_type", modem_get_network_type},
+    {"modem_change_pin", modem_change_pin},
     {{0, 0}},
 };
 

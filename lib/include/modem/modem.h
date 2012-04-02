@@ -84,6 +84,15 @@ modem_network_reg_t modem_network_registration(modem_t* modem);
 
 char* modem_get_network_type(modem_t* modem, char *network, int len);
 
+/**
+ * @brief change pin code
+ * @param modem modem handle
+ * @param old_pin old pin code
+ * @param new_pin new pin code
+ * @return 0 if successful
+ */
+int modem_change_pin(modem_t* modem, const char* old_pin, const char* new_pin);
+
 #if 0
 
 /***************************************************************************

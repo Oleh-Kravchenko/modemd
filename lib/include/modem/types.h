@@ -78,6 +78,15 @@ typedef enum
 
 /*------------------------------------------------------------------------*/
 
+typedef struct
+{
+	char old_pin[16];
+
+	char new_pin[16];
+} __attribute__((__packed__)) modem_change_pin_t;
+
+/*------------------------------------------------------------------------*/
+
 #if 0
 
 typedef void* modem_event_t;

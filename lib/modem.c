@@ -381,3 +381,30 @@ char* modem_get_network_type(modem_t* modem, char *network, int len)
 
     return(NULL);
 }
+
+/*------------------------------------------------------------------------*/
+
+int modem_change_pin(modem_t* modem, const char* old_pin, const char* new_pin)
+{
+    modem_change_pin_t pc;
+    rpc_packet_t* p;
+    int res = -1;
+
+    strncpy(pc.old_pin, old_pin, sizeof(pc.old_pin));
+    strncpy(pc.new_pin, new_pin, sizeof(pc.new_pin));
+
+    /* build packet and send it */
+    p = rpc_create(TYPE_QUERY, __func__, (uint8_t*)&pc, sizeof(pc));
+    rpc_send(sock, p);
+    rpc_free(p);
+
+    /* receive result and unpack it */
+    p = rpc_recv(sock);
+
+    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len)
+        res = 0;
+
+    rpc_free(p);
+
+    return(res);
+}
