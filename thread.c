@@ -401,6 +401,21 @@ rpc_packet_t* modem_get_fw_version(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
+rpc_packet_t* modem_get_info(cellulard_thread_t* priv, rpc_packet_t* p)
+{
+    rpc_packet_t *res = NULL;
+    modem_info_t* mi;
+
+    mi = usb_device_get_info(priv->port);
+    res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)mi, sizeof(*mi) ? sizeof(*mi) : 0);
+
+    free(mi);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
 const rpc_function_info_t rpc_functions[] = {
     {"modem_find_first", modem_find_first_packet},
     {"modem_find_next", modem_find_next_packet},
@@ -415,6 +430,7 @@ const rpc_function_info_t rpc_functions[] = {
     {"modem_get_network_type", modem_get_network_type},
     {"modem_change_pin", modem_change_pin},
     {"modem_get_fw_version", modem_get_fw_version},
+    {"modem_get_info", modem_get_info},
     {{0, 0}},
 };
 

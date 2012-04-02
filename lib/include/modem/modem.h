@@ -95,6 +95,8 @@ int modem_change_pin(modem_t* modem, const char* old_pin, const char* new_pin);
 
 modem_fw_version_t* modem_get_fw_version(modem_t* modem, modem_fw_version_t* fw_info);
 
+modem_info_t* modem_get_info(modem_t* modem, modem_info_t *mi);
+
 #if 0
 
 /***************************************************************************

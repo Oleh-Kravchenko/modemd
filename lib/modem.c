@@ -434,3 +434,29 @@ modem_fw_version_t* modem_get_fw_version(modem_t* modem, modem_fw_version_t* fw_
 
     return(res);
 }
+
+/*------------------------------------------------------------------------*/
+
+modem_info_t* modem_get_info(modem_t* modem, modem_info_t *mi)
+{
+    modem_info_t* res = NULL;
+    rpc_packet_t* p;
+
+    /* build packet and send it */
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
+    rpc_send(sock, p);
+    rpc_free(p);
+
+    /* receive result and unpack it */
+    p = rpc_recv(sock);
+
+    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len == sizeof(*mi))
+    {
+        memcpy(mi, (const char*)p->data, sizeof(*mi));
+        res = mi;
+    }
+
+    rpc_free(p);
+
+    return(res);
+}

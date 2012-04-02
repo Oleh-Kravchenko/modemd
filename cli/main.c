@@ -72,6 +72,7 @@ void modem_info(const char* port)
     modem_fw_version_t fw_info;
     modem_signal_quality_t sq;
     const struct tm* tm;
+	modem_info_t mi;
     char msg[0x100];
     modem_t* modem;
     time_t t;
@@ -103,6 +104,9 @@ void modem_info(const char* port)
 
     if(modem_get_fw_version(modem, &fw_info))
         printf("Firmware: %s, Release: %d\n", fw_info.firmware, (int)fw_info.release);
+
+    if(modem_get_info(modem, &mi))
+        printf("%s %04hx:%04hx %s %s\n", mi.port, mi.id_vendor, mi.id_product, mi.manufacturer, mi.product);
 
     /* close modem */
     modem_close(modem);
