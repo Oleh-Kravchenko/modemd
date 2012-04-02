@@ -49,7 +49,6 @@ modem_info_t* modem_find_first(DIR **dir)
     struct dirent *sysfs_item;
     regex_t reg;
     int reg_res;
-    char path[256];
 
     if(!(sysfs_dir = opendir("/sys/bus/usb/devices/")))
         goto failed_open;
@@ -95,7 +94,6 @@ modem_info_t* modem_find_next(DIR **dir)
     modem_info_t* res = NULL;
     regex_t reg;
     int reg_res;
-    char path[256];
 
     while((sysfs_item = readdir(*dir)))
     {
