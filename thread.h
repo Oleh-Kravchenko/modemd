@@ -10,6 +10,8 @@ typedef struct
     int sock;
 
     DIR *dir;
+
+	char port[0x100];
 } cellulard_thread_t;
 
 /*------------------------------------------------------------------------*/

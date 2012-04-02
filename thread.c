@@ -75,24 +75,24 @@ rpc_packet_t* modem_find_next_packet(cellulard_thread_t* priv, rpc_packet_t* p)
 
 rpc_packet_t* modem_open_by_port(cellulard_thread_t* priv, rpc_packet_t* p)
 {
-	char path[0xff] = {"A"};
+	char port[0xff] = {"A"};
 	char tty[0xff] = {0};
 	int path_len, modem = 0;
     rpc_packet_t *res = NULL;
     int modem_wakeup_tries;
 
-	path_len = p->hdr.data_len > sizeof(path) ? sizeof(path) : p->hdr.data_len;
-	memcpy(path, p->data, path_len);
-	path[path_len] = 0;
+	path_len = p->hdr.data_len > sizeof(port) ? sizeof(port) : p->hdr.data_len;
+	memcpy(port, p->data, path_len);
+	port[path_len] = 0;
 
     modem_wakeup_tries = 3;
 
-	while(!modem_get_at_port_name(path, tty, sizeof(tty)) && modem_wakeup_tries)
+	while(!modem_get_at_port_name(port, tty, sizeof(tty)) && modem_wakeup_tries)
 	{
 #ifdef __MODEMD_DEBUG
         printf("(II) Wait modem wakeup on port %s\n", path);
 #endif
-        init_port(path);
+        init_port(port);
         sleep(20);
         -- modem_wakeup_tries;
 	}
@@ -102,6 +102,8 @@ rpc_packet_t* modem_open_by_port(cellulard_thread_t* priv, rpc_packet_t* p)
 #ifdef __MODEMD_DEBUG
     	printf("==== %s -> %s\n", path, tty);
 #endif
+		strncpy(priv->port, port, sizeof(priv->port));
+
     	modem = mc7700_open(tty);
     }
 

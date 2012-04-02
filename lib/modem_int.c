@@ -12,6 +12,35 @@
 
 /*------------------------------------------------------------------------*/
 
+modem_info_t* usb_device_info(const char* port)
+{
+    modem_info_t* res;
+    char path[0x100];
+
+	if(!(res = malloc(sizeof(*res))))
+		goto err;
+
+	/* read device name and id */
+	snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idVendor", port);
+	res->id_vendor = file_get_contents_hex(path);
+
+	snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idProduct", port);
+	res->id_product = file_get_contents_hex(path);
+
+	snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/manufacturer", port);
+	file_get_contents(path, res->manufacturer, sizeof(res->manufacturer));
+
+	snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/product", port);
+	file_get_contents(path, res->product, sizeof(res->product));
+
+	strncpy(res->port, port, sizeof(res->port) - 1);
+
+err:
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
 modem_info_t* modem_find_first(DIR **dir)
 {
     modem_info_t* res;
@@ -34,15 +63,8 @@ modem_info_t* modem_find_first(DIR **dir)
         if(reg_res != 0)
             continue;
 
-        if(!(res = malloc(sizeof(*res))))
-            goto exit;
-
-        /* read device name and id */
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idVendor", sysfs_item->d_name);
-        res->id_vendor = file_get_contents_hex(path);
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idProduct", sysfs_item->d_name);
-        res->id_product = file_get_contents_hex(path);
+        if(!(res = usb_device_info(sysfs_item->d_name)))
+            goto err;
 
         /* check device on modem db */
         if(!its_modem(res->id_vendor, res->id_product))
@@ -52,20 +74,12 @@ modem_info_t* modem_find_first(DIR **dir)
             continue;
         }
 
-        strncpy(res->port, sysfs_item->d_name, sizeof(res->port) - 1);
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/manufacturer", sysfs_item->d_name);
-        file_get_contents(path, res->manufacturer, sizeof(res->manufacturer));
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/product", sysfs_item->d_name);
-        file_get_contents(path, res->product, sizeof(res->product));
-
         *dir = sysfs_dir;
 
         return(res);
     }
 
-exit:
+err:
     closedir(sysfs_dir);
 
 failed_open:
@@ -92,15 +106,8 @@ modem_info_t* modem_find_next(DIR **dir)
         if(reg_res != 0)
             continue;
 
-        if(!(res = malloc(sizeof(*res))))
-            goto exit;
-
-        /* read device name and id */
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idVendor", sysfs_item->d_name);
-        res->id_vendor = file_get_contents_hex(path);
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idProduct", sysfs_item->d_name);
-        res->id_product = file_get_contents_hex(path);
+        if(!(res = usb_device_info(sysfs_item->d_name)))
+            goto err;
 
         /* check device on modem db */
         if(!its_modem(res->id_vendor, res->id_product))
@@ -110,13 +117,6 @@ modem_info_t* modem_find_next(DIR **dir)
             continue;
         }
 
-        strncpy(res->port, sysfs_item->d_name, sizeof(res->port) - 1);
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/manufacturer", sysfs_item->d_name);
-        file_get_contents(path, res->manufacturer, sizeof(res->manufacturer));
-
-        snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/product", sysfs_item->d_name);
-        file_get_contents(path, res->product, sizeof(res->product));
         return(res);
     }
 
@@ -124,6 +124,6 @@ modem_info_t* modem_find_next(DIR **dir)
     *dir = NULL;
     free(res);
 
-exit:
+err:
     return(NULL);
 }
