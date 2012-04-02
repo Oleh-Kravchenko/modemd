@@ -1,6 +1,7 @@
 #ifndef __MODEM_TYPES_H
 #define __MODEM_TYPES_H
 
+#include <time.h>
 #include <stdint.h>
 
 /*------------------------------------------------------------------------*/
@@ -84,6 +85,15 @@ typedef struct
 
 	char new_pin[16];
 } __attribute__((__packed__)) modem_change_pin_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef struct
+{
+	char firmware[0x100];
+
+	time_t release;
+} __attribute__((__packed__)) modem_fw_version_t;
 
 /*------------------------------------------------------------------------*/
 

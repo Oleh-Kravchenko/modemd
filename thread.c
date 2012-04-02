@@ -227,9 +227,9 @@ rpc_packet_t* modem_get_network_time(cellulard_thread_t* priv, rpc_packet_t* p)
     /* cutting TIME from the reply */
     if(q->answer)
     {
-        memset(dt, 0, sizeof(dt));
         memcpy(dt, q->answer + q->re_subs[1].rm_so, q->re_subs[1].rm_eo - q->re_subs[1].rm_so);
-        
+        dt[q->re_subs[1].rm_eo - q->re_subs[1].rm_so] = 0;
+
         /* parsing date and time */
         strptime(dt, "%Y/%m/%d\r\n%H:%M:%S", &tm);
 
@@ -361,6 +361,51 @@ rpc_packet_t* modem_change_pin(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
+rpc_packet_t* modem_get_fw_version(cellulard_thread_t* priv, rpc_packet_t* p)
+{
+    modem_fw_version_t fw_info;
+    rpc_packet_t *res = NULL;
+    mc7700_query_t *q;
+    char firmware[0x100];
+    char release[0x100];
+    struct tm tm;
+
+    q = mc7700_query_create("AT+CGMR\r\n", "\r\n(.*) ([0-9,/]+ [0-9,:]+)\r\n\r\nOK\r\n");
+
+    mc7700_query_execute(thread_priv.q, q);
+
+    /* cutting Operator name from the answer */
+    if(q->answer)
+    {
+        printf("!!!! [%s]\n", q->answer);
+
+        memcpy(firmware, q->answer + q->re_subs[1].rm_so, q->re_subs[1].rm_eo - q->re_subs[1].rm_so);
+        firmware[q->re_subs[1].rm_eo - q->re_subs[1].rm_so] = 0;
+
+        memcpy(release, q->answer + q->re_subs[2].rm_so, q->re_subs[2].rm_eo - q->re_subs[2].rm_so);
+        release[q->re_subs[2].rm_eo - q->re_subs[2].rm_so] = 0;
+
+        /* create result */
+        strncpy(fw_info.firmware, firmware, sizeof(fw_info.firmware) - 1);
+        fw_info.firmware[sizeof(fw_info.firmware) - 1] = 0;
+
+        printf("++++ [%s]\n", firmware);
+        printf("++++ [%s]\n", release);
+
+        /* parsing date and time */
+        strptime(release, "%Y/%m/%d\r\n%H:%M:%S", &tm);
+        fw_info.release = mktime(&tm);
+
+        res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)&fw_info, sizeof(fw_info));
+    }
+
+    mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
 const rpc_function_info_t rpc_functions[] = {
     {"modem_find_first", modem_find_first_packet},
     {"modem_find_next", modem_find_next_packet},
@@ -374,6 +419,7 @@ const rpc_function_info_t rpc_functions[] = {
     {"modem_network_registration", modem_network_registration},
     {"modem_get_network_type", modem_get_network_type},
     {"modem_change_pin", modem_change_pin},
+    {"modem_get_fw_version", modem_get_fw_version},
     {{0, 0}},
 };
 
@@ -406,7 +452,7 @@ void* ThreadWrapper(void* prm)
             }
 
             p_out = rpc_func->func(priv, p_in);
-            
+
             if(!p_out)
                 /* function failed, create NULL result */
                 p_out = rpc_create(TYPE_RESPONSE, p_in->func, NULL, 0);

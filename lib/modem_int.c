@@ -12,7 +12,7 @@
 
 /*------------------------------------------------------------------------*/
 
-modem_info_t* usb_device_info(const char* port)
+modem_info_t* usb_device_get_info(const char* port)
 {
     modem_info_t* res;
     char path[0x100];
@@ -63,7 +63,7 @@ modem_info_t* modem_find_first(DIR **dir)
         if(reg_res != 0)
             continue;
 
-        if(!(res = usb_device_info(sysfs_item->d_name)))
+        if(!(res = usb_device_get_info(sysfs_item->d_name)))
             goto err;
 
         /* check device on modem db */
@@ -105,7 +105,7 @@ modem_info_t* modem_find_next(DIR **dir)
         if(reg_res != 0)
             continue;
 
-        if(!(res = usb_device_info(sysfs_item->d_name)))
+        if(!(res = usb_device_get_info(sysfs_item->d_name)))
             goto err;
 
         /* check device on modem db */

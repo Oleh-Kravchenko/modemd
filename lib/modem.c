@@ -408,3 +408,29 @@ int modem_change_pin(modem_t* modem, const char* old_pin, const char* new_pin)
 
     return(res);
 }
+
+/*------------------------------------------------------------------------*/
+
+modem_fw_version_t* modem_get_fw_version(modem_t* modem, modem_fw_version_t* fw_info)
+{
+    modem_fw_version_t* res = NULL;
+    rpc_packet_t* p;
+
+    /* build packet and send it */
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
+    rpc_send(sock, p);
+    rpc_free(p);
+
+    /* receive result and unpack it */
+    p = rpc_recv(sock);
+
+    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len == sizeof(*fw_info))
+    {
+        memcpy(fw_info, (const char*)p->data, sizeof(*fw_info));
+        res = fw_info;
+    }
+
+    rpc_free(p);
+
+    return(res);
+}

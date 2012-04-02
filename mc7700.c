@@ -40,11 +40,7 @@ void* mc7700_thread_write(void* prm)
     void* buf;
 
     while(!priv->terminate)
-     {
-#ifdef __MODEMD_DEBUG
-        printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
-#endif
-
+    {
         /* receive pointer to query */
         if(queue_wait_pop(priv->q, THREAD_WAIT, &buf, &buf_len))
             continue;

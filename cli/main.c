@@ -69,7 +69,7 @@ int analyze_parameters(int argc, char** argv)
 
 void modem_info(const char* port)
 {
-    modem_firmware_version_t fw_info;
+    modem_fw_version_t fw_info;
     modem_signal_quality_t sq;
     const struct tm* tm;
     char msg[0x100];
@@ -101,7 +101,7 @@ void modem_info(const char* port)
 
     printf("Registration: %s\n", str_network_registration(modem_network_registration(modem)));
 
-    if(modem_get_firmware_version(modem, &fw_info))
+    if(modem_get_fw_version(modem, &fw_info))
         printf("Firmware: %s, Release: %d\n", fw_info.firmware, (int)fw_info.release);
 
     /* close modem */
