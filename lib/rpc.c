@@ -67,7 +67,7 @@ int rpc_send(int sock, rpc_packet_t *p)
         /* send function name */
         sended = send(sock, p->func, p->hdr.func_len, 0);
 
-		if(sended < 0)
+        if(sended < 0)
         {
             res = sended;
             goto err;

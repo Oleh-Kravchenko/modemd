@@ -16,7 +16,7 @@ static int sock = -1;
 
 int modem_init(const char* socket_path)
 {
-	struct sockaddr_un sa_srv;
+    struct sockaddr_un sa_srv;
     int res = 0;
 
     /* creating socket client */
@@ -50,8 +50,8 @@ void modem_cleanup(void)
 {
     if(sock != -1)
     {
-		/* if socket valid close them */
-		close(sock);
+        /* if socket valid close them */
+        close(sock);
         sock = -1;
     }
 }
@@ -100,11 +100,11 @@ modem_info_t* modem_find_first_res_unpack(rpc_packet_t* p)
 {
     modem_info_t* res = NULL;
 
-	if(p && p->hdr.data_len == sizeof(*res))
-	{
-		res = malloc(sizeof(*res));
-		memcpy(res, p->data, sizeof(*res));
-	}
+    if(p && p->hdr.data_len == sizeof(*res))
+    {
+        res = malloc(sizeof(*res));
+        memcpy(res, p->data, sizeof(*res));
+    }
 
     return(res);
 }
@@ -122,8 +122,8 @@ modem_network_reg_t modem_network_registration_res_unpack(rpc_packet_t* p)
 {
     modem_network_reg_t res = MODEM_NETWORK_REG_UNKNOWN;
 
-	if(p && p->hdr.data_len == sizeof(res))
-		res = *((modem_network_reg_t*)p->data);
+    if(p && p->hdr.data_len == sizeof(res))
+        res = *((modem_network_reg_t*)p->data);
 
     return(res);
 }
@@ -132,116 +132,116 @@ modem_network_reg_t modem_network_registration_res_unpack(rpc_packet_t* p)
 
 modem_t* modem_open_by_port(const char* port)
 {
-	rpc_packet_t* p;
+    rpc_packet_t* p;
 
-	/* build packet and send it */
-	p = (rpc_packet_t*)malloc(sizeof(*p));
-	memset((void*)p, 0, sizeof(*p));
-	p->hdr.type = TYPE_QUERY;
-	p->hdr.func_len = strlen(__func__);
-	p->func = (char*)malloc(p->hdr.func_len);
-	memcpy(p->func, __func__, p->hdr.func_len);
-	p->hdr.data_len = strlen(port);
-	p->data = malloc(p->hdr.data_len);
-	memcpy(p->data, port, p->hdr.data_len);
-	rpc_send(sock, p);
-	rpc_free(p);
+    /* build packet and send it */
+    p = (rpc_packet_t*)malloc(sizeof(*p));
+    memset((void*)p, 0, sizeof(*p));
+    p->hdr.type = TYPE_QUERY;
+    p->hdr.func_len = strlen(__func__);
+    p->func = (char*)malloc(p->hdr.func_len);
+    memcpy(p->func, __func__, p->hdr.func_len);
+    p->hdr.data_len = strlen(port);
+    p->data = malloc(p->hdr.data_len);
+    memcpy(p->data, port, p->hdr.data_len);
+    rpc_send(sock, p);
+    rpc_free(p);
 
-	/* receive result and unpack it */
-	p = rpc_recv(sock);
-//	res = modem_open_by_port_res_unpack(p);
-	rpc_free(p);
+    /* receive result and unpack it */
+    p = rpc_recv(sock);
+//    res = modem_open_by_port_res_unpack(p);
+    rpc_free(p);
 
-	/* returning result */
-	return((modem_t*)p->data);
+    /* returning result */
+    return((modem_t*)p->data);
 }
 
 /*------------------------------------------------------------------------*/
 
 void modem_close(modem_t* modem)
 {
-	rpc_packet_t* p;
+    rpc_packet_t* p;
 
-	/* build packet and send it */
-	p = (rpc_packet_t*)malloc(sizeof(*p));
-	memset((void*)p, 0, sizeof(*p));
-	p->hdr.type = TYPE_QUERY;
-	p->hdr.func_len = strlen(__func__);
-	p->func = (char*)malloc(p->hdr.func_len);
-	memcpy(p->func, __func__, p->hdr.func_len);
-	p->hdr.data_len = 0;
-	rpc_send(sock, p);
-	rpc_free(p);
+    /* build packet and send it */
+    p = (rpc_packet_t*)malloc(sizeof(*p));
+    memset((void*)p, 0, sizeof(*p));
+    p->hdr.type = TYPE_QUERY;
+    p->hdr.func_len = strlen(__func__);
+    p->func = (char*)malloc(p->hdr.func_len);
+    memcpy(p->func, __func__, p->hdr.func_len);
+    p->hdr.data_len = 0;
+    rpc_send(sock, p);
+    rpc_free(p);
 
-	/* receive result and unpack it */
-	p = rpc_recv(sock);
-	rpc_free(p);
+    /* receive result and unpack it */
+    p = rpc_recv(sock);
+    rpc_free(p);
 }
 
 /*------------------------------------------------------------------------*/
 
 char* modem_get_imei(modem_t* modem, char* imei, int len)
 {
-	rpc_packet_t* p;
+    rpc_packet_t* p;
 
-	/* build packet and send it */
-	p = (rpc_packet_t*)malloc(sizeof(*p));
-	memset((void*)p, 0, sizeof(*p));
-	p->hdr.type = TYPE_QUERY;
-	p->hdr.func_len = strlen(__func__);
-	p->func = (char*)malloc(p->hdr.func_len);
-	memcpy(p->func, __func__, p->hdr.func_len);
-	p->hdr.data_len = 0;
-	p->data = NULL;
-	rpc_send(sock, p);
-	rpc_free(p);
+    /* build packet and send it */
+    p = (rpc_packet_t*)malloc(sizeof(*p));
+    memset((void*)p, 0, sizeof(*p));
+    p->hdr.type = TYPE_QUERY;
+    p->hdr.func_len = strlen(__func__);
+    p->func = (char*)malloc(p->hdr.func_len);
+    memcpy(p->func, __func__, p->hdr.func_len);
+    p->hdr.data_len = 0;
+    p->data = NULL;
+    rpc_send(sock, p);
+    rpc_free(p);
 
-	/* receive result and unpack it */
-	p = rpc_recv(sock);
+    /* receive result and unpack it */
+    p = rpc_recv(sock);
 
-	if(p)
-	{
-		len = (p->hdr.data_len > len ? len : p->hdr.data_len);
-		strncpy(imei, (const char*)p->data, len);
-		imei[len] = 0;
+    if(p)
+    {
+        len = (p->hdr.data_len > len ? len : p->hdr.data_len);
+        strncpy(imei, (const char*)p->data, len);
+        imei[len] = 0;
 
-		rpc_free(p);
+        rpc_free(p);
 
-		return(imei);
-	}
+        return(imei);
+    }
 
-	return(NULL);
+    return(NULL);
 }
 
 /*------------------------------------------------------------------------*/
 
 int modem_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 {
-	rpc_packet_t* p;
-	int res = -1;
+    rpc_packet_t* p;
+    int res = -1;
 
-	/* build packet and send it */
-	p = (rpc_packet_t*)malloc(sizeof(*p));
-	memset((void*)p, 0, sizeof(*p));
-	p->hdr.type = TYPE_QUERY;
-	p->hdr.func_len = strlen(__func__);
-	p->func = (char*)malloc(p->hdr.func_len);
-	memcpy(p->func, __func__, p->hdr.func_len);
-	p->hdr.data_len = 0;
-	p->data = NULL;
-	rpc_send(sock, p);
-	rpc_free(p);
+    /* build packet and send it */
+    p = (rpc_packet_t*)malloc(sizeof(*p));
+    memset((void*)p, 0, sizeof(*p));
+    p->hdr.type = TYPE_QUERY;
+    p->hdr.func_len = strlen(__func__);
+    p->func = (char*)malloc(p->hdr.func_len);
+    memcpy(p->func, __func__, p->hdr.func_len);
+    p->hdr.data_len = 0;
+    p->data = NULL;
+    rpc_send(sock, p);
+    rpc_free(p);
 
-	/* receive result and unpack it */
-	p = rpc_recv(sock);
+    /* receive result and unpack it */
+    p = rpc_recv(sock);
 
-	if(p && p->hdr.data_len == sizeof(*sq))
-	{
-		memcpy(sq, p->data, sizeof(*sq));
-		res = 0;
-	}
+    if(p && p->hdr.data_len == sizeof(*sq))
+    {
+        memcpy(sq, p->data, sizeof(*sq));
+        res = 0;
+    }
 
-	rpc_free(p);
+    rpc_free(p);
 
     return(res);
 }
@@ -250,28 +250,28 @@ int modem_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 
 time_t modem_get_network_time(modem_t* modem)
 {
-	rpc_packet_t* p;
-	time_t res = 0;
+    rpc_packet_t* p;
+    time_t res = 0;
 
-	/* build packet and send it */
-	p = (rpc_packet_t*)malloc(sizeof(*p));
-	memset((void*)p, 0, sizeof(*p));
-	p->hdr.type = TYPE_QUERY;
-	p->hdr.func_len = strlen(__func__);
-	p->func = (char*)malloc(p->hdr.func_len);
-	memcpy(p->func, __func__, p->hdr.func_len);
-	p->hdr.data_len = 0;
-	p->data = NULL;
-	rpc_send(sock, p);
-	rpc_free(p);
+    /* build packet and send it */
+    p = (rpc_packet_t*)malloc(sizeof(*p));
+    memset((void*)p, 0, sizeof(*p));
+    p->hdr.type = TYPE_QUERY;
+    p->hdr.func_len = strlen(__func__);
+    p->func = (char*)malloc(p->hdr.func_len);
+    memcpy(p->func, __func__, p->hdr.func_len);
+    p->hdr.data_len = 0;
+    p->data = NULL;
+    rpc_send(sock, p);
+    rpc_free(p);
 
-	/* receive result and unpack it */
-	p = rpc_recv(sock);
+    /* receive result and unpack it */
+    p = rpc_recv(sock);
 
-	if(p && p->hdr.data_len == sizeof(time_t))
-		res = *((time_t*)p->data);
+    if(p && p->hdr.data_len == sizeof(time_t))
+        res = *((time_t*)p->data);
 
-	rpc_free(p);
+    rpc_free(p);
 
     return(res);
 }
@@ -280,103 +280,103 @@ time_t modem_get_network_time(modem_t* modem)
 
 char* modem_get_imsi(modem_t* modem,char *imsi, int len)
 {
-	rpc_packet_t* p;
+    rpc_packet_t* p;
 
-	/* build packet and send it */
-	p = (rpc_packet_t*)malloc(sizeof(*p));
-	memset((void*)p, 0, sizeof(*p));
-	p->hdr.type = TYPE_QUERY;
-	p->hdr.func_len = strlen(__func__);
-	p->func = (char*)malloc(p->hdr.func_len);
-	memcpy(p->func, __func__, p->hdr.func_len);
-	p->hdr.data_len = 0;
-	p->data = NULL;
-	rpc_send(sock, p);
-	rpc_free(p);
+    /* build packet and send it */
+    p = (rpc_packet_t*)malloc(sizeof(*p));
+    memset((void*)p, 0, sizeof(*p));
+    p->hdr.type = TYPE_QUERY;
+    p->hdr.func_len = strlen(__func__);
+    p->func = (char*)malloc(p->hdr.func_len);
+    memcpy(p->func, __func__, p->hdr.func_len);
+    p->hdr.data_len = 0;
+    p->data = NULL;
+    rpc_send(sock, p);
+    rpc_free(p);
 
-	/* receive result and unpack it */
-	p = rpc_recv(sock);
+    /* receive result and unpack it */
+    p = rpc_recv(sock);
 
-	if(p)
-	{
-		len = (p->hdr.data_len > len ? len : p->hdr.data_len);
-		strncpy(imsi, (const char*)p->data, len);
-		imsi[len] = 0;
+    if(p)
+    {
+        len = (p->hdr.data_len > len ? len : p->hdr.data_len);
+        strncpy(imsi, (const char*)p->data, len);
+        imsi[len] = 0;
 
-		rpc_free(p);
+        rpc_free(p);
 
-		return(imsi);
-	}
+        return(imsi);
+    }
 
-	return(NULL);
+    return(NULL);
 }
 
 /*------------------------------------------------------------------------*/
 
 char* modem_get_operator_name(modem_t *modem, char *oper, int len)
 {
-	rpc_packet_t* p;
+    rpc_packet_t* p;
 
-	/* build packet and send it */
-	p = (rpc_packet_t*)malloc(sizeof(*p));
-	memset((void*)p, 0, sizeof(*p));
-	p->hdr.type = TYPE_QUERY;
-	p->hdr.func_len = strlen(__func__);
-	p->func = (char*)malloc(p->hdr.func_len);
-	memcpy(p->func, __func__, p->hdr.func_len);
-	p->hdr.data_len = 0;
-	p->data = NULL;
-	rpc_send(sock, p);
-	rpc_free(p);
+    /* build packet and send it */
+    p = (rpc_packet_t*)malloc(sizeof(*p));
+    memset((void*)p, 0, sizeof(*p));
+    p->hdr.type = TYPE_QUERY;
+    p->hdr.func_len = strlen(__func__);
+    p->func = (char*)malloc(p->hdr.func_len);
+    memcpy(p->func, __func__, p->hdr.func_len);
+    p->hdr.data_len = 0;
+    p->data = NULL;
+    rpc_send(sock, p);
+    rpc_free(p);
 
-	/* receive result and unpack it */
-	p = rpc_recv(sock);
+    /* receive result and unpack it */
+    p = rpc_recv(sock);
 
-	if(p)
-	{
-		len = (p->hdr.data_len > len ? len : p->hdr.data_len);
-		strncpy(oper, (const char*)p->data, len);
-		oper[len] = 0;
+    if(p)
+    {
+        len = (p->hdr.data_len > len ? len : p->hdr.data_len);
+        strncpy(oper, (const char*)p->data, len);
+        oper[len] = 0;
 
-		rpc_free(p);
+        rpc_free(p);
 
-		return(oper);
-	}
+        return(oper);
+    }
 
-	return(NULL);
+    return(NULL);
 }
 
 /*------------------------------------------------------------------------*/
 
 char* modem_get_network_type(modem_t* modem, char *network, int len)
 {
-	rpc_packet_t* p;
+    rpc_packet_t* p;
 
-	/* build packet and send it */
-	p = (rpc_packet_t*)malloc(sizeof(*p));
-	memset((void*)p, 0, sizeof(*p));
-	p->hdr.type = TYPE_QUERY;
-	p->hdr.func_len = strlen(__func__);
-	p->func = (char*)malloc(p->hdr.func_len);
-	memcpy(p->func, __func__, p->hdr.func_len);
-	p->hdr.data_len = 0;
-	p->data = NULL;
-	rpc_send(sock, p);
-	rpc_free(p);
+    /* build packet and send it */
+    p = (rpc_packet_t*)malloc(sizeof(*p));
+    memset((void*)p, 0, sizeof(*p));
+    p->hdr.type = TYPE_QUERY;
+    p->hdr.func_len = strlen(__func__);
+    p->func = (char*)malloc(p->hdr.func_len);
+    memcpy(p->func, __func__, p->hdr.func_len);
+    p->hdr.data_len = 0;
+    p->data = NULL;
+    rpc_send(sock, p);
+    rpc_free(p);
 
-	/* receive result and unpack it */
-	p = rpc_recv(sock);
+    /* receive result and unpack it */
+    p = rpc_recv(sock);
 
-	if(p)
-	{
-		len = (p->hdr.data_len > len ? len : p->hdr.data_len);
-		strncpy(network, (const char*)p->data, len);
-		network[len] = 0;
+    if(p)
+    {
+        len = (p->hdr.data_len > len ? len : p->hdr.data_len);
+        strncpy(network, (const char*)p->data, len);
+        network[len] = 0;
 
-		rpc_free(p);
+        rpc_free(p);
 
-		return(network);
-	}
+        return(network);
+    }
 
-	return(NULL);
+    return(NULL);
 }

@@ -23,13 +23,13 @@
 /*------------------------------------------------------------------------*/
 
 const char help[] =
-	"Usage: %s [-h] [-s SOCKET] [-p PID] [-l FILE] [-e] [-d]\n"
-	"-h - show this help\n"
-	"-s - file socket path (default: /var/run/%s.ctl)\n"
-	"-p - pid file path (default: /var/run/%s.pid)\n"
-	"-l - log to file\n"
-	"-e - log to syslog\n"
-	"-d - daemonize\n";
+    "Usage: %s [-h] [-s SOCKET] [-p PID] [-l FILE] [-e] [-d]\n"
+    "-h - show this help\n"
+    "-s - file socket path (default: /var/run/%s.ctl)\n"
+    "-p - pid file path (default: /var/run/%s.pid)\n"
+    "-l - log to file\n"
+    "-e - log to syslog\n"
+    "-d - daemonize\n";
 
 /*------------------------------------------------------------------------*/
 
@@ -130,7 +130,7 @@ int srv_run(void)
     int sock_client = -1;
     int res = 0;
 #if 0
-	struct timeval tv = {5, 0};
+    struct timeval tv = {5, 0};
     fd_set rfds;
 #endif
 
@@ -164,25 +164,25 @@ int srv_run(void)
     while(!srv_terminate)
     {
 #if 0
-		FD_ZERO(&rfds);
-		FD_SET(sock, &rfds);
+        FD_ZERO(&rfds);
+        FD_SET(sock, &rfds);
 
-		tv.tv_sec = 5;
-		tv.tv_usec = 0;
+        tv.tv_sec = 5;
+        tv.tv_usec = 0;
 
-		if(!(res = select(sock + 1, &rfds, NULL, NULL, &tv)))
-		{
-			printf("Wait more %d\n", srv_terminate);
-			continue;
-		}
+        if(!(res = select(sock + 1, &rfds, NULL, NULL, &tv)))
+        {
+            printf("Wait more %d\n", srv_terminate);
+            continue;
+        }
 
-		if(!FD_ISSET(sock, &rfds))
-		{
-			printf("sig Wait more %d\n", srv_terminate);
-			continue;
-		}
+        if(!FD_ISSET(sock, &rfds))
+        {
+            printf("sig Wait more %d\n", srv_terminate);
+            continue;
+        }
 #endif
-		sock_client = accept(sock, (struct sockaddr*)&sa_client, &sa_client_len);
+        sock_client = accept(sock, (struct sockaddr*)&sa_client, &sa_client_len);
 
         /* create thread for connection */
         if((res = proccess_connection(sock_client)))
@@ -210,9 +210,9 @@ err_socket:
 
 void on_sigterm(int prm)
 {
-	printf("SIGTERM %d\n", prm);
-	srv_terminate = 1;
-	close(sock);
+    printf("SIGTERM %d\n", prm);
+    srv_terminate = 1;
+    close(sock);
 }
 
 /*------------------------------------------------------------------------*/

@@ -10,23 +10,23 @@
 
 int its_cell_ctrl_lattice(int cmd, void* arg)
 {
-	int res = -1;
-	int fd;
+    int res = -1;
+    int fd;
 
-	if((fd = open("/dev/rg_chrdev", O_RDWR | O_NONBLOCK)) == -1)
-		goto err;
+    if((fd = open("/dev/rg_chrdev", O_RDWR | O_NONBLOCK)) == -1)
+        goto err;
 
     /* setup type of device */
-	if(ioctl(fd, RG_IOCTL_SIOCSETRGCHRDEVTYPE, KOS_CDT_LATTICE) == -1)
-		goto err_ioctl;
+    if(ioctl(fd, RG_IOCTL_SIOCSETRGCHRDEVTYPE, KOS_CDT_LATTICE) == -1)
+        goto err_ioctl;
 
-	res = ioctl(fd, cmd, arg);
+    res = ioctl(fd, cmd, arg);
 
 err_ioctl:
-	close(fd);
+    close(fd);
 
 err:
-	return(res);
+    return(res);
 }
 
 /*------------------------------------------------------------------------*/

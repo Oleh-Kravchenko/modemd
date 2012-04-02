@@ -35,43 +35,43 @@ mc7700_query_t* query = NULL;
 
 void* mc7700_thread_write(void* prm)
 {
-	thread_queue_t *priv = prm;
-	size_t buf_len;
-	void* buf;
+    thread_queue_t *priv = prm;
+    size_t buf_len;
+    void* buf;
 
-	while(!priv->terminate)
- 	{
+    while(!priv->terminate)
+     {
 #ifdef __MODEMD_DEBUG
-		printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
+        printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
 #endif
 
-		/* receive pointer to query */
-		if(queue_wait_pop(priv->q, THREAD_WAIT, &buf, &buf_len))
-			continue;
+        /* receive pointer to query */
+        if(queue_wait_pop(priv->q, THREAD_WAIT, &buf, &buf_len))
+            continue;
 
-		if(buf_len != sizeof(void**))
-		{
-			free(buf);
-			continue;
-		}
+        if(buf_len != sizeof(void**))
+        {
+            free(buf);
+            continue;
+        }
 
-		/* resolve pointer to query */
-		query = (mc7700_query_t*)*((mc7700_query_t**)buf);
-		free(buf);
+        /* resolve pointer to query */
+        query = (mc7700_query_t*)*((mc7700_query_t**)buf);
+        free(buf);
 
 #ifdef __MODEMD_DEBUG
-		printf("%s:%d %s() query->query = %s", __FILE__, __LINE__, __func__, query->query);
+        printf("%s:%d %s() query->query = %s", __FILE__, __LINE__, __func__, query->query);
 #endif
 
-		write(priv->fd, query->query, strlen(query->query));
+        write(priv->fd, query->query, strlen(query->query));
 
-		/* wait for answer */
-		pthread_mutex_lock(&mutex_mc7700);
-		pthread_cond_wait(&priv->processed, &mutex_mc7700);
-		pthread_mutex_unlock(&mutex_mc7700);
-	}
+        /* wait for answer */
+        pthread_mutex_lock(&mutex_mc7700);
+        pthread_cond_wait(&priv->processed, &mutex_mc7700);
+        pthread_mutex_unlock(&mutex_mc7700);
+    }
 
-	return(NULL);
+    return(NULL);
 }
 
 /*------------------------------------------------------------------------*/
@@ -82,14 +82,14 @@ void* mc7700_thread_read(void* prm)
     struct pollfd p = {priv->fd, POLLIN, 0};
     char buf[0xffff];
     int buf_len = 0, res = 0, received = 0;
-	regex_t re;
-	int re_res;
-	char re_err[0x100];
+    regex_t re;
+    int re_res;
+    char re_err[0x100];
 
     while(!priv->terminate)
     {
-		if(!received)
-			res = poll(&p, 1, (THREAD_WAIT) * 1000);
+        if(!received)
+            res = poll(&p, 1, (THREAD_WAIT) * 1000);
 
         if(res > 0 && p.revents & POLLIN && !received)
         {
@@ -97,89 +97,89 @@ void* mc7700_thread_read(void* prm)
 
             if(buf_len > 0 && query)
             {
-				buf[buf_len] = 0;
+                buf[buf_len] = 0;
 
 #ifdef __MODEMD_DEBUG
-				if(strncmp(query->query, buf, buf_len) == 0)
-					printf("%s:%d %s() Allowed echo commands is detected!\n", __FILE__, __LINE__, __func__);
+                if(strncmp(query->query, buf, buf_len) == 0)
+                    printf("%s:%d %s() Allowed echo commands is detected!\n", __FILE__, __LINE__, __func__);
 
                 int i;
 
-				printf("(II) %d [", buf_len);
-				for(i = 0; i < buf_len; ++ i)
-					printf("%02x ", buf[i]);
-				printf("]\n");
+                printf("(II) %d [", buf_len);
+                for(i = 0; i < buf_len; ++ i)
+                    printf("%02x ", buf[i]);
+                printf("]\n");
 #endif
-				regcomp(&re, query->answer_reg, REG_EXTENDED);
-				query->n_subs = re.re_nsub + 1;
-				query->re_subs = malloc(sizeof(regmatch_t) * query->n_subs);
-				re_res = regexec(&re, buf, query->n_subs, query->re_subs, 0);
+                regcomp(&re, query->answer_reg, REG_EXTENDED);
+                query->n_subs = re.re_nsub + 1;
+                query->re_subs = malloc(sizeof(regmatch_t) * query->n_subs);
+                re_res = regexec(&re, buf, query->n_subs, query->re_subs, 0);
 
-				if(re_res)
-				{
-					regerror(re_res, &re, re_err, sizeof(re_err));
+                if(re_res)
+                {
+                    regerror(re_res, &re, re_err, sizeof(re_err));
 
 #ifdef __MODEMD_DEBUG
-					printf("(EE) %s <<%s>>\n", re_err, buf);
+                    printf("(EE) %s <<%s>>\n", re_err, buf);
 #endif
-					free(query->re_subs);
-					query->re_subs = NULL;
-					regfree(&re);
+                    free(query->re_subs);
+                    query->re_subs = NULL;
+                    regfree(&re);
 
-					continue;
-				}
+                    continue;
+                }
 
-				regfree(&re);
+                regfree(&re);
 
 #ifdef __MODEMD_DEBUG
-				printf("(II) Matched\n");
+                printf("(II) Matched\n");
 #endif
-				received = 1;
+                received = 1;
 
-				query->answer = malloc(buf_len + 1);
+                query->answer = malloc(buf_len + 1);
                 strncpy(query->answer, buf, buf_len + 1);
             }
         }
         else
-		{
-			if(query)
-			{
-				/* reporting about reply */
-				pthread_mutex_lock(&query->cond_m);
-				pthread_cond_signal(&query->cond);
-				pthread_mutex_unlock(&query->cond_m);
+        {
+            if(query)
+            {
+                /* reporting about reply */
+                pthread_mutex_lock(&query->cond_m);
+                pthread_cond_signal(&query->cond);
+                pthread_mutex_unlock(&query->cond_m);
 
-				buf_len = 0;
-				received = 0;
-				query = NULL;
-			}
+                buf_len = 0;
+                received = 0;
+                query = NULL;
+            }
 
-			/* notify writing thread */
+            /* notify writing thread */
             pthread_mutex_lock(&mutex_mc7700);
             pthread_cond_signal(&priv->processed);
             pthread_mutex_unlock(&mutex_mc7700);
-		}
+        }
     }
 
-	return(NULL);
+    return(NULL);
 }
 
 /*------------------------------------------------------------------------*/
 
 int mc7700_open(const char *port)
 {
-	if(mc7700_clients ++)
-		return(mc7700_clients);
+    if(mc7700_clients ++)
+        return(mc7700_clients);
 
-	thread_priv.fd = serial_open(port, O_RDWR);
-	thread_priv.q = queue_create();
-	thread_priv.terminate = 0;
-	pthread_cond_init(&thread_priv.processed, NULL);
+    thread_priv.fd = serial_open(port, O_RDWR);
+    thread_priv.q = queue_create();
+    thread_priv.terminate = 0;
+    pthread_cond_init(&thread_priv.processed, NULL);
 
     /* creating reading thread */
     pthread_create(&thread_read, NULL, mc7700_thread_read, &thread_priv);
 
-	/* creating write thread */
+    /* creating write thread */
     pthread_create(&thread_write, NULL, mc7700_thread_write, &thread_priv);
     
     return(mc7700_clients);
@@ -189,95 +189,95 @@ int mc7700_open(const char *port)
 
 void mc7700_destroy(void)
 {
-	void* thread_res;
+    void* thread_res;
 
-	if(mc7700_clients <= 0)
-		return;
+    if(mc7700_clients <= 0)
+        return;
 
-	if(!(-- mc7700_clients))
-	{
-		thread_priv.terminate = 1;
+    if(!(-- mc7700_clients))
+    {
+        thread_priv.terminate = 1;
 
-		pthread_join(thread_write, &thread_res);
-		pthread_join(thread_read, &thread_res);
+        pthread_join(thread_write, &thread_res);
+        pthread_join(thread_read, &thread_res);
 
-		/* cleanup used resources */
-		close(thread_priv.fd);
-		queue_destroy(thread_priv.q);
-		pthread_cond_destroy(&thread_priv.processed);
-	}
+        /* cleanup used resources */
+        close(thread_priv.fd);
+        queue_destroy(thread_priv.q);
+        pthread_cond_destroy(&thread_priv.processed);
+    }
 }
 
 /*------------------------------------------------------------------------*/
 
 mc7700_query_t* mc7700_query_create(const char* q, const char* reply_re)
 {
-	mc7700_query_t* res;
+    mc7700_query_t* res;
 
-	if(!(res = malloc(sizeof(*res))))
-		goto err;
+    if(!(res = malloc(sizeof(*res))))
+        goto err;
 
-	if(!(res->query = malloc(strlen(q) + 1)))
-		goto err_q;
+    if(!(res->query = malloc(strlen(q) + 1)))
+        goto err_q;
 
-	strncpy(res->query, q, strlen(q) + 1);
+    strncpy(res->query, q, strlen(q) + 1);
 
-	if(!(res->answer_reg = malloc(strlen(reply_re) + 1)))
-		goto err_a;
+    if(!(res->answer_reg = malloc(strlen(reply_re) + 1)))
+        goto err_a;
 
-	strncpy(res->answer_reg, reply_re, strlen(reply_re) + 1);
+    strncpy(res->answer_reg, reply_re, strlen(reply_re) + 1);
 
-	res->answer = NULL;
-	res->re_subs = NULL;
-	res->n_subs = 0;
+    res->answer = NULL;
+    res->re_subs = NULL;
+    res->n_subs = 0;
 
-	pthread_cond_init(&res->cond, NULL);
-	pthread_mutex_init(&res->cond_m, NULL);
+    pthread_cond_init(&res->cond, NULL);
+    pthread_mutex_init(&res->cond_m, NULL);
 
-	goto exit;
+    goto exit;
 
 err_a:
-	free(res->query);
+    free(res->query);
 
 err_q:
-	free(res);
-	res = NULL;
+    free(res);
+    res = NULL;
 
 err:
 exit:
-	return(res);
+    return(res);
 }
 
 /*------------------------------------------------------------------------*/
 
 int mc7700_query_execute(queue_t* queue, mc7700_query_t* query)
 {
-	int res;
+    int res;
 
-	if((res = queue_add(queue, &query, sizeof(mc7700_query_t**))))
-		goto err;
+    if((res = queue_add(queue, &query, sizeof(mc7700_query_t**))))
+        goto err;
 
-	/* wait for processing */
-	pthread_mutex_lock(&query->cond_m);
-	pthread_cond_wait(&query->cond, &query->cond_m);
-	pthread_mutex_unlock(&query->cond_m);
+    /* wait for processing */
+    pthread_mutex_lock(&query->cond_m);
+    pthread_cond_wait(&query->cond, &query->cond_m);
+    pthread_mutex_unlock(&query->cond_m);
 
 err:
-	return(res);
+    return(res);
 }
 
 /*------------------------------------------------------------------------*/
 
 void mc7700_query_destroy(mc7700_query_t* q)
 {
-	if(!q)
-		return;
+    if(!q)
+        return;
 
-	free(q->answer);
-	free(q->answer_reg);
-	free(q->query);
-	pthread_cond_destroy(&q->cond);
-	pthread_mutex_destroy(&q->cond_m);
-	free(q->re_subs);
-	free(q);
+    free(q->answer);
+    free(q->answer_reg);
+    free(q->query);
+    pthread_cond_destroy(&q->cond);
+    pthread_mutex_destroy(&q->cond_m);
+    free(q->re_subs);
+    free(q);
 }
