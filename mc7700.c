@@ -110,7 +110,7 @@ void* mc7700_thread_read(void* prm)
                     regerror(re_res, &re, re_err, sizeof(re_err));
 
 #ifdef __MODEMD_DEBUG
-                    printf("(EE) Not matched %s [\n%s\n]\n", re_err, buf);
+                    printf("(EE) regexec() %s [\n%s\n]\n", re_err, buf);
 #endif
                     free(query->re_subs);
                     query->re_subs = NULL;

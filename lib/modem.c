@@ -352,16 +352,10 @@ char* modem_get_operator_name(modem_t *modem, char *oper, int len)
 char* modem_get_network_type(modem_t* modem, char *network, int len)
 {
     rpc_packet_t* p;
+    char* res = NULL;
 
     /* build packet and send it */
-    p = (rpc_packet_t*)malloc(sizeof(*p));
-    memset((void*)p, 0, sizeof(*p));
-    p->hdr.type = TYPE_QUERY;
-    p->hdr.func_len = strlen(__func__);
-    p->func = (char*)malloc(p->hdr.func_len);
-    memcpy(p->func, __func__, p->hdr.func_len);
-    p->hdr.data_len = 0;
-    p->data = NULL;
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
     rpc_send(sock, p);
     rpc_free(p);
 
@@ -374,12 +368,12 @@ char* modem_get_network_type(modem_t* modem, char *network, int len)
         memcpy(network, (const char*)p->data, len);
         network[len] = 0;
 
-        rpc_free(p);
-
-        return(network);
+        res = network;
     }
 
-    return(NULL);
+    rpc_free(p);
+
+    return(res);
 }
 
 /*------------------------------------------------------------------------*/
@@ -486,6 +480,33 @@ int modem_operator_scan(modem_t* modem, modem_oper_t** opers)
             res = p->hdr.data_len / sizeof(modem_oper_t);
         }
     }
+
+    rpc_free(p);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+char* modem_at_command(modem_t* modem, const char* query)
+{
+    rpc_packet_t* p;
+    char* res = NULL;
+
+    /* build packet and send it */
+    p = rpc_create(TYPE_QUERY, __func__, (uint8_t*)query, strlen(query));
+    rpc_send(sock, p);
+    rpc_free(p);
+
+    /* receive result and unpack it */
+    p = rpc_recv(sock);
+
+    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len)
+        if((res = malloc(p->hdr.data_len + 1)))
+        {
+            memcpy(res, p->data, p->hdr.data_len);
+            res[p->hdr.data_len] = 0;
+        }
 
     rpc_free(p);
 

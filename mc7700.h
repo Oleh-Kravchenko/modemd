@@ -5,6 +5,8 @@
 
 #include "queue.h"
 
+/*------------------------------------------------------------------------*/
+
 typedef struct {
     int fd;
 
@@ -17,9 +19,10 @@ typedef struct {
 
 extern thread_queue_t thread_priv;
 
+/*------------------------------------------------------------------------*/
 
-
-typedef struct mc7700_query_s{
+typedef struct mc7700_query_s
+{
     char* query;
 
     char* answer_reg;
@@ -38,8 +41,7 @@ typedef struct mc7700_query_s{
     pthread_mutex_t cond_m;
 } mc7700_query_t;
 
-
-
+/*------------------------------------------------------------------------*/
 
 mc7700_query_t* mc7700_query_create(const char* query, const char* answer_reg);
 
@@ -47,9 +49,7 @@ int mc7700_query_execute(queue_t* q, mc7700_query_t* query);
 
 void mc7700_query_destroy(mc7700_query_t* query);
 
-
-
-
+/*------------------------------------------------------------------------*/
 
 int mc7700_open(const char *port);
 

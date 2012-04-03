@@ -94,13 +94,13 @@ int analyze_parameters(int argc, char** argv)
 
 int proccess_connection(int sock)
 {
-    cellulard_thread_t *priv_data;
+    modem_client_thread_t *priv_data;
     pthread_attr_t attr;
     pthread_t thread;
     int res = 0;
 
     /* allocate memory for private data */
-    if(!(priv_data = (cellulard_thread_t*)malloc(sizeof(*priv_data))))
+    if(!(priv_data = (modem_client_thread_t*)malloc(sizeof(*priv_data))))
     {
         res = -1;
         goto err_malloc;

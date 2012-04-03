@@ -11,8 +11,10 @@ typedef struct
 
     DIR *dir;
 
-	char port[0x100];
-} cellulard_thread_t;
+    char port[0x100];
+
+    int terminate;
+} modem_client_thread_t;
 
 /*------------------------------------------------------------------------*/
 

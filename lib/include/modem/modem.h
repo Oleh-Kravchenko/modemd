@@ -107,6 +107,8 @@ modem_info_t* modem_get_info(modem_t* modem, modem_info_t *mi);
  */
 int modem_operator_scan(modem_t* modem, modem_oper_t** opers);
 
+char* modem_at_command(modem_t* modem, const char* query);
+
 #if 0
 
 /***************************************************************************

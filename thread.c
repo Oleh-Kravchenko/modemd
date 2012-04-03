@@ -24,7 +24,7 @@ char *strptime(const char *s, const char *format, struct tm *tm);
 
 /*------------------------------------------------------------------------*/
 
-typedef rpc_packet_t* (*rpc_function_t)(cellulard_thread_t*, rpc_packet_t*);
+typedef rpc_packet_t* (*rpc_function_t)(modem_client_thread_t*, rpc_packet_t*);
 
 /*------------------------------------------------------------------------*/
 
@@ -37,7 +37,7 @@ typedef struct
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_find_first_packet(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_find_first_packet(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
     modem_info_t *mi;
@@ -55,7 +55,7 @@ rpc_packet_t* modem_find_first_packet(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_find_next_packet(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_find_next_packet(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
     modem_info_t *mi;
@@ -73,7 +73,7 @@ rpc_packet_t* modem_find_next_packet(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_open_by_port(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_open_by_port(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     char port[0xff] = {"A"};
     char tty[0xff] = {0};
@@ -115,7 +115,7 @@ rpc_packet_t* modem_open_by_port(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_close(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_close(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     mc7700_destroy();
 
@@ -124,7 +124,7 @@ rpc_packet_t* modem_close(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_get_imei(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_get_imei(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
     mc7700_query_t *q;
@@ -147,7 +147,7 @@ rpc_packet_t* modem_get_imei(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_get_imsi(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_get_imsi(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
     mc7700_query_t *q;
@@ -170,7 +170,7 @@ rpc_packet_t* modem_get_imsi(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_get_signal_quality(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_get_signal_quality(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     modem_signal_quality_t sq;
     rpc_packet_t *res = NULL;
@@ -213,7 +213,7 @@ rpc_packet_t* modem_get_signal_quality(cellulard_thread_t* priv, rpc_packet_t* p
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_get_network_time(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_get_network_time(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
     mc7700_query_t *q;
@@ -245,7 +245,7 @@ rpc_packet_t* modem_get_network_time(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_get_operator_name(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_get_operator_name(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
     mc7700_query_t *q;
@@ -278,7 +278,7 @@ rpc_packet_t* modem_get_operator_name(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_network_registration(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_network_registration(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     modem_network_reg_t nr = MODEM_NETWORK_REG_UNKNOWN;
     rpc_packet_t *res = NULL;
@@ -310,7 +310,7 @@ rpc_packet_t* modem_network_registration(cellulard_thread_t* priv, rpc_packet_t*
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_get_network_type(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_get_network_type(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
     mc7700_query_t *q;
@@ -334,7 +334,7 @@ rpc_packet_t* modem_get_network_type(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_change_pin(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_change_pin(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     modem_change_pin_t *pc = (modem_change_pin_t*)p->data;
     rpc_packet_t *res = NULL;
@@ -361,7 +361,7 @@ rpc_packet_t* modem_change_pin(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_get_fw_version(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_get_fw_version(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     modem_fw_version_t fw_info;
     rpc_packet_t *res = NULL;
@@ -401,7 +401,7 @@ rpc_packet_t* modem_get_fw_version(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_get_info(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_get_info(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
     modem_info_t* mi;
@@ -416,7 +416,7 @@ rpc_packet_t* modem_get_info(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* modem_operator_scan(cellulard_thread_t* priv, rpc_packet_t* p)
+rpc_packet_t* modem_operator_scan(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
     modem_oper_t *opers;
@@ -452,6 +452,37 @@ rpc_packet_t* modem_operator_scan(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
+rpc_packet_t* modem_at_command(modem_client_thread_t* priv, rpc_packet_t* p)
+{
+    rpc_packet_t *res = NULL;
+    mc7700_query_t *q;
+    char *query;
+
+    /* formating query */
+    if(!(query = malloc(p->hdr.data_len + 1 + 2))) /* +2 for "\r\n" */
+        return(res);
+
+    memcpy(query, p->data, p->hdr.data_len);
+    strcpy(query + p->hdr.data_len, "\r\n");
+
+    q = mc7700_query_create(query, "OK\r\n");
+    q->timeout = 5;
+
+    free(query);
+
+    mc7700_query_execute(thread_priv.q, q);
+
+    /* cutting Operator name from the answer */
+    if(q->answer)
+        res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)q->answer, strlen(q->answer));
+
+    mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
 const rpc_function_info_t rpc_functions[] = {
     {"modem_find_first", modem_find_first_packet},
     {"modem_find_next", modem_find_next_packet},
@@ -468,6 +499,7 @@ const rpc_function_info_t rpc_functions[] = {
     {"modem_get_fw_version", modem_get_fw_version},
     {"modem_get_info", modem_get_info},
     {"modem_operator_scan", modem_operator_scan},
+    {"modem_at_command", modem_at_command},
     {{0, 0}},
 };
 
@@ -475,10 +507,11 @@ const rpc_function_info_t rpc_functions[] = {
 
 void* ThreadWrapper(void* prm)
 {
-    cellulard_thread_t* priv = prm;
-    rpc_packet_t *p_in = NULL, *p_out = NULL;
+    const rpc_function_info_t *rpc_func;
+    modem_client_thread_t* priv = prm;
+    rpc_packet_t *p_in = NULL, *p_out;
 
-    while((p_in = rpc_recv(priv->sock)))
+    while(!priv->terminate && (p_in = rpc_recv(priv->sock)))
     {
         rpc_print(p_in);
 
@@ -488,30 +521,29 @@ void* ThreadWrapper(void* prm)
             continue;
         }
 
-        const rpc_function_info_t *rpc_func = rpc_functions;
+        rpc_func = rpc_functions;
+        p_out = NULL;
 
         while(rpc_func->func)
         {
-            if(strcmp(rpc_func->name, p_in->func) != 0)
+            if(strcmp(rpc_func->name, p_in->func) == 0)
             {
-                ++ rpc_func;
+                /* execute function */
+                p_out = rpc_func->func(priv, p_in);
 
-                continue;
+                break;
             }
 
-            p_out = rpc_func->func(priv, p_in);
-
-            if(!p_out)
-                /* function failed, create NULL result */
-                p_out = rpc_create(TYPE_RESPONSE, p_in->func, NULL, 0);
-
-            rpc_send(priv->sock, p_out);
-            rpc_print(p_out);
-            rpc_free(p_out);
-
-            break;
+            ++ rpc_func;
         }
 
+        if(!p_out)
+            /* function failed, create NULL result */
+            p_out = rpc_create(TYPE_RESPONSE, p_in->func, NULL, 0);
+
+        rpc_send(priv->sock, p_out);
+        rpc_print(p_out);
+        rpc_free(p_out);
         rpc_free(p_in);
     }
 
