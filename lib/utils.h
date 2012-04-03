@@ -3,6 +3,18 @@
 
 #include <stdint.h>
 
+#include "modem/types.h"
+
+/*------------------------------------------------------------------------*/
+
+#define __REGMATCH_CUT(dst, src, re_subs)                                \
+{                                                                        \
+    memcpy(dst, (src) + re_subs.rm_so, re_subs.rm_eo - re_subs.rm_so);   \
+    dst[re_subs.rm_eo - re_subs.rm_so] = 0;                              \
+}
+
+/*------------------------------------------------------------------------*/
+
 /**
  * @brief read file contents into the string buffer
  * @param filename name of file
@@ -12,12 +24,16 @@
  */
 char* file_get_contents(const char *filename, char* s, const int size);
 
+/*------------------------------------------------------------------------*/
+
 /**
  * @brief read file contents as a hex string
  * @param filename name of file
  * @return unsigned int
  */
 unsigned int file_get_contents_hex(const char* filename);
+
+/*------------------------------------------------------------------------*/
 
 /**
  * @brief check vendor and product id on modem db
@@ -27,6 +43,8 @@ unsigned int file_get_contents_hex(const char* filename);
  */
 int its_modem(uint16_t vendor, uint16_t product);
 
+/*------------------------------------------------------------------------*/
+
 /**
  * @brief open serial device
  * @param portname port name
@@ -34,6 +52,8 @@ int its_modem(uint16_t vendor, uint16_t product);
  * @return -1 if an error occurred
  */
 int serial_open(const char* portname, int flags);
+
+/*------------------------------------------------------------------------*/
 
 /**
  * @brief receive tty name of AT interface of modem
@@ -43,5 +63,15 @@ int serial_open(const char* portname, int flags);
  * @return if successful pointer to tty buffer, other wise NULL
  **/
 char* modem_get_at_port_name(const char* port, char* tty, int tty_len);
+
+/*------------------------------------------------------------------------*/
+
+/**
+ * @brief parse output of AT+COPS=? command
+ * @param s string in result +COPS: (...)
+ * @param opers pointer to operator list
+ * @return number of items, or 0 if failed
+ */
+int at_parse_cops_list(const char* s, modem_oper_t** opers);
 
 #endif /* __UTILS_H */

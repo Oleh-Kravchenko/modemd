@@ -97,6 +97,40 @@ typedef struct
 
 /*------------------------------------------------------------------------*/
 
+typedef enum
+{
+    MODEM_OPER_STAT_UNKNOWN   = 0,
+    MODEM_OPER_STAT_AVAILABLE = 1,
+    MODEM_OPER_STAT_CURRENT   = 2,
+    MODEM_OPER_STAT_FORBIDDEN = 3
+} __attribute__((__packed__)) modem_oper_stat_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef enum
+{
+    MODEM_OPER_ACT_GSM     = 0,
+    MODEM_OPER_ACT_COMPACT = 1,
+    MODEM_OPER_ACT_UTRAN   = 2
+} __attribute__((__packed__)) modem_oper_act_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef struct
+{
+    modem_oper_stat_t stat;
+
+    char longname[17];
+
+    char shortname[9];
+
+    char numeric[13];
+
+    modem_oper_act_t act;
+} __attribute__((__packed__)) modem_oper_t;
+
+/*------------------------------------------------------------------------*/
+
 #if 0
 
 typedef void* modem_event_t;

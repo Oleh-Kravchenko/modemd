@@ -368,7 +368,7 @@ char* modem_get_network_type(modem_t* modem, char *network, int len)
     /* receive result and unpack it */
     p = rpc_recv(sock);
 
-    if(p && strcmp(p->func, __func__) == 0)
+    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len)
     {
         len = (p->hdr.data_len > len ? len : p->hdr.data_len);
         memcpy(network, (const char*)p->data, len);
@@ -454,6 +454,37 @@ modem_info_t* modem_get_info(modem_t* modem, modem_info_t *mi)
     {
         memcpy(mi, (const char*)p->data, sizeof(*mi));
         res = mi;
+    }
+
+    rpc_free(p);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_operator_scan(modem_t* modem, modem_oper_t** opers)
+{
+    rpc_packet_t* p;
+    int res = 0;
+
+    /* build packet and send it */
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
+    rpc_send(sock, p);
+    rpc_free(p);
+
+    /* receive result and unpack it */
+    p = rpc_recv(sock);
+
+    if(p && strcmp(p->func, __func__) == 0 && (p->hdr.data_len % sizeof(modem_oper_t) == 0))
+    {
+        if((*opers = malloc(p->hdr.data_len)))
+        {
+            memcpy(*opers, p->data, p->hdr.data_len);
+
+            /* calculate number of operator items */
+            res = p->hdr.data_len / sizeof(modem_oper_t);
+        }
     }
 
     rpc_free(p);

@@ -67,19 +67,24 @@ int analyze_parameters(int argc, char** argv)
 
 /*------------------------------------------------------------------------*/
 
-void modem_info(const char* port)
+void print_modem_info(const char* port)
 {
     modem_fw_version_t fw_info;
     modem_signal_quality_t sq;
+    modem_oper_t *opers = NULL;
     const struct tm* tm;
-	modem_info_t mi;
+    modem_info_t mi;
     char msg[0x100];
     modem_t* modem;
     time_t t;
+    int i ;
 
     /* try open modem */
     if(!(modem = modem_open_by_port(port)))
         return;
+
+    if(modem_get_info(modem, &mi))
+        printf("Device: [port: %s] [%04hx:%04hx] [%s %s]\n", mi.port, mi.id_vendor, mi.id_product, mi.manufacturer, mi.product);
 
     /* show modem info */
     printf("IMEI: [%s]\n", modem_get_imei(modem, msg, sizeof(msg)));
@@ -88,7 +93,8 @@ void modem_info(const char* port)
 
     printf("Operator: [%s]\n", modem_get_operator_name(modem, msg, sizeof(msg)));
 
-    printf("Network: [%s]\n", modem_get_network_type(modem, msg, sizeof(msg)));
+    if(modem_get_network_type(modem, msg, sizeof(msg)))
+        printf("Network: [%s]\n", msg);
 
     if(!modem_get_signal_quality(modem, &sq))
         printf("Signal: %d dBm, %d Level\n", sq.dbm, sq.level);
@@ -103,10 +109,25 @@ void modem_info(const char* port)
     printf("Registration: %s\n", str_network_registration(modem_network_registration(modem)));
 
     if(modem_get_fw_version(modem, &fw_info))
-        printf("Firmware: %s, Release: %d\n", fw_info.firmware, (int)fw_info.release);
+    {
+        tm = gmtime(&fw_info.release);
+        strftime(msg, sizeof(msg), "%Y.%m.%d %H:%M:%S", tm);
+        printf("Firmware: %s, Release: %s\n", fw_info.firmware, msg);
+    }
 
-    if(modem_get_info(modem, &mi))
-        printf("%s %04hx:%04hx %s %s\n", mi.port, mi.id_vendor, mi.id_product, mi.manufacturer, mi.product);
+    puts("Performing operator scan:");
+
+    i = modem_operator_scan(modem, &opers);
+
+    while(i > 0)
+    {
+        -- i;
+
+        printf("stat=%d\nlong=%s\nshort=%s\nnumeric=%s\nact=%d\n\n",
+            opers[i].stat, opers[i].longname, opers[i].shortname, opers[i].numeric, opers[i].act);
+    }
+
+    free(opers);
 
     /* close modem */
     modem_close(modem);
@@ -140,7 +161,7 @@ int main(int argc, char** argv)
     if(*opt_modem_port)
     {
         /* show modem info by port and exit */
-        modem_info(opt_modem_port);
+        print_modem_info(opt_modem_port);
         goto exit;
     }
 
@@ -149,9 +170,7 @@ int main(int argc, char** argv)
 
     while(mi)
     {
-        printf("%s %04hx:%04hx %s %s\n", mi->port, mi->id_vendor, mi->id_product, mi->manufacturer, mi->product);
-
-        modem_info(mi->port);
+        print_modem_info(mi->port);
 
         free(mi);
 

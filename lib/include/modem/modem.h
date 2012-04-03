@@ -97,6 +97,16 @@ modem_fw_version_t* modem_get_fw_version(modem_t* modem, modem_fw_version_t* fw_
 
 modem_info_t* modem_get_info(modem_t* modem, modem_info_t *mi);
 
+/**
+ * @brief perform operator scan
+ * @param modem modem handle
+ * @param opers pointer to array of items
+ * @return numbers of items in opers
+ *
+ * After usage must be called free(opers)
+ */
+int modem_operator_scan(modem_t* modem, modem_oper_t** opers);
+
 #if 0
 
 /***************************************************************************

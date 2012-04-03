@@ -416,6 +416,42 @@ rpc_packet_t* modem_get_info(cellulard_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
+rpc_packet_t* modem_operator_scan(cellulard_thread_t* priv, rpc_packet_t* p)
+{
+    rpc_packet_t *res = NULL;
+    modem_oper_t *opers;
+    mc7700_query_t *q;
+    int nopers = 0;
+    char *sopers;
+
+    q = mc7700_query_create("AT+COPS=?\r\n", "\r\n\\+COPS: (.+),,\\(.+\\),\\(.+\\)\r\n\r\nOK\r\n");
+    q->timeout = 120;
+
+    mc7700_query_execute(thread_priv.q, q);
+
+    /* cutting operators from the answer */
+    if(q->answer)
+    {
+        if((sopers = malloc(q->re_subs[1].rm_eo - q->re_subs[1].rm_so + 1)))
+        {
+            /* parsing operator list */
+            __REGMATCH_CUT(sopers, q->answer, q->re_subs[1]);
+            nopers = at_parse_cops_list(sopers, &opers);
+
+            res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)opers, sizeof(modem_oper_t) * nopers);
+
+            free(opers);
+            free(sopers);
+        }
+    }
+
+    mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
 const rpc_function_info_t rpc_functions[] = {
     {"modem_find_first", modem_find_first_packet},
     {"modem_find_next", modem_find_next_packet},
@@ -431,6 +467,7 @@ const rpc_function_info_t rpc_functions[] = {
     {"modem_change_pin", modem_change_pin},
     {"modem_get_fw_version", modem_get_fw_version},
     {"modem_get_info", modem_get_info},
+    {"modem_operator_scan", modem_operator_scan},
     {{0, 0}},
 };
 

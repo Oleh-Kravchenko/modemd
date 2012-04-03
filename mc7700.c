@@ -56,7 +56,7 @@ void* mc7700_thread_write(void* prm)
         free(buf);
 
 #ifdef __MODEMD_DEBUG
-        printf("%s:%d %s() query->query = %s", __FILE__, __LINE__, __func__, query->query);
+        printf("%s:%d %s() query [\n%s\n]\n", __FILE__, __LINE__, __func__, query->query);
 #endif
 
         write(priv->fd, query->query, strlen(query->query));
@@ -76,18 +76,16 @@ void* mc7700_thread_read(void* prm)
 {
     thread_queue_t *priv = prm;
     struct pollfd p = {priv->fd, POLLIN, 0};
-    char buf[0xffff];
-    int buf_len = 0, res = 0, received = 0;
-    regex_t re;
-    int re_res;
+    int buf_len = 0, res = 0, giveup = 0, re_res;
     char re_err[0x100];
+    char buf[0xffff];
+    regex_t re;
 
     while(!priv->terminate)
     {
-        if(!received)
-            res = poll(&p, 1, (THREAD_WAIT) * 1000);
+        res = poll(&p, 1, (THREAD_WAIT) * 1000);
 
-        if(res > 0 && p.revents & POLLIN && !received)
+        if(res > 0 && p.revents & POLLIN)
         {
             buf_len += read(priv->fd, buf + buf_len, sizeof(buf) - buf_len - 1);
 
@@ -99,13 +97,9 @@ void* mc7700_thread_read(void* prm)
                 if(strncmp(query->query, buf, buf_len) == 0)
                     printf("%s:%d %s() Allowed echo commands is detected!\n", __FILE__, __LINE__, __func__);
 
-                int i;
-
-                printf("(II) %d [", buf_len);
-                for(i = 0; i < buf_len; ++ i)
-                    printf("%02x ", buf[i]);
-                printf("]\n");
+                printf("(II) buf(%d) [\n%s\n]\n\n", buf_len, buf);
 #endif
+
                 regcomp(&re, query->answer_reg, REG_EXTENDED);
                 query->n_subs = re.re_nsub + 1;
                 query->re_subs = malloc(sizeof(regmatch_t) * query->n_subs);
@@ -116,7 +110,7 @@ void* mc7700_thread_read(void* prm)
                     regerror(re_res, &re, re_err, sizeof(re_err));
 
 #ifdef __MODEMD_DEBUG
-                    printf("(EE) %s <<%s>>\n", re_err, buf);
+                    printf("(EE) Not matched %s [\n%s\n]\n", re_err, buf);
 #endif
                     free(query->re_subs);
                     query->re_subs = NULL;
@@ -130,32 +124,36 @@ void* mc7700_thread_read(void* prm)
 #ifdef __MODEMD_DEBUG
                 printf("(II) Matched\n");
 #endif
-                received = 1;
 
                 query->answer = malloc(buf_len + 1);
                 strncpy(query->answer, buf, buf_len );
                 query->answer[buf_len] = 0;
             }
         }
-        else
-        {
-            if(query)
-            {
-                /* reporting about reply */
-                pthread_mutex_lock(&query->cond_m);
-                pthread_cond_signal(&query->cond);
-                pthread_mutex_unlock(&query->cond_m);
 
-                buf_len = 0;
-                received = 0;
-                query = NULL;
-            }
+        if(query && (giveup >= query->timeout || query->answer))
+        {
+#ifdef __MODEMD_DEBUG
+    if(giveup >= query->timeout)
+        printf("%s:%d %s() Command [%s] timeout after %d second(s)\n", __FILE__, __LINE__, __func__, query->query, giveup);
+#endif
+
+            /* reporting about reply */
+            pthread_mutex_lock(&query->cond_m);
+            pthread_cond_signal(&query->cond);
+            pthread_mutex_unlock(&query->cond_m);
+
+            buf_len = 0;
+            giveup = 0;
+            query = NULL;
 
             /* notify writing thread */
             pthread_mutex_lock(&mutex_mc7700);
             pthread_cond_signal(&priv->processed);
             pthread_mutex_unlock(&mutex_mc7700);
         }
+        else if(query)
+            ++ giveup;
     }
 
     return(NULL);
@@ -178,7 +176,7 @@ int mc7700_open(const char *port)
 
     /* creating write thread */
     pthread_create(&thread_write, NULL, mc7700_thread_write, &thread_priv);
-    
+
     return(mc7700_clients);
 }
 
@@ -229,6 +227,7 @@ mc7700_query_t* mc7700_query_create(const char* q, const char* reply_re)
     res->answer = NULL;
     res->re_subs = NULL;
     res->n_subs = 0;
+    res->timeout = 2; /* default timeout for command */
 
     pthread_cond_init(&res->cond, NULL);
     pthread_mutex_init(&res->cond_m, NULL);

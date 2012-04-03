@@ -6,6 +6,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <stdlib.h>
+#include <regex.h>
+
+#include "utils.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -120,9 +124,9 @@ char* modem_get_at_port_name(const char* port, char* tty, int tty_len)
     product = file_get_contents_hex(path);
 
     /* getting interface number */
-    if((vendor == 0x1199 && product == 0x68a3))
+    if((vendor == 0x1199 && product == 0x68a2))
         snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s:1.3/", port);
-    else if((vendor == 0x1199 && product == 0x68a2))
+    else if((vendor == 0x1199 && product == 0x68a3))
         snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s:1.3/", port);
     else if((vendor == 0x12d1 && product == 0x1001))
         snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s:1.0/", port);
@@ -148,4 +152,56 @@ char* modem_get_at_port_name(const char* port, char* tty, int tty_len)
 
 err:
     return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int at_parse_cops_list(const char* s, modem_oper_t** opers)
+{
+    regmatch_t *re_subs;
+    int len = strlen(s);
+    int next = 0;
+    int nopers;
+    regex_t re;
+
+    nopers = 0;
+    *opers = NULL;
+
+    if(regcomp(&re, "\\(([0123]),\"(.{0,16})\",\"(.{0,16})\",\"([0-9]{5,16})\",([012])),?", REG_EXTENDED))
+        goto err;
+
+    /* memory for regexp result */
+    re_subs = malloc(sizeof(regmatch_t) * (re.re_nsub + 1));
+
+    if(!re_subs)
+        goto malloc_err;
+
+    while(next < len)
+    {
+        if(regexec(&re, s + next, (re.re_nsub + 1), re_subs, 0))
+            break;
+
+        ++ nopers;
+
+        /* increase memory for result */
+        *opers = realloc(*opers, sizeof(modem_oper_t) * nopers);
+
+        /* add new info about operator */
+        (*opers)[nopers - 1].stat = (*(s + next + re_subs[1].rm_so)) - 0x30;
+        __REGMATCH_CUT((*opers)[nopers - 1].longname, s + next, re_subs[2]);
+        __REGMATCH_CUT((*opers)[nopers - 1].shortname, s + next, re_subs[3]);
+        __REGMATCH_CUT((*opers)[nopers - 1].numeric, s + next, re_subs[4]);
+        (*opers)[nopers - 1].act = (*(s + next + re_subs[5].rm_so)) - 0x30;
+
+        /* length of one operator string */
+        next += re_subs[0].rm_eo - re_subs[0].rm_so;
+    }
+
+    free(re_subs);
+
+malloc_err:
+    regfree(&re);
+
+err:
+    return(nopers);
 }

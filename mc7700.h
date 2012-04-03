@@ -6,13 +6,13 @@
 #include "queue.h"
 
 typedef struct {
-	int fd;
+    int fd;
 
-	pthread_cond_t processed;
+    pthread_cond_t processed;
 
-	queue_t *q;
+    queue_t *q;
 
-	int terminate;
+    int terminate;
 } thread_queue_t;
 
 extern thread_queue_t thread_priv;
@@ -20,19 +20,22 @@ extern thread_queue_t thread_priv;
 
 
 typedef struct mc7700_query_s{
-	char* query;
+    char* query;
 
-	char* answer_reg;
+    char* answer_reg;
 
-	int n_subs;
+    int n_subs;
 
-	regmatch_t *re_subs;
+    regmatch_t *re_subs;
 
-	char* answer;
+    /** timeout for command in seconds */
+    int timeout;
 
-	pthread_cond_t cond;
+    char* answer;
 
-	pthread_mutex_t cond_m;
+    pthread_cond_t cond;
+
+    pthread_mutex_t cond_m;
 } mc7700_query_t;
 
 
