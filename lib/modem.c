@@ -10,6 +10,10 @@
  
 /*------------------------------------------------------------------------*/
 
+#define __DEFAULT_TRIES 3
+
+/*------------------------------------------------------------------------*/
+
 static int sock = -1;
 
 /*------------------------------------------------------------------------*/
@@ -69,17 +73,12 @@ void modem_cleanup(void)
         result res;                                                        \
                                                                            \
         /* build packet and send it */                                     \
-        p = (rpc_packet_t*)malloc(sizeof(*p));                             \
-        memset((void*)p, 0, sizeof(*p));                                   \
-        p->hdr.type = TYPE_QUERY;                                          \
-        p->hdr.func_len = strlen(#funcname);                               \
-        p->func = (char*)malloc(p->hdr.func_len);                          \
-        memcpy(p->func, #funcname, p->hdr.func_len);                       \
+        p = rpc_create(TYPE_QUERY, __func__, NULL, 0);                     \
         rpc_send(sock, p);                                                 \
         rpc_free(p);                                                       \
                                                                            \
         /* receive result and unpack it */                                 \
-        p = rpc_recv(sock);                                                \
+        p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);                \
                                                                            \
         res = funcname##_res_unpack(p);                                    \
                                                                            \
@@ -136,20 +135,12 @@ modem_t* modem_open_by_port(const char* port)
     rpc_packet_t* p;
 
     /* build packet and send it */
-    p = (rpc_packet_t*)malloc(sizeof(*p));
-    memset((void*)p, 0, sizeof(*p));
-    p->hdr.type = TYPE_QUERY;
-    p->hdr.func_len = strlen(__func__);
-    p->func = (char*)malloc(p->hdr.func_len);
-    memcpy(p->func, __func__, p->hdr.func_len);
-    p->hdr.data_len = strlen(port);
-    p->data = malloc(p->hdr.data_len);
-    memcpy(p->data, port, p->hdr.data_len);
+    p = rpc_create(TYPE_QUERY, __func__, (uint8_t*)port, strlen(port));
     rpc_send(sock, p);
     rpc_free(p);
 
     /* receive result and unpack it */
-    p = rpc_recv(sock);
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 //    res = modem_open_by_port_res_unpack(p);
     rpc_free(p);
 
@@ -164,18 +155,12 @@ void modem_close(modem_t* modem)
     rpc_packet_t* p;
 
     /* build packet and send it */
-    p = (rpc_packet_t*)malloc(sizeof(*p));
-    memset((void*)p, 0, sizeof(*p));
-    p->hdr.type = TYPE_QUERY;
-    p->hdr.func_len = strlen(__func__);
-    p->func = (char*)malloc(p->hdr.func_len);
-    memcpy(p->func, __func__, p->hdr.func_len);
-    p->hdr.data_len = 0;
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
     rpc_send(sock, p);
     rpc_free(p);
 
     /* receive result and unpack it */
-    p = rpc_recv(sock);
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
     rpc_free(p);
 }
 
@@ -186,19 +171,12 @@ char* modem_get_imei(modem_t* modem, char* imei, int len)
     rpc_packet_t* p;
 
     /* build packet and send it */
-    p = (rpc_packet_t*)malloc(sizeof(*p));
-    memset((void*)p, 0, sizeof(*p));
-    p->hdr.type = TYPE_QUERY;
-    p->hdr.func_len = strlen(__func__);
-    p->func = (char*)malloc(p->hdr.func_len);
-    memcpy(p->func, __func__, p->hdr.func_len);
-    p->hdr.data_len = 0;
-    p->data = NULL;
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
     rpc_send(sock, p);
     rpc_free(p);
 
     /* receive result and unpack it */
-    p = rpc_recv(sock);
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
     if(p && strcmp(p->func, __func__) == 0)
     {
@@ -222,19 +200,12 @@ int modem_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
     int res = -1;
 
     /* build packet and send it */
-    p = (rpc_packet_t*)malloc(sizeof(*p));
-    memset((void*)p, 0, sizeof(*p));
-    p->hdr.type = TYPE_QUERY;
-    p->hdr.func_len = strlen(__func__);
-    p->func = (char*)malloc(p->hdr.func_len);
-    memcpy(p->func, __func__, p->hdr.func_len);
-    p->hdr.data_len = 0;
-    p->data = NULL;
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
     rpc_send(sock, p);
     rpc_free(p);
 
     /* receive result and unpack it */
-    p = rpc_recv(sock);
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
     if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len == sizeof(*sq))
     {
@@ -255,19 +226,12 @@ time_t modem_get_network_time(modem_t* modem)
     time_t res = 0;
 
     /* build packet and send it */
-    p = (rpc_packet_t*)malloc(sizeof(*p));
-    memset((void*)p, 0, sizeof(*p));
-    p->hdr.type = TYPE_QUERY;
-    p->hdr.func_len = strlen(__func__);
-    p->func = (char*)malloc(p->hdr.func_len);
-    memcpy(p->func, __func__, p->hdr.func_len);
-    p->hdr.data_len = 0;
-    p->data = NULL;
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
     rpc_send(sock, p);
     rpc_free(p);
 
     /* receive result and unpack it */
-    p = rpc_recv(sock);
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
     if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len == sizeof(time_t))
         res = *((time_t*)p->data);
@@ -284,19 +248,12 @@ char* modem_get_imsi(modem_t* modem,char *imsi, int len)
     rpc_packet_t* p;
 
     /* build packet and send it */
-    p = (rpc_packet_t*)malloc(sizeof(*p));
-    memset((void*)p, 0, sizeof(*p));
-    p->hdr.type = TYPE_QUERY;
-    p->hdr.func_len = strlen(__func__);
-    p->func = (char*)malloc(p->hdr.func_len);
-    memcpy(p->func, __func__, p->hdr.func_len);
-    p->hdr.data_len = 0;
-    p->data = NULL;
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
     rpc_send(sock, p);
     rpc_free(p);
 
     /* receive result and unpack it */
-    p = rpc_recv(sock);
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
     if(p && strcmp(p->func, __func__) == 0)
     {
@@ -319,19 +276,12 @@ char* modem_get_operator_name(modem_t *modem, char *oper, int len)
     rpc_packet_t* p;
 
     /* build packet and send it */
-    p = (rpc_packet_t*)malloc(sizeof(*p));
-    memset((void*)p, 0, sizeof(*p));
-    p->hdr.type = TYPE_QUERY;
-    p->hdr.func_len = strlen(__func__);
-    p->func = (char*)malloc(p->hdr.func_len);
-    memcpy(p->func, __func__, p->hdr.func_len);
-    p->hdr.data_len = 0;
-    p->data = NULL;
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
     rpc_send(sock, p);
     rpc_free(p);
 
     /* receive result and unpack it */
-    p = rpc_recv(sock);
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
     if(p && strcmp(p->func, __func__) == 0)
     {
@@ -360,7 +310,7 @@ char* modem_get_network_type(modem_t* modem, char *network, int len)
     rpc_free(p);
 
     /* receive result and unpack it */
-    p = rpc_recv(sock);
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
     if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len)
     {
@@ -393,7 +343,7 @@ int modem_change_pin(modem_t* modem, const char* old_pin, const char* new_pin)
     rpc_free(p);
 
     /* receive result and unpack it */
-    p = rpc_recv(sock);
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
     if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len)
         res = 0;
@@ -416,7 +366,7 @@ modem_fw_version_t* modem_get_fw_version(modem_t* modem, modem_fw_version_t* fw_
     rpc_free(p);
 
     /* receive result and unpack it */
-    p = rpc_recv(sock);
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
     if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len == sizeof(*fw_info))
     {
@@ -442,7 +392,7 @@ modem_info_t* modem_get_info(modem_t* modem, modem_info_t *mi)
     rpc_free(p);
 
     /* receive result and unpack it */
-    p = rpc_recv(sock);
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
     if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len == sizeof(*mi))
     {
@@ -468,7 +418,7 @@ int modem_operator_scan(modem_t* modem, modem_oper_t** opers)
     rpc_free(p);
 
     /* receive result and unpack it */
-    p = rpc_recv(sock);
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
     if(p && strcmp(p->func, __func__) == 0 && (p->hdr.data_len % sizeof(modem_oper_t) == 0))
     {
@@ -499,7 +449,7 @@ char* modem_at_command(modem_t* modem, const char* query)
     rpc_free(p);
 
     /* receive result and unpack it */
-    p = rpc_recv(sock);
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
     if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len)
         if((res = malloc(p->hdr.data_len + 1)))

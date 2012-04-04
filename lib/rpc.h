@@ -57,7 +57,7 @@ typedef struct
  *
  * Result must be free by function free()
  */
-rpc_packet_t* rpc_create(rpc_packet_type_t type, const char* func, uint8_t* data, uint16_t data_len);
+rpc_packet_t* rpc_create(rpc_packet_type_t type, const char* func, const uint8_t* data, uint16_t data_len);
 
 /**
  * @brief receive packet over socket
@@ -75,6 +75,17 @@ int rpc_send(int sock, rpc_packet_t *p);
  * Packet must be free by function rpc_free()
  */
 rpc_packet_t* rpc_recv(int sock);
+
+/**
+ * @brief receive packet over socket
+ * @param sock socket
+ * @param func receive only this function
+ * @param tries give up after tries, must be great 0
+ * @return pointer to packet, or NULL if failed
+ *
+ * Packet must be free by function rpc_free()
+ */
+rpc_packet_t* rpc_recv_func(int sock, const char* func, int tries);
 
 /**
  * @brief free memory used by packet

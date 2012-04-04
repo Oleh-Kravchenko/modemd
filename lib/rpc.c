@@ -8,7 +8,7 @@
 
 /*------------------------------------------------------------------------*/
 
-rpc_packet_t* rpc_create(rpc_packet_type_t type, const char* func, uint8_t* data, uint16_t data_len)
+rpc_packet_t* rpc_create(rpc_packet_type_t type, const char* func, const uint8_t* data, uint16_t data_len)
 {
     rpc_packet_t* res;
 
@@ -157,6 +157,28 @@ exit:
 
 /*------------------------------------------------------------------------*/
 
+rpc_packet_t* rpc_recv_func(int sock, const char* func, int tries)
+{
+    rpc_packet_t* res = NULL;
+
+    while(tries)
+    {
+        res = rpc_recv(sock);
+
+        if(res && strcmp(res->func, func) == 0)
+            break;
+
+        rpc_free(res);
+        res = NULL;
+
+        -- tries;
+    }
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
 void rpc_free(rpc_packet_t *p)
 {
     if(!p)
@@ -171,13 +193,16 @@ void rpc_free(rpc_packet_t *p)
 
 void rpc_print(rpc_packet_t *p)
 {
-//#ifdef __MODEMD_DEBUG
+#ifdef __MODEMD_DEBUG
     int i;
+
+    if(!p)
+        return;
 
     printf("==== %s %s(%d) data(%d) = [", p->hdr.type ? "Response" : "Query" , p->func, p->hdr.func_len, p->hdr.data_len);
 
     for(i = 0; i < p->hdr.data_len; ++ i)
         printf(" %02x", p->data[i]);
     puts(" ]");
-//#endif
+#endif
 }
