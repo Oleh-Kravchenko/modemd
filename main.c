@@ -199,6 +199,11 @@ int srv_run(void)
 
         /* and wait another connection */
         sa_client_len = sizeof(sa_client);
+
+#if 0
+        srv_terminate = 1;
+        sleep(30);
+#endif
     }
 
 err_listen:

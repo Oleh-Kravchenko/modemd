@@ -75,13 +75,13 @@ rpc_packet_t* modem_find_next_packet(modem_client_thread_t* priv, rpc_packet_t* 
 
 rpc_packet_t* modem_open_by_port(modem_client_thread_t* priv, rpc_packet_t* p)
 {
-    char port[0xff] = {"A"};
-    char tty[0xff] = {0};
-    int path_len, modem = 0;
     rpc_packet_t *res = NULL;
+    int path_len, modem = 0;
     int modem_wakeup_tries;
+    char port[0x100] = {0};
+    char tty[0x100] = {0};
 
-    path_len = p->hdr.data_len > sizeof(port) ? sizeof(port) : p->hdr.data_len;
+    path_len = p->hdr.data_len >= sizeof(port) ? sizeof(port) - 1 : p->hdr.data_len;
     memcpy(port, p->data, path_len);
     port[path_len] = 0;
 
@@ -184,11 +184,8 @@ rpc_packet_t* modem_get_signal_quality(modem_client_thread_t* priv, rpc_packet_t
     /* cutting IMEI number from the reply */
     if(q->answer)
     {
-        memset(rssi, 0, sizeof(rssi));
-        memset(ber, 0, sizeof(ber));
-
-        memcpy(rssi, q->answer + q->re_subs[1].rm_so, q->re_subs[1].rm_eo - q->re_subs[1].rm_so);
-        memcpy(ber, q->answer + q->re_subs[2].rm_so, q->re_subs[2].rm_eo - q->re_subs[2].rm_so);
+        __REGMATCH_N_CUT(rssi, q->answer, q->re_subs[1]);
+        __REGMATCH_N_CUT(ber, q->answer, q->re_subs[2]);
 
         nrssi = atoi(rssi);
         nber = atoi(ber);
@@ -227,8 +224,7 @@ rpc_packet_t* modem_get_network_time(modem_client_thread_t* priv, rpc_packet_t* 
     /* cutting TIME from the reply */
     if(q->answer)
     {
-        memcpy(dt, q->answer + q->re_subs[1].rm_so, q->re_subs[1].rm_eo - q->re_subs[1].rm_so);
-        dt[q->re_subs[1].rm_eo - q->re_subs[1].rm_so] = 0;
+        __REGMATCH_N_CUT(dt, q->answer, q->re_subs[1]);
 
         /* parsing date and time */
         strptime(dt, "%Y/%m/%d\r\n%H:%M:%S", &tm);
@@ -377,11 +373,8 @@ rpc_packet_t* modem_get_fw_version(modem_client_thread_t* priv, rpc_packet_t* p)
     /* cutting Operator name from the answer */
     if(q->answer)
     {
-        memcpy(firmware, q->answer + q->re_subs[1].rm_so, q->re_subs[1].rm_eo - q->re_subs[1].rm_so);
-        firmware[q->re_subs[1].rm_eo - q->re_subs[1].rm_so] = 0;
-
-        memcpy(release, q->answer + q->re_subs[2].rm_so, q->re_subs[2].rm_eo - q->re_subs[2].rm_so);
-        release[q->re_subs[2].rm_eo - q->re_subs[2].rm_so] = 0;
+        __REGMATCH_N_CUT(firmware, q->answer, q->re_subs[1]);
+        __REGMATCH_N_CUT(release, q->answer, q->re_subs[2]);
 
         /* create result */
         strncpy(fw_info.firmware, firmware, sizeof(fw_info.firmware) - 1);
@@ -486,18 +479,22 @@ rpc_packet_t* modem_at_command(modem_client_thread_t* priv, rpc_packet_t* p)
 rpc_packet_t* modem_get_cell_id(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
+    char cell_ids[0x100];
     mc7700_query_t *q;
+    int32_t cell_id;
 
-    q = mc7700_query_create("AT!GSMINFO?\r\n", "\r\n!GSMINFO:.*Cell ID: +([0-9]+).*\r\n\r\nOK\r\n");
+    q = mc7700_query_create("AT!GSMINFO?\r\n", "!GSMINFO:.*\r\nCell ID:[\t]*([0-9]+)\r\n.*\r\nOK\r\n");
     mc7700_query_execute(thread_priv.q, q);
 
     /* cutting Cell ID number from the reply */
     if(q->answer)
-        res = rpc_create(
-            TYPE_RESPONSE, __func__,
-            (uint8_t*)q->answer + q->re_subs[1].rm_so,
-            q->re_subs[1].rm_eo - q->re_subs[1].rm_so
-        );
+    {
+        __REGMATCH_N_CUT(cell_ids, q->answer, q->re_subs[1])
+
+        cell_id = atoi(cell_ids);
+
+        res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)&cell_id, sizeof(cell_id));
+    }
 
     mc7700_query_destroy(q);
 

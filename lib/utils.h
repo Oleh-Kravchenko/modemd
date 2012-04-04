@@ -7,10 +7,21 @@
 
 /*------------------------------------------------------------------------*/
 
-#define __REGMATCH_CUT(dst, src, re_subs)                                \
-{                                                                        \
-    memcpy(dst, (src) + re_subs.rm_so, re_subs.rm_eo - re_subs.rm_so);   \
-    dst[re_subs.rm_eo - re_subs.rm_so] = 0;                              \
+#define __REGMATCH_CUT(dst, src, re_subs)                                  \
+{                                                                          \
+    memcpy(dst, (src) + re_subs.rm_so, re_subs.rm_eo - re_subs.rm_so);     \
+    dst[re_subs.rm_eo - re_subs.rm_so] = 0;                                \
+}
+
+#define __REGMATCH_N_CUT(dst, src, re_subs)                                \
+{                                                                          \
+    size_t len;                                                            \
+                                                                           \
+    len = re_subs.rm_eo - re_subs.rm_so;                                   \
+    len = (len >= sizeof(dst) ? sizeof(dst) - 1 : len);                    \
+                                                                           \
+    memcpy(dst, src + re_subs.rm_so, len);                                 \
+    dst[len] = 0;                                                          \
 }
 
 /*------------------------------------------------------------------------*/

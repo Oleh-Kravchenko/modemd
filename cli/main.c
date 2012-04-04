@@ -30,7 +30,11 @@ const char help[] =
     "-d - detect all known modems\n"
     "-p - modem port, for example 1-1\n"
     "-c - execute at command\n"
-    "-t - perform a standard sequence of commands on modem";
+    "-t - perform a standard sequence of commands on modem\n\n"
+    "Examples:\n"
+    "modem_cli -d -c ATI                             - show AT information\n"
+    "modem_cli -d -c 'AT+CGDCONT=1,\"IP\",\"apn.com\"'   - set apn\n"
+    "modem_cli -d -c 'AT+CPIN=\"1111\"'                - set pin code";
 
 /*------------------------------------------------------------------------*/
 
@@ -118,6 +122,7 @@ void modem_test(const char* port)
     char msg[0x100];
     modem_t* modem;
     time_t t;
+    int cell;
 
     /* try open modem */
     if(!(modem = modem_open_by_port(port)))
@@ -155,6 +160,9 @@ void modem_test(const char* port)
         strftime(msg, sizeof(msg), "%Y.%m.%d %H:%M:%S", tm);
         printf("Firmware: %s, Release: %s\n", fw_info.firmware, msg);
     }
+
+    if((cell = modem_get_cell_id(modem)))
+        printf("Cell ID: %d\n", cell);
 
 #if 0
     modem_oper_t *opers = NULL;

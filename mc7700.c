@@ -86,7 +86,16 @@ void* mc7700_thread_read(void* prm)
 
         if(res > 0 && p.revents & POLLIN)
         {
-            buf_len += read(priv->fd, buf + buf_len, sizeof(buf) - buf_len - 1);
+            res = read(priv->fd, buf + buf_len, sizeof(buf) - buf_len - 1);
+
+            if(res == -1)
+            {
+                printf("(EE) %s:%d %s()\n", __FILE__, __LINE__, __func__);
+
+                continue;
+            }
+
+            buf_len += res;
 
             if(buf_len > 0 && query)
             {
@@ -97,7 +106,7 @@ void* mc7700_thread_read(void* prm)
                 if(strncmp(query->query, buf, buf_len) == 0)
                     printf("%s:%d %s() Allowed echo commands is detected!\n", __FILE__, __LINE__, __func__);
 #endif
-                printf("(II) readed(%d) [\n%s\n]\n\n", buf_len, buf);
+                printf("(II) read(%d) [\n%s\n]\n\n", buf_len, buf);
 #endif /*__MODEMD_DEBUG */
 
                 regcomp(&re, query->answer_reg, REG_EXTENDED);

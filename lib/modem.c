@@ -63,7 +63,7 @@ void modem_cleanup(void)
 
 /*------------------------------------------------------------------------*/
 
-#define RPC_FUNCTION_VOID(result, funcname)                                \
+#define RPC_FUNCTION_PRM_VOID(result, funcname)                            \
                                                                            \
     result funcname##_res_unpack(rpc_packet_t*);                           \
                                                                            \
@@ -90,9 +90,47 @@ void modem_cleanup(void)
 
 /*------------------------------------------------------------------------*/
 
-RPC_FUNCTION_VOID(modem_info_t*, modem_find_first)
-RPC_FUNCTION_VOID(modem_info_t*, modem_find_next)
-RPC_FUNCTION_VOID(modem_network_reg_t, modem_network_registration)
+#define RPC_FUNCTION_RES_STR(funcname)                                     \
+                                                                           \
+    char* funcname(modem_t *modem, char *s, int len)                       \
+    {                                                                      \
+        rpc_packet_t* p;                                                   \
+        char* res = NULL;                                                  \
+                                                                           \
+        /* build packet and send it */                                     \
+        p = rpc_create(TYPE_QUERY, __func__, NULL, 0);                     \
+        rpc_send(sock, p);                                                 \
+        rpc_free(p);                                                       \
+                                                                           \
+        /* receive result and unpack it */                                 \
+        p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);                \
+                                                                           \
+        if(p && p->hdr.data_len)                                           \
+        {                                                                  \
+            len = (p->hdr.data_len >= len ? len - 1 : p->hdr.data_len);    \
+            memcpy(s, (const char*)p->data, len);                          \
+            s[len] = 0;                                                    \
+                                                                           \
+            res = s;                                                       \
+        }                                                                  \
+                                                                           \
+        rpc_free(p);                                                       \
+                                                                           \
+        return(res);                                                       \
+    }
+
+/*------------------------------------------------------------------------*/
+
+RPC_FUNCTION_PRM_VOID(modem_info_t*, modem_find_first)
+RPC_FUNCTION_PRM_VOID(modem_info_t*, modem_find_next)
+RPC_FUNCTION_PRM_VOID(modem_network_reg_t, modem_network_registration)
+
+/*------------------------------------------------------------------------*/
+
+RPC_FUNCTION_RES_STR(modem_get_imei)
+RPC_FUNCTION_RES_STR(modem_get_imsi)
+RPC_FUNCTION_RES_STR(modem_get_operator_name)
+RPC_FUNCTION_RES_STR(modem_get_network_type)
 
 /*------------------------------------------------------------------------*/
 
@@ -141,10 +179,10 @@ modem_t* modem_open_by_port(const char* port)
 
     /* receive result and unpack it */
     p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
-//    res = modem_open_by_port_res_unpack(p);
     rpc_free(p);
 
     /* returning result */
+    /* on this stage this result is not necessary */
     return((modem_t*)p->data);
 }
 
@@ -154,21 +192,8 @@ void modem_close(modem_t* modem)
 {
     rpc_packet_t* p;
 
-    /* build packet and send it */
-    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
-    rpc_send(sock, p);
-    rpc_free(p);
-
-    /* receive result and unpack it */
-    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
-    rpc_free(p);
-}
-
-/*------------------------------------------------------------------------*/
-
-char* modem_get_imei(modem_t* modem, char* imei, int len)
-{
-    rpc_packet_t* p;
+    if(!modem)
+        return;
 
     /* build packet and send it */
     p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
@@ -177,19 +202,7 @@ char* modem_get_imei(modem_t* modem, char* imei, int len)
 
     /* receive result and unpack it */
     p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
-
-    if(p && strcmp(p->func, __func__) == 0)
-    {
-        len = (p->hdr.data_len > len ? len : p->hdr.data_len);
-        memcpy(imei, (const char*)p->data, len);
-        imei[len] = 0;
-
-        rpc_free(p);
-
-        return(imei);
-    }
-
-    return(NULL);
+    rpc_free(p);
 }
 
 /*------------------------------------------------------------------------*/
@@ -207,9 +220,10 @@ int modem_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
     /* receive result and unpack it */
     p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
-    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len == sizeof(*sq))
+    if(p && p->hdr.data_len == sizeof(*sq))
     {
         memcpy(sq, p->data, sizeof(*sq));
+
         res = 0;
     }
 
@@ -233,93 +247,8 @@ time_t modem_get_network_time(modem_t* modem)
     /* receive result and unpack it */
     p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
-    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len == sizeof(time_t))
+    if(p && p->hdr.data_len == sizeof(time_t))
         res = *((time_t*)p->data);
-
-    rpc_free(p);
-
-    return(res);
-}
-
-/*------------------------------------------------------------------------*/
-
-char* modem_get_imsi(modem_t* modem,char *imsi, int len)
-{
-    rpc_packet_t* p;
-
-    /* build packet and send it */
-    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
-    rpc_send(sock, p);
-    rpc_free(p);
-
-    /* receive result and unpack it */
-    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
-
-    if(p && strcmp(p->func, __func__) == 0)
-    {
-        len = (p->hdr.data_len > len ? len : p->hdr.data_len);
-        memcpy(imsi, (const char*)p->data, len);
-        imsi[len] = 0;
-
-        rpc_free(p);
-
-        return(imsi);
-    }
-
-    return(NULL);
-}
-
-/*------------------------------------------------------------------------*/
-
-char* modem_get_operator_name(modem_t *modem, char *oper, int len)
-{
-    rpc_packet_t* p;
-
-    /* build packet and send it */
-    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
-    rpc_send(sock, p);
-    rpc_free(p);
-
-    /* receive result and unpack it */
-    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
-
-    if(p && strcmp(p->func, __func__) == 0)
-    {
-        len = (p->hdr.data_len > len ? len : p->hdr.data_len);
-        memcpy(oper, (const char*)p->data, len);
-        oper[len] = 0;
-
-        rpc_free(p);
-
-        return(oper);
-    }
-
-    return(NULL);
-}
-
-/*------------------------------------------------------------------------*/
-
-char* modem_get_network_type(modem_t* modem, char *network, int len)
-{
-    rpc_packet_t* p;
-    char* res = NULL;
-
-    /* build packet and send it */
-    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
-    rpc_send(sock, p);
-    rpc_free(p);
-
-    /* receive result and unpack it */
-    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
-
-    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len)
-    {
-        len = (p->hdr.data_len > len ? len : p->hdr.data_len);
-        memcpy(network, (const char*)p->data, len);
-        network[len] = 0;
-
-        res = network;
-    }
 
     rpc_free(p);
 
@@ -345,7 +274,7 @@ int modem_change_pin(modem_t* modem, const char* old_pin, const char* new_pin)
     /* receive result and unpack it */
     p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
-    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len)
+    if(p && p->hdr.data_len)
         res = 0;
 
     rpc_free(p);
@@ -368,9 +297,10 @@ modem_fw_version_t* modem_get_fw_version(modem_t* modem, modem_fw_version_t* fw_
     /* receive result and unpack it */
     p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
-    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len == sizeof(*fw_info))
+    if(p && p->hdr.data_len == sizeof(*fw_info))
     {
         memcpy(fw_info, (const char*)p->data, sizeof(*fw_info));
+
         res = fw_info;
     }
 
@@ -394,9 +324,10 @@ modem_info_t* modem_get_info(modem_t* modem, modem_info_t *mi)
     /* receive result and unpack it */
     p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
-    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len == sizeof(*mi))
+    if(p && p->hdr.data_len == sizeof(*mi))
     {
         memcpy(mi, (const char*)p->data, sizeof(*mi));
+
         res = mi;
     }
 
@@ -410,8 +341,7 @@ modem_info_t* modem_get_info(modem_t* modem, modem_info_t *mi)
 int modem_get_cell_id(modem_t* modem)
 {
     rpc_packet_t* p;
-    char val[30];
-    int res=0;
+    int res = 0;
 
     /* build packet and send it */
     p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
@@ -421,14 +351,10 @@ int modem_get_cell_id(modem_t* modem)
     /* receive result and unpack it */
     p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
-    if(p && strcmp(p->func, __func__) == 0)
-    {
-        memcpy(val, (const char*)p->data, p->hdr.data_len);
-        val[p->hdr.data_len] = 0;
+    if(p && p->hdr.data_len == sizeof(int32_t))
+        res = *((int32_t*)p->data);
 
-        res=atoi(val);
-        rpc_free(p);
-    }
+    rpc_free(p);
 
     return res;
 }
@@ -448,7 +374,7 @@ int modem_operator_scan(modem_t* modem, modem_oper_t** opers)
     /* receive result and unpack it */
     p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
-    if(p && strcmp(p->func, __func__) == 0 && (p->hdr.data_len % sizeof(modem_oper_t) == 0))
+    if(p && (p->hdr.data_len % sizeof(modem_oper_t) == 0))
     {
         if((*opers = malloc(p->hdr.data_len)))
         {
@@ -479,7 +405,7 @@ char* modem_at_command(modem_t* modem, const char* query)
     /* receive result and unpack it */
     p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
-    if(p && strcmp(p->func, __func__) == 0 && p->hdr.data_len)
+    if(p && p->hdr.data_len)
         if((res = malloc(p->hdr.data_len + 1)))
         {
             memcpy(res, p->data, p->hdr.data_len);

@@ -194,7 +194,7 @@ void rpc_free(rpc_packet_t *p)
 
 void rpc_print(rpc_packet_t *p)
 {
-#ifdef __MODEMD_DEBUG
+#if 0
     int i;
 
     if(!p)
