@@ -77,7 +77,6 @@ void* mc7700_thread_read(void* prm)
     thread_queue_t *priv = prm;
     struct pollfd p = {priv->fd, POLLIN, 0};
     int buf_len = 0, res = 0, giveup = 0, re_res;
-    char re_err[0x100];
     char buf[0xffff];
     regex_t re;
 
@@ -109,6 +108,8 @@ void* mc7700_thread_read(void* prm)
                 if(re_res)
                 {
 #if 0
+                    char re_err[0x100];
+
                     regerror(re_res, &re, re_err, sizeof(re_err));
 
                     printf("(EE) regexec() %s [\n%s\n]\n", re_err, buf);
