@@ -3,7 +3,7 @@
 
 #include <time.h>
 
-#include "modem/types.h"
+#include "types.h"
 
 /***************************************************************************
  * Initialization                                                          *
@@ -106,6 +106,8 @@ modem_info_t* modem_get_info(modem_t* modem, modem_info_t *mi);
  * After usage must be called free(opers)
  */
 int modem_operator_scan(modem_t* modem, modem_oper_t** opers);
+
+int modem_get_cell_id(modem_t* modem);
 
 char* modem_at_command(modem_t* modem, const char* query);
 

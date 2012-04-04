@@ -407,6 +407,34 @@ modem_info_t* modem_get_info(modem_t* modem, modem_info_t *mi)
 
 /*------------------------------------------------------------------------*/
 
+int modem_get_cell_id(modem_t* modem)
+{
+    rpc_packet_t* p;
+    char val[30];
+    int res=0;
+
+    /* build packet and send it */
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
+    rpc_send(sock, p);
+    rpc_free(p);
+
+    /* receive result and unpack it */
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
+
+    if(p && strcmp(p->func, __func__) == 0)
+    {
+        memcpy(val, (const char*)p->data, p->hdr.data_len);
+        val[p->hdr.data_len] = 0;
+
+        res=atoi(val);
+        rpc_free(p);
+    }
+
+    return res;
+}
+
+/*------------------------------------------------------------------------*/
+
 int modem_operator_scan(modem_t* modem, modem_oper_t** opers)
 {
     rpc_packet_t* p;

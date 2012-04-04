@@ -483,6 +483,29 @@ rpc_packet_t* modem_at_command(modem_client_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
+rpc_packet_t* modem_get_cell_id(modem_client_thread_t* priv, rpc_packet_t* p)
+{
+    rpc_packet_t *res = NULL;
+    mc7700_query_t *q;
+
+    q = mc7700_query_create("AT!GSMINFO?\r\n", "\r\n!GSMINFO:.*Cell ID: +([0-9]+).*\r\n\r\nOK\r\n");
+    mc7700_query_execute(thread_priv.q, q);
+
+    /* cutting Cell ID number from the reply */
+    if(q->answer)
+        res = rpc_create(
+            TYPE_RESPONSE, __func__,
+            (uint8_t*)q->answer + q->re_subs[1].rm_so,
+            q->re_subs[1].rm_eo - q->re_subs[1].rm_so
+        );
+
+    mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
 const rpc_function_info_t rpc_functions[] = {
     {"modem_find_first", modem_find_first_packet},
     {"modem_find_next", modem_find_next_packet},
@@ -500,6 +523,7 @@ const rpc_function_info_t rpc_functions[] = {
     {"modem_get_info", modem_get_info},
     {"modem_operator_scan", modem_operator_scan},
     {"modem_at_command", modem_at_command},
+    {"modem_get_cell_id", modem_get_cell_id},
     {{0, 0}},
 };
 
