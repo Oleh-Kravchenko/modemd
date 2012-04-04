@@ -113,13 +113,11 @@ void modem_test(const char* port)
 {
     modem_fw_version_t fw_info;
     modem_signal_quality_t sq;
-    modem_oper_t *opers = NULL;
     const struct tm* tm;
     modem_info_t mi;
     char msg[0x100];
     modem_t* modem;
     time_t t;
-    int i ;
 
     /* try open modem */
     if(!(modem = modem_open_by_port(port)))
@@ -158,6 +156,10 @@ void modem_test(const char* port)
         printf("Firmware: %s, Release: %s\n", fw_info.firmware, msg);
     }
 
+#if 0
+    modem_oper_t *opers = NULL;
+    int i;
+
     puts("Performing operator scan:");
 
     i = modem_operator_scan(modem, &opers);
@@ -171,6 +173,7 @@ void modem_test(const char* port)
     }
 
     free(opers);
+#endif
 
     /* close modem */
     modem_close(modem);
