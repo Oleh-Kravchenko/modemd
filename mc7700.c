@@ -94,11 +94,12 @@ void* mc7700_thread_read(void* prm)
                 buf[buf_len] = 0;
 
 #ifdef __MODEMD_DEBUG
+#if 0
                 if(strncmp(query->query, buf, buf_len) == 0)
                     printf("%s:%d %s() Allowed echo commands is detected!\n", __FILE__, __LINE__, __func__);
-
-                printf("(II) buf(%d) [\n%s\n]\n\n", buf_len, buf);
 #endif
+                printf("(II) readed(%d) [\n%s\n]\n\n", buf_len, buf);
+#endif /*__MODEMD_DEBUG */
 
                 regcomp(&re, query->answer_reg, REG_EXTENDED);
                 query->n_subs = re.re_nsub + 1;
@@ -107,9 +108,9 @@ void* mc7700_thread_read(void* prm)
 
                 if(re_res)
                 {
+#if 0
                     regerror(re_res, &re, re_err, sizeof(re_err));
 
-#ifdef __MODEMD_DEBUG
                     printf("(EE) regexec() %s [\n%s\n]\n", re_err, buf);
 #endif
                     free(query->re_subs);
@@ -135,7 +136,11 @@ void* mc7700_thread_read(void* prm)
         {
 #ifdef __MODEMD_DEBUG
     if(giveup >= query->timeout)
+    {
         printf("%s:%d %s() Command [%s] timeout after %d second(s)\n", __FILE__, __LINE__, __func__, query->query, giveup);
+
+        printf("(EE) No match [\n%s\n]\n", buf);
+    }
 #endif
 
             /* reporting about reply */
