@@ -113,14 +113,14 @@ int modem_operator_scan(modem_t* modem, modem_oper_t** opers);
  * @return 0 if scan is started
  * @remark this function only for openrg
  */
-int modem_operator_scan_start(const char* file);
+int modem_operator_scan_start(modem_t* modem, const char* file);
 
 /**
  * @brief report about background operator scan
  * @return -1 error, 0 not running, 1 scanning is running
  * @remark this function only for openrg
  */
-int modem_operator_scan_is_running(void);
+int modem_operator_scan_is_running(modem_t* modem);
 
 int modem_get_cell_id(modem_t* modem);
 

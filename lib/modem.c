@@ -419,7 +419,7 @@ char* modem_at_command(modem_t* modem, const char* query)
 
 /*------------------------------------------------------------------------*/
 
-int modem_operator_scan_start(const char* file)
+int modem_operator_scan_start(modem_t* modem, const char* file)
 {
     rpc_packet_t* p;
     int res = -1;
@@ -442,7 +442,7 @@ int modem_operator_scan_start(const char* file)
 
 /*------------------------------------------------------------------------*/
 
-int modem_operator_scan_is_running(void)
+int modem_operator_scan_is_running(modem_t* modem)
 {
     rpc_packet_t* p;
     int res = -1;
