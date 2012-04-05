@@ -287,7 +287,7 @@ void* at_thread_operator_scan(void* prm)
     if((nopers = at_operator_scan(priv->priv->q, &opers)) == 0)
         goto exit;
 
-    if(!(f = fopen("/tmp/op_list.conf", "w")))
+    if(!(f = fopen(priv->file, "w")))
         goto err_fopen;
 
     for(i = 0; i < nopers; ++ i)

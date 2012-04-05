@@ -49,7 +49,7 @@ void* mc7700_thread_write(void* prm)
         free(buf);
 
 #ifdef __MODEMD_DEBUG
-        printf("(II) query [\n%s\n]\n", priv->query->query);
+        printf("(II) write [\n%s\n]\n", priv->query->query);
 #endif
 
         write(priv->fd, priv->query->query, strlen(priv->query->query));
@@ -121,7 +121,6 @@ void* mc7700_thread_read(void* prm)
                     regfree(&re);
 
                     priv->query->error = at_parse_error(buf);
-                    printf("(WW) CME ERROR: %d\n", priv->query->error);
 
                     if(priv->query->error == -1)
                         /* no error detected, proceed collecting data */
