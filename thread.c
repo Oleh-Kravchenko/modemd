@@ -194,11 +194,13 @@ rpc_packet_t* modem_get_signal_quality(modem_client_thread_t* priv, rpc_packet_t
         sq.dbm = (nrssi > 31) ? 0 : nrssi * 2 - 113;
 
         /* calculation signal level */
-        sq.level = !!sq.dbm;
-        sq.level += (sq.dbm >= -95);
-        sq.level += (sq.dbm >= -85);
-        sq.level += (sq.dbm >= -73);
-        sq.level += (sq.dbm >= -65);
+        if((sq.level = !!sq.dbm))
+        {
+            sq.level += (sq.dbm >= -95);
+            sq.level += (sq.dbm >= -85);
+            sq.level += (sq.dbm >= -73);
+            sq.level += (sq.dbm >= -65);
+        }
 
         res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)&sq, sizeof(sq));
     }
