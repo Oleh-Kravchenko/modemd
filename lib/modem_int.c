@@ -204,6 +204,7 @@ int at_raw_ok(queue_t* queue, const char* cmd)
     int res;
 
     q = mc7700_query_create(cmd, "\r\nOK\r\n");
+    q->timeout = 10;
     mc7700_query_execute(queue, q);
 
     res = (q->answer ? 0 : -1);
@@ -303,4 +304,58 @@ err_fopen:
 exit:
     free(priv);
     return(NULL);
+}
+
+/*------------------------------------------------------------------------*/
+
+modem_network_reg_t at_creg(queue_t* queue)
+{
+    modem_network_reg_t nr = MODEM_NETWORK_REG_UNKNOWN;
+    mc7700_query_t *q;
+    int nnr;
+
+#ifdef __HW_C1KMBR
+    q = mc7700_query_create("AT+CEREG?\r\n", "\r\n\\+CEREG: [0-9],([0-9])\r\n\r\nOK\r\n");
+#else
+    q = mc7700_query_create("AT+CREG?\r\n", "\r\n\\+CREG: [0-9],([0-9])\r\n\r\nOK\r\n");
+#endif /* __HW_C1KMBR */
+
+    mc7700_query_execute(queue, q);
+
+    if(q->answer)
+    {
+        /* cutting registration status from the reply and check value */
+        /* fast ASCII digit conversion (char - 0x30) */
+        nnr = *(q->answer + q->re_subs[1].rm_so) - 0x30;
+        nr = (nnr >= 0 && nnr <= 5) ? nnr : MODEM_NETWORK_REG_UNKNOWN;
+    }
+
+    mc7700_query_destroy(q);
+
+    return(nr);
+}
+
+/*------------------------------------------------------------------------*/
+
+modem_cops_mode_t at_cops_mode(queue_t* queue)
+{
+    modem_cops_mode_t nr = MODEM_COPS_MODE_UNKNOWN;
+    mc7700_query_t *q;
+    int nnr;
+
+    q = mc7700_query_create("AT+COPS?\r\n", "\\+COPS: ([01234]),?.*\r\n\r\nOK\r\n");
+
+    mc7700_query_execute(queue, q);
+
+    if(q->answer)
+    {
+        /* cutting registration status from the reply and check value */
+        /* fast ASCII digit conversion (char - 0x30) */
+        nnr = *(q->answer + q->re_subs[1].rm_so) - 0x30;
+        nr = (nnr >= 0 && nnr <= 4) ? nnr : MODEM_COPS_MODE_UNKNOWN;
+    }
+
+    mc7700_query_destroy(q);
+
+    return(nr);
 }

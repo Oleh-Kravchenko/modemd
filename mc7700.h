@@ -34,6 +34,21 @@ typedef struct mc7700_query_s
 
 typedef struct
 {
+    char pin[20];
+
+    char puk[20];
+
+    int roaming_enable;
+
+    int operator_number;
+
+    int frequency_band;
+} modem_conf_t;
+ 
+/*------------------------------------------------------------------------*/
+
+typedef struct
+{
     int fd;
 
     pthread_cond_t processed;
@@ -52,9 +67,13 @@ typedef struct
 
     pthread_t thread_read;
 
+    pthread_t thread_reg;
+
     pthread_t thread_scan;
 
     mc7700_query_t* query;
+
+    modem_conf_t conf;
 } thread_queue_t;
 
 /*------------------------------------------------------------------------*/

@@ -34,4 +34,8 @@ int at_operator_scan(queue_t* queue, modem_oper_t** opers);
  */
 void* at_thread_operator_scan(void* prm);
 
+modem_network_reg_t at_creg(queue_t* queue);
+
+modem_cops_mode_t at_cops_mode(queue_t* queue);
+
 #endif /* __MODEM_INTERNAL_H */

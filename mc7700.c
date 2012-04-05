@@ -183,6 +183,110 @@ void* mc7700_thread_read(void* prm)
     return(NULL);
 }
 
+
+/*------------------------------------------------------------------------*/
+
+void* mc7700_thread_reg(void* prm)
+{
+    thread_queue_t *priv = prm;
+    char s[0x100];
+    int res_ok;
+
+    at_raw_ok(priv->q, "ATE0\r\n");
+    at_raw_ok(priv->q, "AT+CMEE=1\r\n");
+    at_raw_ok(priv->q, "AT+CFUN=1\r\n");
+#ifdef __HW_C1KMBR
+    snprintf(s, sizeof(s), "AT!BAND=%02X\r\n", priv->conf.frequency_band);
+    res_ok = at_raw_ok(priv->q, s);
+#endif /* __HW_C1KMBR */
+
+    /* pin && puk handling */
+    res_ok = -1;
+    switch(at_cpin_state(priv->q))
+    {
+        case MODEM_CPIN_STATE_PIN:
+            if(*priv->conf.pin)
+                res_ok = at_cpin_pin(priv->q, priv->conf.pin);
+            break;
+
+        case MODEM_CPIN_STATE_PUK:
+            if(*priv->conf.pin && *priv->conf.puk)
+                res_ok = at_cpin_puk(priv->q, priv->conf.puk, priv->conf.pin);
+            break;
+    }
+
+    priv->locked = res_ok == -1;
+
+/*    if(priv->conf.operator_number)
+    {
+        snprintf(s, sizeof(s), "AT+COPS=1,2,%d\r\n", priv->conf.operator_number);
+        res_ok = at_raw_ok(priv->q, s);
+    }
+    else
+        at_raw_ok(priv->q, "AT+COPS=0\r\n");*/
+
+
+    return(NULL);
+}
+
+/*------------------------------------------------------------------------*/
+
+void mc7700_read_config(const char* port, modem_conf_t* conf)
+{
+    char s[0x100];
+    FILE *f;
+
+    /* default values */
+    *conf->pin = 0;
+    *conf->puk = 0;
+    conf->roaming_enable = 0;
+    conf->operator_number = 0;
+    conf->frequency_band = 0;
+
+    /* path to config */
+    snprintf(s, sizeof(s), "/etc/modemd/%s/conf", port);
+
+    if(!(f = fopen(s, "r")))
+        return;
+
+    while(!feof(f))
+    {
+        if(!fgets(s, sizeof(s), f))
+            continue;
+
+#define CONF_PIN     "pin="
+#define CONF_PUK     "puk="
+#define CONF_ROAMING "roaming_enable=yes"
+#define CONF_OPER    "operator_number="
+#define CONF_BAND    "frequency_band="
+
+        if(strstr(s, CONF_PIN) == s)
+        {
+            strncpy(conf->pin, s + strlen(CONF_PIN), sizeof(conf->pin) - 1);
+            conf->pin[sizeof(conf->pin) - 1] = 0;
+        }
+        else if(strstr(s, CONF_PUK) == s)
+        {
+            strncpy(conf->puk, s + strlen(CONF_PUK), sizeof(conf->puk) - 1);
+            conf->puk[sizeof(conf->puk) - 1] = 0;
+        }
+        else if(strstr(s, CONF_ROAMING))
+        {
+            conf->roaming_enable = 1;
+        }
+        else if(strstr(s, CONF_OPER) == s)
+        {
+            conf->operator_number = atoi(s + strlen(CONF_OPER));
+        }
+        else if(strstr(s, CONF_BAND) == s)
+        {
+            conf->frequency_band = atoi(s + strlen(CONF_BAND));
+        }
+    }
+
+    fclose(f);
+}
+
 /*------------------------------------------------------------------------*/
 
 int mc7700_open(const char *port)
@@ -193,12 +297,17 @@ int mc7700_open(const char *port)
     mc7700_thread_priv.fd = serial_open(port, O_RDWR);
     mc7700_thread_priv.q = queue_create();
     mc7700_thread_priv.terminate = 0;
-    mc7700_thread_priv.locked = 0;
+    mc7700_thread_priv.locked = 1;
     mc7700_thread_priv.query = NULL;
     pthread_cond_init(&mc7700_thread_priv.processed, NULL);
     pthread_mutex_init(&mc7700_thread_priv.mutex, NULL);
 
     mc7700_thread_priv.thread_scan = 0;
+
+    mc7700_read_config(port, &mc7700_thread_priv.conf);
+
+    /* creating registration thread */
+    pthread_create(&mc7700_thread_priv.thread_reg, NULL, mc7700_thread_reg, &mc7700_thread_priv);
 
     /* creating reading thread */
     pthread_create(&mc7700_thread_priv.thread_read, NULL, mc7700_thread_read, &mc7700_thread_priv);
@@ -222,6 +331,8 @@ void mc7700_destroy(void)
     {
         if(mc7700_thread_priv.thread_scan)
             pthread_join(mc7700_thread_priv.thread_scan, &thread_res);
+
+        pthread_join(mc7700_thread_priv.thread_reg, &thread_res);
 
         mc7700_thread_priv.terminate = 1;
 

@@ -126,6 +126,18 @@ typedef enum
 
 /*------------------------------------------------------------------------*/
 
+typedef enum
+{
+    MODEM_COPS_MODE_UNKNOWN = -1,
+    MODEM_COPS_MODE_AUTO    = 0,
+    MODEM_COPS_MODE_MANUAL,
+    MODEM_COPS_MODE_DEREGISTER,
+    MODEM_COPS_MODE_SET_FORMAT,
+    MODEM_COPS_MODE_MANUAL_AUTO
+} __attribute__((__packed__)) modem_cops_mode_t;
+
+/*------------------------------------------------------------------------*/
+
 typedef struct
 {
     modem_oper_stat_t stat;

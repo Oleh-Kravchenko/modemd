@@ -169,14 +169,14 @@ void modem_test(const char* port)
         printf("Cell ID: %d\n", cell);
 
 #if 0
-    if(!modem_operator_scan_start("/tmp/op_list.conf"))
+    if(!modem_operator_scan_start(modem, "/tmp/op_list.conf"))
     {
         puts("Operator scanning is started");
 
-        while(modem_operator_scan_is_running() == 1)
+        while(modem_operator_scan_is_running(modem) == 1)
         {
             sleep(1);
-            puts("Operator scanning is runnig");
+            puts("Operator scanning is running");
         }
     }
 #endif
