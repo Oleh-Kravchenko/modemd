@@ -10,6 +10,9 @@
 #include "utils.h"
 #include "rpc.h"
 
+#include "../queue.h"
+#include "../mc7700.h"
+
 /*------------------------------------------------------------------------*/
 
 modem_info_t* usb_device_get_info(const char* port)
@@ -125,4 +128,87 @@ modem_info_t* modem_find_next(DIR **dir)
 
 err:
     return(NULL);
+}
+
+/*------------------------------------------------------------------------*/
+
+modem_cpin_state_t at_cpin_state(queue_t* queue)
+{
+    modem_cpin_state_t res = MODEM_CPIN_STATE_UNKNOWN;
+    mc7700_query_t* q;
+    char cpin_st[8];
+
+    q = mc7700_query_create("AT+CPIN?\r\n", "\r\n\\+CPIN: ((READY)|(SIM PIN)|(SIM PUK))\r\n\r\nOK\r\n");
+    mc7700_query_execute(queue, q);
+
+    if(q->answer)
+    {
+        __REGMATCH_N_CUT(cpin_st, q->answer, q->re_subs[1])
+
+        if(strcmp(cpin_st, "READY") == 0)
+            res = MODEM_CPIN_STATE_READY;
+        else if(strcmp(cpin_st, "SIM PIN") == 0)
+            res = MODEM_CPIN_STATE_PIN;
+        else if(strcmp(cpin_st, "SIM PUK") == 0)
+            res = MODEM_CPIN_STATE_PUK;
+    }
+
+    mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int at_cpin_pin(queue_t* queue, const char* pin)
+{
+    mc7700_query_t* q;
+    char cmd[32];
+    int res;
+
+    snprintf(cmd, sizeof(cmd), "AT+CPIN=\"%s\"\r\n", pin);
+    q = mc7700_query_create(cmd, "\r\nOK\r\n");
+    mc7700_query_execute(queue, q);
+
+    res = (q->answer ? 0 : -1);
+
+    mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int at_cpin_puk(queue_t* queue, const char* puk, const char* pin)
+{
+    mc7700_query_t* q;
+    char cmd[0x100];
+    int res;
+
+    snprintf(cmd, sizeof(cmd), "AT+CPIN=\"%s\",\"%s\"\r\n", puk, pin);
+    q = mc7700_query_create(cmd, "\r\nOK\r\n");
+    mc7700_query_execute(queue, q);
+
+    res = (q->answer ? 0 : -1);
+
+    mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int at_raw_ok(queue_t* queue, const char* cmd)
+{
+    mc7700_query_t* q;
+    int res;
+
+    q = mc7700_query_create(cmd, "\r\nOK\r\n");
+    mc7700_query_execute(queue, q);
+
+    res = (q->answer ? 0 : -1);
+
+    mc7700_query_destroy(q);
+
+    return(res);
 }

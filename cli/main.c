@@ -133,11 +133,15 @@ void modem_test(const char* port)
             mi.port, mi.id_vendor, mi.id_product, mi.manufacturer, mi.product);
 
     /* show modem info */
-    printf("IMEI: [%s]\n", modem_get_imei(modem, msg, sizeof(msg)));
 
-    printf("IMSI: [%s]\n", modem_get_imsi(modem, msg, sizeof(msg)));
+    if(modem_get_imei(modem, msg, sizeof(msg)))
+        printf("IMEI: [%s]\n", msg);
 
-    printf("Operator: [%s]\n", modem_get_operator_name(modem, msg, sizeof(msg)));
+    if(modem_get_imsi(modem, msg, sizeof(msg)))
+        printf("IMSI: [%s]\n", msg);
+
+    if(modem_get_operator_name(modem, msg, sizeof(msg)))
+        printf("Operator: [%s]\n", msg);
 
     if(modem_get_network_type(modem, msg, sizeof(msg)))
         printf("Network: [%s]\n", msg);

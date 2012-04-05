@@ -227,6 +227,19 @@ void on_sigterm(int prm)
 
 /*------------------------------------------------------------------------*/
 
+void create_pid_file(const char* path)
+{
+    FILE *f = fopen(path, "w");
+
+    if(f)
+    {
+        fprintf(f, "%d\n", getpid());
+        fclose(f);
+    }
+}
+
+/*------------------------------------------------------------------------*/
+
 int main(int argc, char** argv)
 {
     int res;
@@ -252,6 +265,9 @@ int main(int argc, char** argv)
 
     signal(SIGTERM, on_sigterm);
     signal(SIGINT, on_sigterm);
+
+    if(*srv_pid_path)
+        create_pid_file(srv_pid_path);
 
     /* run socket server */
     if(srv_run())

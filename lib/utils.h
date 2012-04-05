@@ -85,4 +85,11 @@ char* modem_get_at_port_name(const char* port, char* tty, int tty_len);
  */
 int at_parse_cops_list(const char* s, modem_oper_t** opers);
 
+/**
+ * @brief parse string and return error number
+ * @param s string with ERROR or +CME:
+ * @return -1 if no error
+ */
+int at_parse_error(const char* s);
+
 #endif /* __UTILS_H */

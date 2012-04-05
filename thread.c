@@ -33,6 +33,8 @@ typedef struct
     char name[0x100];
 
     rpc_function_t func;
+
+    int reg_need;
 } rpc_function_info_t;
 
 /*------------------------------------------------------------------------*/
@@ -106,9 +108,9 @@ rpc_packet_t* modem_open_by_port(modem_client_thread_t* priv, rpc_packet_t* p)
         priv->port[sizeof(priv->port) - 1] = 0;
 
         modem = mc7700_open(tty);
-    }
 
-    res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)&modem, sizeof(modem));
+        res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)&modem, sizeof(modem));
+    }
 
     return(res);
 }
@@ -130,7 +132,7 @@ rpc_packet_t* modem_get_imei(modem_client_thread_t* priv, rpc_packet_t* p)
     mc7700_query_t *q;
 
     q = mc7700_query_create("AT+CGSN\r\n", "\r\n([0-9]+)\r\n\r\nOK\r\n");
-    mc7700_query_execute(thread_priv.q, q);
+    mc7700_query_execute(mc7700_thread_priv.q, q);
 
     /* cutting IMEI number from the reply */
     if(q->answer)
@@ -153,7 +155,7 @@ rpc_packet_t* modem_get_imsi(modem_client_thread_t* priv, rpc_packet_t* p)
     mc7700_query_t *q;
 
     q = mc7700_query_create("AT+CIMI\r\n", "\r\n([0-9]+)\r\n\r\nOK\r\n");
-    mc7700_query_execute(thread_priv.q, q);
+    mc7700_query_execute(mc7700_thread_priv.q, q);
 
     /* cutting IMEI number from the reply */
     if(q->answer)
@@ -179,7 +181,7 @@ rpc_packet_t* modem_get_signal_quality(modem_client_thread_t* priv, rpc_packet_t
     int nrssi, nber;
 
     q = mc7700_query_create("AT+CSQ\r\n", "\r\n\\+CSQ: ([0-9]+),([0-9]+)\r\n\r\nOK\r\n");
-    mc7700_query_execute(thread_priv.q, q);
+    mc7700_query_execute(mc7700_thread_priv.q, q);
 
     /* cutting IMEI number from the reply */
     if(q->answer)
@@ -221,7 +223,7 @@ rpc_packet_t* modem_get_network_time(modem_client_thread_t* priv, rpc_packet_t* 
     time_t t;
 
      q = mc7700_query_create("AT!TIME?\r\n", "!TIME:.*\r\n([0-9,/]+\r\n[0-9,:]+) \\(local\\)\r\n[0-9,/]+\r\n[0-9,:]+ \\(UTC\\)\r\n\r\n\r\nOK\r\n");
-    mc7700_query_execute(thread_priv.q, q);
+    mc7700_query_execute(mc7700_thread_priv.q, q);
 
     /* cutting TIME from the reply */
     if(q->answer)
@@ -251,7 +253,7 @@ rpc_packet_t* modem_get_operator_name(modem_client_thread_t* priv, rpc_packet_t*
 
     /* setup format of +COPS as a string */
     q = mc7700_query_create("AT+COPS=3,0\r\n", "\r\nOK\r\n");
-    mc7700_query_execute(thread_priv.q, q);
+    mc7700_query_execute(mc7700_thread_priv.q, q);
     res_ok = !!q->answer;
     mc7700_query_destroy(q);
 
@@ -259,7 +261,7 @@ rpc_packet_t* modem_get_operator_name(modem_client_thread_t* priv, rpc_packet_t*
         return(res);
 
     q = mc7700_query_create("AT+COPS?\r\n", "\r\n\\+COPS: [0-9],[0-9],\"(.+)\",[0-9]\r\n\r\nOK\r\n");
-    mc7700_query_execute(thread_priv.q, q);
+    mc7700_query_execute(mc7700_thread_priv.q, q);
 
     /* cutting Operator name from the answer */
     if(q->answer)
@@ -289,7 +291,7 @@ rpc_packet_t* modem_network_registration(modem_client_thread_t* priv, rpc_packet
     q = mc7700_query_create("AT+CREG?\r\n", "\r\n\\+CREG: [0-9],([0-9])\r\n\r\nOK\r\n");
 #endif /* __HW_C1KMBR */
 
-    mc7700_query_execute(thread_priv.q, q);
+    mc7700_query_execute(mc7700_thread_priv.q, q);
 
     if(q->answer)
     {
@@ -315,7 +317,7 @@ rpc_packet_t* modem_get_network_type(modem_client_thread_t* priv, rpc_packet_t* 
 
     q = mc7700_query_create("AT*CNTI=0\r\n", "\r\n\\*CNTI: 0,(.+)\r\n\r\nOK\r\n");
 
-    mc7700_query_execute(thread_priv.q, q);
+    mc7700_query_execute(mc7700_thread_priv.q, q);
 
     /* cutting Operator name from the answer */
     if(q->answer)
@@ -346,7 +348,7 @@ rpc_packet_t* modem_change_pin(modem_client_thread_t* priv, rpc_packet_t* p)
 
     q = mc7700_query_create(cmd, "\r\nOK\r\n");
 
-    mc7700_query_execute(thread_priv.q, q);
+    mc7700_query_execute(mc7700_thread_priv.q, q);
 
     /* cutting Operator name from the answer */
     if(q->answer)
@@ -370,7 +372,7 @@ rpc_packet_t* modem_get_fw_version(modem_client_thread_t* priv, rpc_packet_t* p)
 
     q = mc7700_query_create("AT+CGMR\r\n", "\r\n.*(SWI.*) .* .* ([0-9,/]+ [0-9,:]+)\r\n\r\nOK\r\n");
 
-    mc7700_query_execute(thread_priv.q, q);
+    mc7700_query_execute(mc7700_thread_priv.q, q);
 
     /* cutting Operator name from the answer */
     if(q->answer)
@@ -422,7 +424,7 @@ rpc_packet_t* modem_operator_scan(modem_client_thread_t* priv, rpc_packet_t* p)
     q = mc7700_query_create("AT+COPS=?\r\n", "\r\n\\+COPS: (.+),,\\(.+\\),\\(.+\\)\r\n\r\nOK\r\n");
     q->timeout = 120;
 
-    mc7700_query_execute(thread_priv.q, q);
+    mc7700_query_execute(mc7700_thread_priv.q, q);
 
     /* cutting operators from the answer */
     if(q->answer)
@@ -465,7 +467,7 @@ rpc_packet_t* modem_at_command(modem_client_thread_t* priv, rpc_packet_t* p)
 
     free(query);
 
-    mc7700_query_execute(thread_priv.q, q);
+    mc7700_query_execute(mc7700_thread_priv.q, q);
 
     /* cutting Operator name from the answer */
     if(q->answer)
@@ -486,7 +488,7 @@ rpc_packet_t* modem_get_cell_id(modem_client_thread_t* priv, rpc_packet_t* p)
     int32_t cell_id;
 
     q = mc7700_query_create("AT!GSMINFO?\r\n", "!GSMINFO:.*\r\nCell ID:[\t]*([0-9]+)\r\n.*\r\nOK\r\n");
-    mc7700_query_execute(thread_priv.q, q);
+    mc7700_query_execute(mc7700_thread_priv.q, q);
 
     /* cutting Cell ID number from the reply */
     if(q->answer)
@@ -510,20 +512,20 @@ const rpc_function_info_t rpc_functions[] = {
     {"modem_find_next", modem_find_next_packet},
     {"modem_open_by_port", modem_open_by_port},
     {"modem_close", modem_close},
-    {"modem_get_imei", modem_get_imei},
-    {"modem_get_signal_quality", modem_get_signal_quality},
-    {"modem_get_network_time", modem_get_network_time},
-    {"modem_get_imsi", modem_get_imsi},
-    {"modem_get_operator_name", modem_get_operator_name},
-    {"modem_network_registration", modem_network_registration},
-    {"modem_get_network_type", modem_get_network_type},
-    {"modem_change_pin", modem_change_pin},
-    {"modem_get_fw_version", modem_get_fw_version},
     {"modem_get_info", modem_get_info},
-    {"modem_operator_scan", modem_operator_scan},
-    {"modem_at_command", modem_at_command},
-    {"modem_get_cell_id", modem_get_cell_id},
-    {{0, 0}},
+    {"modem_get_imei", modem_get_imei,                         0},
+    {"modem_get_imsi", modem_get_imsi,                         1},
+    {"modem_change_pin", modem_change_pin,                     0},
+    {"modem_get_fw_version", modem_get_fw_version,             0},
+    {"modem_operator_scan", modem_operator_scan,               1},
+    {"modem_at_command", modem_at_command,                     0},
+    {"modem_get_signal_quality", modem_get_signal_quality,     1},
+    {"modem_get_network_time", modem_get_network_time,         1},
+    {"modem_get_operator_name", modem_get_operator_name,       1},
+    {"modem_network_registration", modem_network_registration, 1},
+    {"modem_get_network_type", modem_get_network_type,         1},
+    {"modem_get_cell_id", modem_get_cell_id,                   1},
+    {{0, 0, 0}},
 };
 
 /*------------------------------------------------------------------------*/
@@ -551,6 +553,14 @@ void* ThreadWrapper(void* prm)
         {
             if(strcmp(rpc_func->name, p_in->func) == 0)
             {
+                if(rpc_func->reg_need && mc7700_thread_priv.locked)
+                {
+                    printf("(WW) Denied function %s Registration is not complete\n",
+                        rpc_func->name);
+
+                    break;
+                }
+
                 /* execute function */
                 p_out = rpc_func->func(priv, p_in);
 

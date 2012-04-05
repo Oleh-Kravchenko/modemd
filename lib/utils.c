@@ -205,3 +205,43 @@ malloc_err:
 err:
     return(nopers);
 }
+
+/*------------------------------------------------------------------------*/
+
+int at_parse_error(const char* s)
+{
+    regmatch_t *re_subs;
+    int cme_error = -1;
+    char serror[6];
+    regex_t re;
+
+    if(strstr(s, "\r\nERROR\r\n"))
+        /* modem failure (general error) or reporting is AT+CMEE=0 */
+        return(0);
+
+    if(regcomp(&re, "\\+CME ERROR: ([0-9]{1,5})\r\n", REG_EXTENDED))
+        goto err;
+
+    /* memory for regexp result */
+    re_subs = malloc(sizeof(regmatch_t) * (re.re_nsub + 1));
+
+    if(!re_subs)
+        goto malloc_err;
+
+    if(regexec(&re, s, (re.re_nsub + 1), re_subs, 0))
+        goto reg_err;
+
+    __REGMATCH_CUT(serror, s, re_subs[1]);
+
+    /* CME error */
+    cme_error = atoi(serror);
+
+reg_err:
+    free(re_subs);
+
+malloc_err:
+    regfree(&re);
+
+err:
+    return(cme_error);
+}
