@@ -1,14 +1,8 @@
+#include <signal.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include <errno.h>
+#include <pthread.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <time.h>
 
 #include "thread.h"
 #include "mc7700.h"
@@ -17,10 +11,6 @@
 #include "lib/modem_int.h"
 #include "lib/utils.h"
 #include "hardware.h"
-
-/*------------------------------------------------------------------------*/
-
-char *strptime(const char *s, const char *format, struct tm *tm);
 
 /*------------------------------------------------------------------------*/
 
@@ -152,20 +142,10 @@ rpc_packet_t* modem_get_imei(modem_client_thread_t* priv, rpc_packet_t* p)
 rpc_packet_t* modem_get_imsi(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
-    mc7700_query_t *q;
+    char imsi[0x100];
 
-    q = mc7700_query_create("AT+CIMI\r\n", "\r\n([0-9]+)\r\n\r\nOK\r\n");
-    mc7700_query_execute(mc7700_thread_priv.q, q);
-
-    /* cutting IMEI number from the reply */
-    if(q->answer)
-        res = rpc_create(
-            TYPE_RESPONSE, __func__,
-            (uint8_t*)q->answer + q->re_subs[1].rm_so,
-            q->re_subs[1].rm_eo - q->re_subs[1].rm_so
-        );
-
-    mc7700_query_destroy(q);
+    if(at_get_imsi(mc7700_thread_priv.q, imsi, sizeof(imsi)))
+        res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)imsi, strlen(imsi));
 
     return(res);
 }
@@ -417,32 +397,12 @@ rpc_packet_t* modem_operator_scan(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
     modem_oper_t *opers;
-    mc7700_query_t *q;
     int nopers = 0;
-    char *sopers;
 
-    q = mc7700_query_create("AT+COPS=?\r\n", "\r\n\\+COPS: (.+),,\\(.+\\),\\(.+\\)\r\n\r\nOK\r\n");
-    q->timeout = 120;
+    if((nopers = at_operator_scan(mc7700_thread_priv.q, &opers)) > 0)
+        res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)opers, sizeof(modem_oper_t) * nopers);
 
-    mc7700_query_execute(mc7700_thread_priv.q, q);
-
-    /* cutting operators from the answer */
-    if(q->answer)
-    {
-        if((sopers = malloc(q->re_subs[1].rm_eo - q->re_subs[1].rm_so + 1)))
-        {
-            /* parsing operator list */
-            __REGMATCH_CUT(sopers, q->answer, q->re_subs[1]);
-            nopers = at_parse_cops_list(sopers, &opers);
-
-            res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)opers, sizeof(modem_oper_t) * nopers);
-
-            free(opers);
-            free(sopers);
-        }
-    }
-
-    mc7700_query_destroy(q);
+    free(opers);
 
     return(res);
 }
@@ -507,24 +467,86 @@ rpc_packet_t* modem_get_cell_id(modem_client_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
+rpc_packet_t* modem_operator_scan_start(modem_client_thread_t* priv, rpc_packet_t* p)
+{
+    at_operator_scan_t *at_priv;
+    rpc_packet_t* res = NULL;
+    int thread_res, file_len;
+
+    if(mc7700_thread_priv.thread_scan)
+        goto exit;
+
+    if(!(at_priv = malloc(sizeof(*at_priv))))
+        goto exit;
+
+    /* cutting file name */
+    file_len = p->hdr.data_len >= sizeof(at_priv->file) ? sizeof(at_priv->file) - 1 : p->hdr.data_len;
+    memcpy(at_priv->file, p->data, file_len);
+    at_priv->file[file_len] = 0;
+
+    at_priv->priv = &mc7700_thread_priv;
+
+    /* creating thread with a query AT+COPS=? */
+    thread_res = pthread_create(&mc7700_thread_priv.thread_scan, NULL, at_thread_operator_scan, at_priv);
+
+    if(!thread_res)
+        res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)&thread_res, sizeof(thread_res));
+    else
+        free(at_priv);
+
+exit:
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+rpc_packet_t* modem_operator_scan_is_running(modem_client_thread_t* priv, rpc_packet_t* p)
+{
+    rpc_packet_t *res = NULL;
+    int8_t scan_res = -1;
+    int kill_res = -1;
+    void *thread_res;
+
+    if(mc7700_thread_priv.thread_scan)
+        kill_res = pthread_kill(mc7700_thread_priv.thread_scan, 0);
+
+    if(kill_res == ESRCH)
+    {
+        pthread_join(mc7700_thread_priv.thread_scan, &thread_res);
+        mc7700_thread_priv.thread_scan = 0;
+        scan_res = 0;
+    }
+    else if(kill_res == 0)
+        scan_res = 1;
+
+    if(scan_res >= 0)
+        res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)&scan_res, sizeof(scan_res));
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
 const rpc_function_info_t rpc_functions[] = {
     {"modem_find_first", modem_find_first_packet},
     {"modem_find_next", modem_find_next_packet},
     {"modem_open_by_port", modem_open_by_port},
     {"modem_close", modem_close},
     {"modem_get_info", modem_get_info},
-    {"modem_get_imei", modem_get_imei,                         0},
-    {"modem_get_imsi", modem_get_imsi,                         1},
-    {"modem_change_pin", modem_change_pin,                     0},
-    {"modem_get_fw_version", modem_get_fw_version,             0},
-    {"modem_operator_scan", modem_operator_scan,               1},
-    {"modem_at_command", modem_at_command,                     0},
-    {"modem_get_signal_quality", modem_get_signal_quality,     1},
-    {"modem_get_network_time", modem_get_network_time,         1},
-    {"modem_get_operator_name", modem_get_operator_name,       1},
-    {"modem_network_registration", modem_network_registration, 1},
-    {"modem_get_network_type", modem_get_network_type,         1},
-    {"modem_get_cell_id", modem_get_cell_id,                   1},
+    {"modem_get_imei", modem_get_imei,                                 0},
+    {"modem_change_pin", modem_change_pin,                             0},
+    {"modem_get_fw_version", modem_get_fw_version,                     0},
+    {"modem_network_registration", modem_network_registration,         0},
+    {"modem_get_signal_quality", modem_get_signal_quality,             1},
+    {"modem_get_imsi", modem_get_imsi,                                 1},
+    {"modem_operator_scan", modem_operator_scan,                       1},
+    {"modem_at_command", modem_at_command,                             1},
+    {"modem_get_network_time", modem_get_network_time,                 1},
+    {"modem_get_operator_name", modem_get_operator_name,               1},
+    {"modem_get_network_type", modem_get_network_type,                 1},
+    {"modem_get_cell_id", modem_get_cell_id,                           1},
+    {"modem_operator_scan_start", modem_operator_scan_start,           1},
+    {"modem_operator_scan_is_running", modem_operator_scan_is_running, 1},
     {{0, 0, 0}},
 };
 

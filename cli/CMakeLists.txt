@@ -2,8 +2,6 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 PROJECT(modem_cli)
 
-ADD_DEFINITIONS(-DCELLULAR_EXPORTS)
-
 SET(PROJECT_SOURCES
 ../lib/include/modem/modem.h
 ../lib/include/modem/types.h

@@ -416,3 +416,49 @@ char* modem_at_command(modem_t* modem, const char* query)
 
     return(res);
 }
+
+/*------------------------------------------------------------------------*/
+
+int modem_operator_scan_start(const char* file)
+{
+    rpc_packet_t* p;
+    int res = -1;
+
+    /* build packet and send it */
+    p = rpc_create(TYPE_QUERY, __func__, (uint8_t*)file, strlen(file));
+    rpc_send(sock, p);
+    rpc_free(p);
+
+    /* receive result and unpack it */
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
+
+    if(p && p->hdr.data_len)
+        res = 0;
+
+    rpc_free(p);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_operator_scan_is_running(void)
+{
+    rpc_packet_t* p;
+    int res = -1;
+
+    /* build packet and send it */
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
+    rpc_send(sock, p);
+    rpc_free(p);
+
+    /* receive result and unpack it */
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
+
+    if(p && p->hdr.data_len == sizeof(int8_t))
+        res = *((int8_t*)p->data);
+
+    rpc_free(p);
+
+    return(res);
+}

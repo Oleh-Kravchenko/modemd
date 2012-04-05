@@ -52,8 +52,21 @@ typedef struct
 
     pthread_t thread_read;
 
+    pthread_t thread_scan;
+
     mc7700_query_t* query;
 } thread_queue_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef struct
+{
+    char file[0x100];
+
+    thread_queue_t *priv;
+} at_operator_scan_t;
+
+/*------------------------------------------------------------------------*/
 
 extern thread_queue_t mc7700_thread_priv;
 

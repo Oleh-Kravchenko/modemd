@@ -199,6 +199,8 @@ int mc7700_open(const char *port)
     pthread_cond_init(&mc7700_thread_priv.processed, NULL);
     pthread_mutex_init(&mc7700_thread_priv.mutex, NULL);
 
+    mc7700_thread_priv.thread_scan = 0;
+
     /* creating reading thread */
     pthread_create(&mc7700_thread_priv.thread_read, NULL, mc7700_thread_read, &mc7700_thread_priv);
 
@@ -219,6 +221,9 @@ void mc7700_destroy(void)
 
     if(!(-- mc7700_thread_priv.mc7700_clients))
     {
+        if(mc7700_thread_priv.thread_scan)
+            pthread_join(mc7700_thread_priv.thread_scan, &thread_res);
+
         mc7700_thread_priv.terminate = 1;
 
         pthread_join(mc7700_thread_priv.thread_write, &thread_res);

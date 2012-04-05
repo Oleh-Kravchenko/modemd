@@ -169,6 +169,19 @@ void modem_test(const char* port)
         printf("Cell ID: %d\n", cell);
 
 #if 0
+    if(!modem_operator_scan_start("/tmp/op_list.conf"))
+    {
+        puts("Operator scanning is started");
+
+        while(modem_operator_scan_is_running() == 1)
+        {
+            sleep(1);
+            puts("Operator scanning is runnig");
+        }
+    }
+#endif
+
+#if 0
     modem_oper_t *opers = NULL;
     int i;
 

@@ -92,4 +92,8 @@ int at_parse_cops_list(const char* s, modem_oper_t** opers);
  */
 int at_parse_error(const char* s);
 
+/*------------------------------------------------------------------------*/
+
+int mnc_get_length(const char *imsi);
+
 #endif /* __UTILS_H */

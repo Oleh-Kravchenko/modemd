@@ -212,3 +212,95 @@ int at_raw_ok(queue_t* queue, const char* cmd)
 
     return(res);
 }
+
+/*------------------------------------------------------------------------*/
+
+char* at_get_imsi(queue_t* queue, char* imsi, size_t len)
+{
+    mc7700_query_t *q;
+    char *res = NULL;
+    size_t res_len;
+
+    q = mc7700_query_create("AT+CIMI\r\n", "\r\n([0-9]+)\r\n\r\nOK\r\n");
+    mc7700_query_execute(mc7700_thread_priv.q, q);
+
+    /* cutting IMSI number from the reply */
+    if(q->answer)
+    {
+        res_len = q->re_subs[1].rm_eo - q->re_subs[1].rm_so;
+        len = (len > res_len ? res_len : len - 1);
+
+        memcpy(imsi, q->answer + q->re_subs[1].rm_so, len);
+        imsi[len] = 0;
+
+        res = imsi;
+    }
+
+    mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int at_operator_scan(queue_t* queue, modem_oper_t** opers)
+{
+    mc7700_query_t *q;
+    int nopers = 0;
+    char *sopers;
+
+    q = mc7700_query_create("AT+COPS=?\r\n", "\r\n\\+COPS: (.+),,\\(.+\\),\\(.+\\)\r\n\r\nOK\r\n");
+    q->timeout = 120;
+
+    mc7700_query_execute(queue, q);
+
+    /* cutting operators from the answer */
+    if(!q->answer)
+        goto exit;
+
+    if(!(sopers = malloc(q->re_subs[1].rm_eo - q->re_subs[1].rm_so + 1)))
+        goto err_malloc;
+
+    /* parsing operator list */
+    __REGMATCH_CUT(sopers, q->answer, q->re_subs[1]);
+
+    nopers = at_parse_cops_list(sopers, opers);
+
+err_malloc:
+    free(sopers);
+
+exit:
+    mc7700_query_destroy(q);
+
+    return(nopers);
+}
+
+/*------------------------------------------------------------------------*/
+
+void* at_thread_operator_scan(void* prm)
+{
+    at_operator_scan_t *priv = prm;
+    modem_oper_t* opers;
+    int nopers, i;
+    FILE *f;
+
+    if((nopers = at_operator_scan(priv->priv->q, &opers)) == 0)
+        goto exit;
+
+    if(!(f = fopen("/tmp/op_list.conf", "w")))
+        goto err_fopen;
+
+    for(i = 0; i < nopers; ++ i)
+        fprintf(f, "%s,%s,%d\n", opers[i].numeric,
+            strlen(opers[i].shortname) ?
+            opers[i].shortname : opers[i].numeric, opers[i].act);
+
+    fclose(f);
+
+err_fopen:
+    free(opers);
+
+exit:
+    free(priv);
+    return(NULL);
+}
