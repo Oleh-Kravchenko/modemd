@@ -226,6 +226,10 @@ void* mc7700_thread_reg(void* prm)
                 res_ok = at_cpin_puk(priv->q, priv->conf.puk, priv->conf.pin);
             break;
 
+        case MODEM_CPIN_STATE_READY:
+            res_ok = 0;
+            break;
+
         default:
             res_ok = -1;
             break;
