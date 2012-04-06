@@ -65,6 +65,8 @@ typedef struct
 
     int terminate;
 
+    int terminate_reg;
+
     int locked;
 
     int mc7700_clients;
@@ -80,6 +82,8 @@ typedef struct
     mc7700_query_t* query;
 
     modem_conf_t conf;
+
+    int32_t last_error;
 } thread_queue_t;
 
 /*------------------------------------------------------------------------*/

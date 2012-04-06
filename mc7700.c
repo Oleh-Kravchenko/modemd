@@ -151,7 +151,6 @@ void* mc7700_thread_read(void* prm)
             )
         )
         {
-#ifdef __MODEMD_DEBUG
             if(giveup >= priv->query->timeout)
             {
                 printf("(II) Command [%s] timeout after %d second(s)\n", priv->query->query, giveup);
@@ -160,8 +159,13 @@ void* mc7700_thread_read(void* prm)
             else if(priv->query->error != -1)
             {
                 printf("(EE) CME ERROR: %d\n", priv->query->error);
+                priv->last_error = priv->query->error;
             }
-#endif
+            else
+            {
+                priv->last_error = priv->query->error;
+            }
+
             /* reporting about reply */
             pthread_mutex_lock(&priv->query->cond_m);
             pthread_cond_signal(&priv->query->cond);
@@ -235,18 +239,31 @@ void* mc7700_thread_reg(void* prm)
             break;
     }
 
-//printf("%s:%d %s() res_ok %d\n", __FILE__, __LINE__, __func__, res_ok);
+    if(res_ok == -1)
+    {
+        /* pin && puk failed */
+        priv->locked = 1;
 
-    priv->locked = res_ok == -1;
+        return(NULL);
+    }
 
-/*    if(priv->conf.operator_number)
+    if(priv->conf.operator_number)
     {
         snprintf(s, sizeof(s), "AT+COPS=1,2,%d\r\n", priv->conf.operator_number);
-        res_ok = at_raw_ok(priv->q, s);
+        at_raw_ok(priv->q, s);
     }
     else
-        at_raw_ok(priv->q, "AT+COPS=0\r\n");*/
+        at_raw_ok(priv->q, "AT+COPS=0\r\n");
 
+    while(!priv->terminate_reg)
+    {
+        sleep(10);
+
+        if(MODEM_NETWORK_REG_ROAMING == at_creg(priv->q))
+            priv->locked = !priv->conf.roaming_enable;
+        else
+            priv->locked = 0;
+    }
 
     return(NULL);
 }
@@ -356,8 +373,10 @@ int mc7700_open(const char *port)
     mc7700_thread_priv.fd = serial_open(port, O_RDWR);
     mc7700_thread_priv.q = queue_create();
     mc7700_thread_priv.terminate = 0;
+    mc7700_thread_priv.terminate_reg = 0;
     mc7700_thread_priv.locked = 1;
     mc7700_thread_priv.query = NULL;
+    mc7700_thread_priv.last_error = -1;
     pthread_cond_init(&mc7700_thread_priv.processed, NULL);
     pthread_mutex_init(&mc7700_thread_priv.mutex, NULL);
 
@@ -391,6 +410,9 @@ void mc7700_destroy(void)
         if(mc7700_thread_priv.thread_scan)
             pthread_join(mc7700_thread_priv.thread_scan, &thread_res);
 
+        mc7700_thread_priv.terminate_reg = 1;
+
+        /* waiting for termination thread_reg */
         pthread_join(mc7700_thread_priv.thread_reg, &thread_res);
 
         mc7700_thread_priv.terminate = 1;

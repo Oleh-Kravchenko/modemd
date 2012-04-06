@@ -126,6 +126,13 @@ int modem_get_cell_id(modem_t* modem);
 
 char* modem_at_command(modem_t* modem, const char* query);
 
+/**
+ * @brief return last error on modem
+ * @param modem handle
+ * @return if no errors result is -1
+ */
+int modem_get_last_error(modem_t* modem);
+
 #if 0
 
 /***************************************************************************

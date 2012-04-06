@@ -513,12 +513,27 @@ rpc_packet_t* modem_operator_scan_is_running(modem_client_thread_t* priv, rpc_pa
 
 /*------------------------------------------------------------------------*/
 
+rpc_packet_t* modem_get_last_error(modem_client_thread_t* priv, rpc_packet_t* p)
+{
+    if(mc7700_thread_priv.locked && mc7700_thread_priv.last_error == -1)
+        mc7700_thread_priv.last_error = 258; /* we are busy now */
+
+    return
+    (
+        rpc_create(TYPE_RESPONSE, __func__,
+            (uint8_t*)&mc7700_thread_priv.last_error, sizeof(mc7700_thread_priv.last_error))
+    );
+}
+
+/*------------------------------------------------------------------------*/
+
 const rpc_function_info_t rpc_functions[] = {
     {"modem_find_first", modem_find_first_packet},
     {"modem_find_next", modem_find_next_packet},
     {"modem_open_by_port", modem_open_by_port},
     {"modem_close", modem_close},
     {"modem_get_info", modem_get_info},
+    {"modem_get_last_error", modem_get_last_error},
     {"modem_get_imei", modem_get_imei,                                 0},
     {"modem_change_pin", modem_change_pin,                             0},
     {"modem_get_fw_version", modem_get_fw_version,                     0},

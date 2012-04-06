@@ -462,3 +462,26 @@ int modem_operator_scan_is_running(modem_t* modem)
 
     return(res);
 }
+
+/*------------------------------------------------------------------------*/
+
+int modem_get_last_error(modem_t* modem)
+{
+    rpc_packet_t* p;
+    int res = -1;
+
+    /* build packet and send it */
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
+    rpc_send(sock, p);
+    rpc_free(p);
+
+    /* receive result and unpack it */
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
+
+    if(p && p->hdr.data_len == sizeof(int32_t))
+        res = *((int32_t*)p->data);
+
+    rpc_free(p);
+
+    return(res);
+}
