@@ -46,6 +46,8 @@ typedef struct
 
     int operator_number;
 
+    int access_technology;
+
     int frequency_band;
 } modem_conf_t;
  

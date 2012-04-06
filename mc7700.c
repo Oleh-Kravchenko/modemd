@@ -249,7 +249,7 @@ void* mc7700_thread_reg(void* prm)
 
     if(priv->conf.operator_number)
     {
-        snprintf(s, sizeof(s), "AT+COPS=1,2,%d\r\n", priv->conf.operator_number);
+        snprintf(s, sizeof(s), "AT+COPS=1,2,%d,%d\r\n", priv->conf.operator_number, priv->conf.access_technology);
         at_raw_ok(priv->q, s);
     }
     else
@@ -281,6 +281,7 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
     *conf->apn = 0;
     conf->roaming_enable = 0;
     conf->operator_number = 0;
+    conf->access_technology = 0;
     conf->frequency_band = 0;
     conf->from_file = 0;
 
@@ -306,6 +307,7 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
 #define CONF_APN     "apn="
 #define CONF_ROAMING "roaming_enable=yes"
 #define CONF_OPER    "operator_number="
+#define CONF_ACT     "access_technology="
 #define CONF_BAND    "frequency_band="
 
         if(strstr(s, CONF_PIN) == s)
@@ -335,6 +337,10 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
         {
             conf->operator_number = atoi(s + strlen(CONF_OPER));
         }
+        else if(strstr(s, CONF_ACT) == s)
+        {
+            conf->access_technology = atoi(s + strlen(CONF_ACT));
+        }
         else if(strstr(s, CONF_BAND) == s)
         {
             conf->frequency_band = atoi(s + strlen(CONF_BAND));
@@ -347,6 +353,7 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
         "APN: %s\n"
         "roaming_enable: %d\n"
         "operator_number: %d\n"
+        "access_technology: %d"
         "frequency_band: %d\n"
         "from_file: %d\n",
 
@@ -355,6 +362,7 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
         conf->apn,
         conf->roaming_enable,
         conf->operator_number,
+        conf->access_technology,
         conf->frequency_band,
         conf->from_file
     );
