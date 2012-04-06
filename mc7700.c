@@ -353,7 +353,7 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
         "APN: %s\n"
         "roaming_enable: %d\n"
         "operator_number: %d\n"
-        "access_technology: %d"
+        "access_technology: %d\n"
         "frequency_band: %d\n"
         "from_file: %d\n",
 
