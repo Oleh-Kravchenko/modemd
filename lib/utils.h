@@ -96,4 +96,8 @@ int at_parse_error(const char* s);
 
 int mnc_get_length(const char *imsi);
 
+/*------------------------------------------------------------------------*/
+
+size_t mystrtrm_a(char* str);
+
 #endif /* __UTILS_H */

@@ -34,6 +34,8 @@ typedef struct mc7700_query_s
 
 typedef struct
 {
+    int from_file;
+
     char pin[20];
 
     char puk[20];
@@ -50,6 +52,8 @@ typedef struct
 typedef struct
 {
     int fd;
+
+    char port[0x100];
 
     pthread_cond_t processed;
 
@@ -106,5 +110,7 @@ void mc7700_destroy(void);
 void* mc7700_thread_write(void* prm);
 
 void* mc7700_thread_read(void* prm);
+
+void mc7700_read_config(const char* port, modem_conf_t* conf);
 
 #endif /* __MC7700_H */

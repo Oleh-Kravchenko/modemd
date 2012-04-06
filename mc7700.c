@@ -183,7 +183,6 @@ void* mc7700_thread_read(void* prm)
     return(NULL);
 }
 
-
 /*------------------------------------------------------------------------*/
 
 void* mc7700_thread_reg(void* prm)
@@ -191,6 +190,14 @@ void* mc7700_thread_reg(void* prm)
     thread_queue_t *priv = prm;
     char s[0x100];
     int res_ok;
+
+    /* waiting for config */
+    while(!priv->conf.from_file)
+    {
+        mc7700_read_config(priv->port, &priv->conf);
+        printf("Waiting configuration for %s port\n", priv->port);
+        sleep(5);
+    }
 
     at_raw_ok(priv->q, "ATE0\r\n");
     at_raw_ok(priv->q, "AT+CMEE=1\r\n");
@@ -201,7 +208,6 @@ void* mc7700_thread_reg(void* prm)
 #endif /* __HW_C1KMBR */
 
     /* pin && puk handling */
-    res_ok = -1;
     switch(at_cpin_state(priv->q))
     {
         case MODEM_CPIN_STATE_PIN:
@@ -213,7 +219,13 @@ void* mc7700_thread_reg(void* prm)
             if(*priv->conf.pin && *priv->conf.puk)
                 res_ok = at_cpin_puk(priv->q, priv->conf.puk, priv->conf.pin);
             break;
+
+        default:
+            res_ok = -1;
+            break;
     }
+
+//printf("%s:%d %s() res_ok %d\n", __FILE__, __LINE__, __func__, res_ok);
 
     priv->locked = res_ok == -1;
 
@@ -242,12 +254,19 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
     conf->roaming_enable = 0;
     conf->operator_number = 0;
     conf->frequency_band = 0;
+    conf->from_file = 0;
 
     /* path to config */
-    snprintf(s, sizeof(s), "/etc/modemd/%s/conf", port);
+//    snprintf(s, sizeof(s), "/etc/modemd/%s/conf", port);
+    snprintf(s, sizeof(s), "/etc/modemd/1-1/conf");
 
     if(!(f = fopen(s, "r")))
+    {
+        perror(s);
         return;
+    }
+
+    conf->from_file = 1;
 
     while(!feof(f))
     {
@@ -264,11 +283,13 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
         {
             strncpy(conf->pin, s + strlen(CONF_PIN), sizeof(conf->pin) - 1);
             conf->pin[sizeof(conf->pin) - 1] = 0;
+            mystrtrm_a(conf->pin);
         }
         else if(strstr(s, CONF_PUK) == s)
         {
             strncpy(conf->puk, s + strlen(CONF_PUK), sizeof(conf->puk) - 1);
             conf->puk[sizeof(conf->puk) - 1] = 0;
+            mystrtrm_a(conf->puk);
         }
         else if(strstr(s, CONF_ROAMING))
         {
@@ -293,6 +314,9 @@ int mc7700_open(const char *port)
 {
     if(mc7700_thread_priv.mc7700_clients ++)
         return(mc7700_thread_priv.mc7700_clients);
+
+    strncpy(mc7700_thread_priv.port, port, sizeof(mc7700_thread_priv.port) - 1);
+    mc7700_thread_priv.port[sizeof(mc7700_thread_priv.port) - 1] = 0;
 
     mc7700_thread_priv.fd = serial_open(port, O_RDWR);
     mc7700_thread_priv.q = queue_create();

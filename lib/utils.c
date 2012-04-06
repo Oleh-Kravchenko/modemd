@@ -315,3 +315,86 @@ int mnc_get_length(const char *imsi)
 exit:
 	return ret;
 }
+
+/*------------------------------------------------------------------------*/
+
+char szTrim[] = "\x20\t\r\n";
+
+/*------------------------------------------------------------------------*/
+
+char* mystrtrml_a(char* str)
+{
+	char* trim = str;
+
+	while (strchr(szTrim, *trim))
+		++ trim;
+
+	while ((*str ++ = *trim ++));
+
+	return(str);
+}
+
+/*-------------------------------------------------------------------------*/
+
+char* mystrtrmr_a(char* str)
+{
+	char* trim = 0;
+
+	while (*str)
+	{
+		if (strchr(szTrim, *str))
+		{
+			if (!trim)
+				trim = str;
+		}
+		else
+			trim = 0;
+
+		str ++;
+	}
+
+	if (trim)
+		*trim = 0;
+
+	return(trim ? trim : str);
+}
+
+/*-------------------------------------------------------------------------*/
+
+size_t mystrtrm_a(char* str)
+{
+	char* trimr, *triml = str, *trim = NULL;
+	size_t result = 0;
+
+	while (strchr(szTrim, *triml))
+		++ triml;
+
+	if (*triml)
+	{
+		trimr = triml + sizeof(char);
+
+		while (*trimr)
+		{
+			if (strchr(szTrim, *trimr))
+			{
+				if (!trim)
+					trim = trimr;
+			}
+			else
+				trim = 0;
+
+			trimr ++;
+		}
+	}
+
+	if (trim)
+		*trim = 0;
+
+	while ((*str = *triml ++))
+	{
+		++ str;
+		++ result;
+	}
+
+	return(result);
+}
