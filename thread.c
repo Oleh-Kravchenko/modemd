@@ -546,8 +546,8 @@ const rpc_function_info_t rpc_functions[] = {
     {"modem_get_operator_name", modem_get_operator_name,               1},
     {"modem_get_network_type", modem_get_network_type,                 1},
     {"modem_get_cell_id", modem_get_cell_id,                           1},
-    {"modem_operator_scan_start", modem_operator_scan_start,           1},
-    {"modem_operator_scan_is_running", modem_operator_scan_is_running, 1},
+    {"modem_operator_scan_start", modem_operator_scan_start,           0},
+    {"modem_operator_scan_is_running", modem_operator_scan_is_running, 0},
     {{0, 0, 0}},
 };
 
