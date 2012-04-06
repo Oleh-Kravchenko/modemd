@@ -156,13 +156,9 @@ void* mc7700_thread_read(void* prm)
                 printf("(II) Command [%s] timeout after %d second(s)\n", priv->query->query, giveup);
                 printf("(EE) No match [\n%s\n]\n", buf);
             }
-            else if(priv->query->error != -1)
+            else if(priv->query->error > 0) /* ignore general error */
             {
                 printf("(EE) CME ERROR: %d\n", priv->query->error);
-                priv->last_error = priv->query->error;
-            }
-            else
-            {
                 priv->last_error = priv->query->error;
             }
 
