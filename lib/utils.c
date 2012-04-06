@@ -366,6 +366,9 @@ size_t mystrtrm_a(char* str)
 	char* trimr, *triml = str, *trim = NULL;
 	size_t result = 0;
 
+    if(!*str)
+        return(result);
+
 	while (strchr(szTrim, *triml))
 		++ triml;
 

@@ -207,6 +207,12 @@ void* mc7700_thread_reg(void* prm)
     res_ok = at_raw_ok(priv->q, s);
 #endif /* __HW_C1KMBR */
 
+    if(*priv->conf.apn)
+    {
+        snprintf(s, sizeof(s), "AT+CGDCONT=3,\"IP\",\"%s\"\r\n", priv->conf.apn);
+        res_ok = at_raw_ok(priv->q, s);
+    }
+
     /* pin && puk handling */
     switch(at_cpin_state(priv->q))
     {
@@ -251,6 +257,7 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
     /* default values */
     *conf->pin = 0;
     *conf->puk = 0;
+    *conf->apn = 0;
     conf->roaming_enable = 0;
     conf->operator_number = 0;
     conf->frequency_band = 0;
@@ -275,6 +282,7 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
 
 #define CONF_PIN     "pin="
 #define CONF_PUK     "puk="
+#define CONF_APN     "apn="
 #define CONF_ROAMING "roaming_enable=yes"
 #define CONF_OPER    "operator_number="
 #define CONF_BAND    "frequency_band="
@@ -283,13 +291,20 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
         {
             strncpy(conf->pin, s + strlen(CONF_PIN), sizeof(conf->pin) - 1);
             conf->pin[sizeof(conf->pin) - 1] = 0;
-            mystrtrm_a(conf->pin);
+            mystrtrmr_a(conf->pin);
         }
         else if(strstr(s, CONF_PUK) == s)
         {
             strncpy(conf->puk, s + strlen(CONF_PUK), sizeof(conf->puk) - 1);
             conf->puk[sizeof(conf->puk) - 1] = 0;
-            mystrtrm_a(conf->puk);
+            printf("PUK: [%s]\n", conf->puk);
+            mystrtrmr_a(conf->puk);
+        }
+        else if(strstr(s, CONF_APN) == s)
+        {
+            strncpy(conf->apn, s + strlen(CONF_APN), sizeof(conf->apn) - 1);
+            conf->apn[sizeof(conf->apn) - 1] = 0;
+            mystrtrmr_a(conf->apn);
         }
         else if(strstr(s, CONF_ROAMING))
         {
@@ -306,6 +321,22 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
     }
 
     fclose(f);
+
+    printf("PIN: %s PUK: %s\n"
+        "APN: %s\n"
+        "roaming_enable: %d\n"
+        "operator_number: %d\n"
+        "frequency_band: %d\n"
+        "from_file: %d\n",
+
+        conf->pin,
+        conf->puk,
+        conf->apn,
+        conf->roaming_enable,
+        conf->operator_number,
+        conf->frequency_band,
+        conf->from_file
+    );
 }
 
 /*------------------------------------------------------------------------*/

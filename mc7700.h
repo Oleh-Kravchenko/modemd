@@ -40,6 +40,8 @@ typedef struct
 
     char puk[20];
 
+    char apn[100];
+
     int roaming_enable;
 
     int operator_number;
