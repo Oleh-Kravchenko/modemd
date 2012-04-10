@@ -172,7 +172,10 @@ rpc_packet_t* rpc_recv_func(int sock, const char* func, int tries)
         res = NULL;
 
         -- tries;
+
+#if 0
         printf("==== %s:%d %s() tries %d left\n", __FILE__, __LINE__, __func__, tries);
+#endif
     }
 
     return(res);

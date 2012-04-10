@@ -269,6 +269,12 @@ int main(int argc, char** argv)
     if(*srv_pid_path)
         create_pid_file(srv_pid_path);
 
+    if(!stat(srv_sock_path, &(struct stat) {}))
+    {
+        printf("(WW) socket file %s is exist. Removing..\n", srv_sock_path);
+        unlink(srv_sock_path);
+    }
+    
     /* run socket server */
     if(srv_run())
         perror(srv_basename);
