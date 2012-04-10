@@ -3,6 +3,7 @@
 
 #include <regex.h>
 
+#include "modem/types.h"
 #include "queue.h"
 
 /*------------------------------------------------------------------------*/
@@ -40,7 +41,7 @@ typedef struct
 
     char puk[20];
 
-    char apn[100];
+    modem_data_profile_t data;
 
     int roaming_enable;
 

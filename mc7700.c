@@ -207,10 +207,22 @@ void* mc7700_thread_reg(void* prm)
     res_ok = at_raw_ok(priv->q, s);
 #endif /* __HW_C1KMBR */
 
-    if(*priv->conf.apn)
+    if(*priv->conf.data.apn)
     {
-        snprintf(s, sizeof(s), "AT+CGDCONT=3,\"IP\",\"%s\"\r\n", priv->conf.apn);
+        snprintf(s, sizeof(s), "AT+CGDCONT=3,\"IP\",\"%s\"\r\n", priv->conf.data.apn);
         res_ok = at_raw_ok(priv->q, s);
+
+        if(priv->conf.data.auth != PPP_NONE)
+        {
+            snprintf(s, sizeof(s), "AT$QCPDPP=3,%d,\"%s\",\"%s\"\r\n",
+                priv->conf.data.auth, priv->conf.data.password, priv->conf.data.username);
+
+            res_ok = at_raw_ok(priv->q, s);
+        }
+        else
+        {
+            res_ok = at_raw_ok(priv->q, "AT$QCPDPP=3,0\r\n");
+        }
     }
 
     /* pin && puk handling */
@@ -274,7 +286,11 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
     /* default values */
     *conf->pin = 0;
     *conf->puk = 0;
-    *conf->apn = 0;
+    *conf->data.apn = 0;
+    *conf->data.apn = 0;
+    conf->data.auth = PPP_NONE;
+    *conf->data.username = 0;
+    *conf->data.password = 0;
     conf->roaming_enable = 0;
     conf->operator_number = 0;
     conf->access_technology = 0;
@@ -301,6 +317,9 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
 #define CONF_PIN     "pin="
 #define CONF_PUK     "puk="
 #define CONF_APN     "apn="
+#define CONF_AUTH    "auth="
+#define CONF_USER    "username="
+#define CONF_PASS    "password="
 #define CONF_ROAMING "roaming_enable=yes"
 #define CONF_OPER    "operator_number="
 #define CONF_ACT     "access_technology="
@@ -321,9 +340,25 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
         }
         else if(strstr(s, CONF_APN) == s)
         {
-            strncpy(conf->apn, s + strlen(CONF_APN), sizeof(conf->apn) - 1);
-            conf->apn[sizeof(conf->apn) - 1] = 0;
-            mystrtrmr_a(conf->apn);
+            strncpy(conf->data.apn, s + strlen(CONF_APN), sizeof(conf->data.apn) - 1);
+            conf->data.apn[sizeof(conf->data.apn) - 1] = 0;
+            mystrtrmr_a(conf->data.apn);
+        }
+        else if(strstr(s, CONF_AUTH) == s)
+        {
+            conf->data.auth = atoi(s + strlen(CONF_AUTH));
+        }
+        else if(strstr(s, CONF_USER) == s)
+        {
+            strncpy(conf->data.username, s + strlen(CONF_USER), sizeof(conf->data.username) - 1);
+            conf->data.username[sizeof(conf->data.username) - 1] = 0;
+            mystrtrmr_a(conf->data.username);
+        }
+        else if(strstr(s, CONF_PASS) == s)
+        {
+            strncpy(conf->data.password, s + strlen(CONF_PASS), sizeof(conf->data.password) - 1);
+            conf->data.password[sizeof(conf->data.password) - 1] = 0;
+            mystrtrmr_a(conf->data.password);
         }
         else if(strstr(s, CONF_ROAMING))
         {
@@ -347,6 +382,9 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
 
     printf("PIN: %s PUK: %s\n"
         "APN: %s\n"
+        "Auth: %d\n"
+        "Username: %s\n"
+        "Password: %s\n"
         "roaming_enable: %d\n"
         "operator_number: %d\n"
         "access_technology: %d\n"
@@ -355,7 +393,10 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
 
         conf->pin,
         conf->puk,
-        conf->apn,
+        conf->data.apn,
+        conf->data.auth,
+        conf->data.username,
+        conf->data.password,
         conf->roaming_enable,
         conf->operator_number,
         conf->access_technology,
