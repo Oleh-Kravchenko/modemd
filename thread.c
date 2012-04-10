@@ -164,7 +164,7 @@ rpc_packet_t* modem_get_signal_quality(modem_client_thread_t* priv, rpc_packet_t
     mc7700_query_t *q;
     int nrssi, nber;
 
-    q = mc7700_query_create("AT+CSQ\r\n", "\r\n\\+CSQ: ([0-9]+),([0-9]+)\r\n\r\nOK\r\n");
+    q = mc7700_query_create("AT+CSQ\r\n", "([0-9]+),([0-9]+)\r\n\r\nOK\r\n");
     mc7700_query_execute(mc7700_thread_priv.q, q);
 
     /* cutting IMEI number from the reply */
