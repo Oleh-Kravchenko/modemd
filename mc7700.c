@@ -191,11 +191,15 @@ void* mc7700_thread_reg(void* prm)
     char s[0x100];
     int res_ok;
 
+    at_get_fw_version(priv->q, &priv->fw_info);
+    at_get_imei(priv->q, priv->imei, sizeof(priv->imei));
+
     /* waiting for config */
     while(!priv->conf.from_file)
     {
         mc7700_read_config(priv->port, &priv->conf);
         printf("Waiting configuration for %s port\n", priv->port);
+
         sleep(5);
     }
 
@@ -231,11 +235,15 @@ void* mc7700_thread_reg(void* prm)
         case MODEM_CPIN_STATE_PIN:
             if(*priv->conf.pin)
                 res_ok = at_cpin_pin(priv->q, priv->conf.pin);
+            else
+                priv->last_error = 11;
             break;
 
         case MODEM_CPIN_STATE_PUK:
             if(*priv->conf.pin && *priv->conf.puk)
                 res_ok = at_cpin_puk(priv->q, priv->conf.puk, priv->conf.pin);
+            else
+                priv->last_error = 12;
             break;
 
         case MODEM_CPIN_STATE_READY:
@@ -265,12 +273,26 @@ void* mc7700_thread_reg(void* prm)
 
     while(!priv->terminate_reg)
     {
-        sleep(10);
+        priv->reg = at_network_registration(priv->q);
 
-        if(MODEM_NETWORK_REG_ROAMING == at_creg(priv->q))
-            priv->locked = !priv->conf.roaming_enable;
+        if(priv->reg == MODEM_NETWORK_REG_ROAMING && !priv->conf.roaming_enable)
+        {
+            priv->locked = 1;
+            priv->reg = MODEM_NETWORK_REG_DENIED;
+        }
         else
             priv->locked = 0;
+
+        at_get_signal_quality(priv->q, &priv->sq);
+
+        at_get_network_type(priv->q, priv->network_type, sizeof(priv->network_type));
+
+        at_get_operator_name(priv->q, priv->oper, sizeof(priv->oper));
+
+        if(!*priv->imsi)
+            at_get_imsi(priv->q, priv->imsi, sizeof(priv->imsi));
+
+        sleep(10);
     }
 
     return(NULL);
@@ -422,6 +444,7 @@ int mc7700_open(const char *port)
     mc7700_thread_priv.locked = 1;
     mc7700_thread_priv.query = NULL;
     mc7700_thread_priv.last_error = -1;
+    mc7700_thread_priv.reg = MODEM_NETWORK_REG_SEARCHING;
     pthread_cond_init(&mc7700_thread_priv.processed, NULL);
     pthread_mutex_init(&mc7700_thread_priv.mutex, NULL);
 

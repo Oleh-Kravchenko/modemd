@@ -87,6 +87,25 @@ typedef struct
     modem_conf_t conf;
 
     int32_t last_error;
+    
+    /* cached values, update per 10 seconds */
+
+    modem_network_reg_t reg;
+    
+    modem_signal_quality_t sq;
+
+    char oper[0x100];
+    
+    char network_type[0x32];
+    
+    /* values valid per session */
+
+    modem_fw_version_t fw_info;
+    
+    char imsi[0x32];
+
+    char imei[0x32];
+
 } thread_queue_t;
 
 /*------------------------------------------------------------------------*/

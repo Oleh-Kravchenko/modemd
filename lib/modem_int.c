@@ -15,6 +15,10 @@
 
 /*------------------------------------------------------------------------*/
 
+char *strptime(const char *s, const char *format, struct tm *tm);
+
+/*------------------------------------------------------------------------*/
+
 modem_info_t* usb_device_get_info(const char* port)
 {
     modem_info_t* res;
@@ -143,7 +147,7 @@ modem_cpin_state_t at_cpin_state(queue_t* queue)
 
     if(q->answer)
     {
-        __REGMATCH_N_CUT(cpin_st, q->answer, q->re_subs[1])
+        __REGMATCH_N_CUT(cpin_st, sizeof(cpin_st), q->answer, q->re_subs[1])
 
         if(strcmp(cpin_st, "READY") == 0)
             res = MODEM_CPIN_STATE_READY;
@@ -244,6 +248,33 @@ char* at_get_imsi(queue_t* queue, char* imsi, size_t len)
 
 /*------------------------------------------------------------------------*/
 
+char* at_get_imei(queue_t* queue, char* imei, size_t len)
+{
+    mc7700_query_t *q;
+    char *res = NULL;
+    size_t res_len;
+
+    q = mc7700_query_create("AT+CGSN\r\n", "\r\n([0-9]+)\r\n\r\nOK\r\n");
+    mc7700_query_execute(mc7700_thread_priv.q, q);
+
+    if(q->answer)
+    {
+        res_len = q->re_subs[1].rm_eo - q->re_subs[1].rm_so;
+        len = (len > res_len ? res_len : len - 1);
+
+        memcpy(imei, q->answer + q->re_subs[1].rm_so, len);
+        imei[len] = 0;
+
+        res = imei;
+    }
+
+    mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
 int at_operator_scan(queue_t* queue, modem_oper_t** opers)
 {
     mc7700_query_t *q;
@@ -308,7 +339,7 @@ exit:
 
 /*------------------------------------------------------------------------*/
 
-modem_network_reg_t at_creg(queue_t* queue)
+modem_network_reg_t at_network_registration(queue_t* queue)
 {
     modem_network_reg_t nr = MODEM_NETWORK_REG_UNKNOWN;
     mc7700_query_t *q;
@@ -358,4 +389,139 @@ modem_cops_mode_t at_cops_mode(queue_t* queue)
     mc7700_query_destroy(q);
 
     return(nr);
+}
+
+/*------------------------------------------------------------------------*/
+
+int at_get_signal_quality(queue_t *queue, modem_signal_quality_t* sq)
+{
+    char rssi[16], ber[16];
+    mc7700_query_t *q;
+    int res = -1, nrssi, nber;
+
+    sq->dbm = 0;
+    sq->level = 0;
+
+    q = mc7700_query_create("AT+CSQ\r\n", "([0-9]+),([0-9]+)\r\n\r\nOK\r\n");
+    mc7700_query_execute(queue, q);
+
+    /* cutting IMEI number from the reply */
+    if(q->answer)
+    {
+        __REGMATCH_N_CUT(rssi, sizeof(rssi), q->answer, q->re_subs[1])
+        __REGMATCH_N_CUT(ber, sizeof(ber), q->answer, q->re_subs[1])
+
+        nrssi = atoi(rssi);
+        nber = atoi(ber);
+
+        /* calculation dBm */
+        sq->dbm = (nrssi > 31) ? 0 : nrssi * 2 - 113;
+
+        /* calculation signal level */
+        if((sq->level = !!sq->dbm))
+        {
+            sq->level += (sq->dbm >= -95);
+            sq->level += (sq->dbm >= -85);
+            sq->level += (sq->dbm >= -73);
+            sq->level += (sq->dbm >= -65);
+        }
+        
+        res = 0;
+    }
+
+    mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+modem_fw_version_t* at_get_fw_version(queue_t *queue, modem_fw_version_t* fw_info)
+{
+    modem_fw_version_t* res = NULL;
+    mc7700_query_t *q;
+    char firmware[0x100];
+    char release[0x100];
+    struct tm tm;
+
+    q = mc7700_query_create("AT+CGMR\r\n", "\r\n.*(SWI.*) .* .* ([0-9,/]+ [0-9,:]+)\r\n\r\nOK\r\n");
+
+    mc7700_query_execute(queue, q);
+
+    /* cutting Operator name from the answer */
+    if(q->answer)
+    {
+        __REGMATCH_N_CUT(firmware, sizeof(firmware), q->answer, q->re_subs[1])
+        __REGMATCH_N_CUT(release, sizeof(release), q->answer, q->re_subs[1])
+
+        /* create result */
+        strncpy(fw_info->firmware, firmware, sizeof(fw_info->firmware) - 1);
+        fw_info->firmware[sizeof(fw_info->firmware) - 1] = 0;
+
+        /* parsing date and time */
+        strptime(release, "%Y/%m/%d\r\n%H:%M:%S", &tm);
+        fw_info->release = mktime(&tm);
+
+        res = fw_info;
+    }
+
+    mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+char* at_get_network_type(queue_t *queue, char *network, int len)
+{
+    mc7700_query_t *q;
+    char *res = NULL;
+
+    q = mc7700_query_create("AT*CNTI=0\r\n", "\r\n\\*CNTI: 0,(.+)\r\n\r\nOK\r\n");
+
+    mc7700_query_execute(queue, q);
+
+    if(q->answer)
+    {
+        __REGMATCH_N_CUT(network, len, q->answer, q->re_subs[1])
+
+        res = network;
+    }
+
+    mc7700_query_destroy(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+char* at_get_operator_name(queue_t *queue, char *oper, int len)
+{
+    mc7700_query_t *q;
+    int res_ok;
+    char *res = NULL;
+
+    /* setup format of +COPS as a string */
+    q = mc7700_query_create("AT+COPS=3,0\r\n", "\r\nOK\r\n");
+    mc7700_query_execute(mc7700_thread_priv.q, q);
+    res_ok = !!q->answer;
+    mc7700_query_destroy(q);
+
+    if(!res_ok)
+        return(res);
+
+    q = mc7700_query_create("AT+COPS?\r\n", "\r\n\\+COPS: [0-9],[0-9],\"(.+)\",[0-9]\r\n\r\nOK\r\n");
+    mc7700_query_execute(mc7700_thread_priv.q, q);
+
+    /* cutting Operator name from the answer */
+    if(q->answer)
+    {
+        __REGMATCH_N_CUT(oper, len, q->answer, q->re_subs[1])
+
+        res = oper;
+    }
+
+    mc7700_query_destroy(q);
+
+    return(res);
 }
