@@ -209,7 +209,7 @@ void* mc7700_thread_reg(void* prm)
 
     if(*priv->conf.data.apn)
     {
-        snprintf(s, sizeof(s), "AT+CGDCONT=3,\"IP\",\"%s\"\r\n", priv->conf.data.apn);
+        snprintf(s, sizeof(s), "AT+CGDCONT=3,\"IPV4V6\",\"%s\"\r\n", priv->conf.data.apn);
         res_ok = at_raw_ok(priv->q, s);
 
         if(priv->conf.data.auth != PPP_NONE)
