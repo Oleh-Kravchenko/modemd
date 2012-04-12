@@ -224,7 +224,6 @@ char* at_get_imsi(queue_t* queue, char* imsi, size_t len)
 {
     mc7700_query_t *q;
     char *res = NULL;
-    size_t res_len;
 
     q = mc7700_query_create("AT+CIMI\r\n", "\r\n([0-9]+)\r\n\r\nOK\r\n");
     mc7700_query_execute(mc7700_thread_priv.q, q);
@@ -232,11 +231,7 @@ char* at_get_imsi(queue_t* queue, char* imsi, size_t len)
     /* cutting IMSI number from the reply */
     if(q->answer)
     {
-        res_len = q->re_subs[1].rm_eo - q->re_subs[1].rm_so;
-        len = (len > res_len ? res_len : len - 1);
-
-        memcpy(imsi, q->answer + q->re_subs[1].rm_so, len);
-        imsi[len] = 0;
+        __REGMATCH_N_CUT(imsi, len, q->answer, q->re_subs[1])
 
         res = imsi;
     }
@@ -252,18 +247,13 @@ char* at_get_imei(queue_t* queue, char* imei, size_t len)
 {
     mc7700_query_t *q;
     char *res = NULL;
-    size_t res_len;
 
     q = mc7700_query_create("AT+CGSN\r\n", "\r\n([0-9]+)\r\n\r\nOK\r\n");
     mc7700_query_execute(mc7700_thread_priv.q, q);
 
     if(q->answer)
     {
-        res_len = q->re_subs[1].rm_eo - q->re_subs[1].rm_so;
-        len = (len > res_len ? res_len : len - 1);
-
-        memcpy(imei, q->answer + q->re_subs[1].rm_so, len);
-        imei[len] = 0;
+        __REGMATCH_N_CUT(imei, len, q->answer, q->re_subs[1])
 
         res = imei;
     }
