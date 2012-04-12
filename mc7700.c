@@ -263,6 +263,16 @@ void* mc7700_thread_reg(void* prm)
         return(NULL);
     }
 
+    /* waiting for IMSI ready */
+    while(!*priv->imsi && !priv->terminate_reg)
+    {
+        printf("(II) Waiting for IMSI ready..\n");
+
+        sleep(1);
+
+        at_get_imsi(priv->q, priv->imsi, sizeof(priv->imsi));
+    }
+
     if(priv->conf.operator_number)
     {
         snprintf(s, sizeof(s), "AT+COPS=1,2,%d,%d\r\n", priv->conf.operator_number, priv->conf.access_technology);
@@ -274,9 +284,6 @@ void* mc7700_thread_reg(void* prm)
     while(!priv->terminate_reg)
     {
         sleep(10);
-
-        if(!*priv->imsi)
-            at_get_imsi(priv->q, priv->imsi, sizeof(priv->imsi));
 
         priv->reg = at_network_registration(priv->q);
 
