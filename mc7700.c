@@ -49,7 +49,7 @@ void* mc7700_thread_write(void* prm)
         free(buf);
 
 #ifdef __MODEMD_DEBUG
-        printf("(II) write [\n%s\n]\n", priv->query->query);
+        printf("(II) write: %s\n", priv->query->query);
 #endif
 
         write(priv->fd, priv->query->query, strlen(priv->query->query));
@@ -99,7 +99,7 @@ void* mc7700_thread_read(void* prm)
                 if(strncmp(query->query, buf, buf_len) == 0)
                     printf("(II) Allowed echo commands is detected!\n");
 #endif
-                printf("(II) read(%d) [\n%s\n]\n\n", buf_len, buf);
+                printf("(II) read(%d): %s\n", buf_len, buf);
 #endif /*__MODEMD_DEBUG */
 
                 regcomp(&re, priv->query->answer_reg, REG_EXTENDED);
@@ -130,7 +130,7 @@ void* mc7700_thread_read(void* prm)
                 regfree(&re);
 
 #ifdef __MODEMD_DEBUG
-                printf("(II) Matched\n");
+                printf("(II) Matched\n\n\n");
 #endif
 
                 if(priv->query->error == -1)
