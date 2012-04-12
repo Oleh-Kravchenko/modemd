@@ -399,7 +399,7 @@ int at_get_signal_quality(queue_t *queue, modem_signal_quality_t* sq)
     if(q->answer)
     {
         __REGMATCH_N_CUT(rssi, sizeof(rssi), q->answer, q->re_subs[1])
-        __REGMATCH_N_CUT(ber, sizeof(ber), q->answer, q->re_subs[1])
+        __REGMATCH_N_CUT(ber, sizeof(ber), q->answer, q->re_subs[2])
 
         nrssi = atoi(rssi);
         nber = atoi(ber);
@@ -442,7 +442,7 @@ modem_fw_version_t* at_get_fw_version(queue_t *queue, modem_fw_version_t* fw_inf
     if(q->answer)
     {
         __REGMATCH_N_CUT(firmware, sizeof(firmware), q->answer, q->re_subs[1])
-        __REGMATCH_N_CUT(release, sizeof(release), q->answer, q->re_subs[1])
+        __REGMATCH_N_CUT(release, sizeof(release), q->answer, q->re_subs[2])
 
         /* create result */
         strncpy(fw_info->firmware, firmware, sizeof(fw_info->firmware) - 1);
