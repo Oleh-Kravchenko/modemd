@@ -273,12 +273,23 @@ void* mc7700_thread_reg(void* prm)
 
     while(!priv->terminate_reg)
     {
+        sleep(10);
+
+        if(!*priv->imsi)
+            at_get_imsi(priv->q, priv->imsi, sizeof(priv->imsi));
+
         priv->reg = at_network_registration(priv->q);
 
         if(priv->reg == MODEM_NETWORK_REG_ROAMING && !priv->conf.roaming_enable)
         {
             priv->locked = 1;
             priv->reg = MODEM_NETWORK_REG_DENIED;
+
+            memset(&priv->sq, 0, sizeof(priv->sq));
+            memset(&priv->network_type, 0, sizeof(priv->network_type));
+            memset(&priv->oper, 0, sizeof(priv->oper));
+
+            continue;
         }
         else
             priv->locked = 0;
@@ -288,11 +299,6 @@ void* mc7700_thread_reg(void* prm)
         at_get_network_type(priv->q, priv->network_type, sizeof(priv->network_type));
 
         at_get_operator_name(priv->q, priv->oper, sizeof(priv->oper));
-
-        if(!*priv->imsi)
-            at_get_imsi(priv->q, priv->imsi, sizeof(priv->imsi));
-
-        sleep(10);
     }
 
     return(NULL);
