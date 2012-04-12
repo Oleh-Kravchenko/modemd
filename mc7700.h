@@ -43,7 +43,7 @@ typedef struct
 
     modem_data_profile_t data;
 
-    int roaming_enable;
+    int roaming;
 
     int operator_number;
 
@@ -59,6 +59,8 @@ typedef struct
     int fd;
 
     char port[0x100];
+
+    char tty[0x100];
 
     pthread_cond_t processed;
 
@@ -131,13 +133,19 @@ void mc7700_query_destroy(mc7700_query_t* query);
 
 /*------------------------------------------------------------------------*/
 
-int mc7700_open(const char *port);
+int mc7700_open(const char *port, const char *tty);
 
 void mc7700_destroy(void);
+
+/*------------------------------------------------------------------------*/
 
 void* mc7700_thread_write(void* prm);
 
 void* mc7700_thread_read(void* prm);
+
+void* mc7700_thread_reg(void* prm);
+
+/*------------------------------------------------------------------------*/
 
 void mc7700_read_config(const char* port, modem_conf_t* conf);
 

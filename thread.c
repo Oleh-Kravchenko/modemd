@@ -101,7 +101,7 @@ rpc_packet_t* modem_open_by_port(modem_client_thread_t* priv, rpc_packet_t* p)
         strncpy(priv->port, port, sizeof(priv->port) - 1);
         priv->port[sizeof(priv->port) - 1] = 0;
 
-        modem = mc7700_open(tty);
+        modem = mc7700_open(port, tty);
 
         res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)&modem, sizeof(modem));
     }

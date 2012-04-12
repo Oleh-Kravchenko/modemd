@@ -128,6 +128,7 @@ void modem_test(const char* port)
     if(!(modem = modem_open_by_port(port)))
         return;
 
+    /* if modem detected, this printf will be waste */
     if(!opt_detect_modems && modem_get_info(modem, &mi))
         printf("Device: [port: %s] [%04hx:%04hx] [%s %s]\n",
             mi.port, mi.id_vendor, mi.id_product, mi.manufacturer, mi.product);

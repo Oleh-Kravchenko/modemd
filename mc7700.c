@@ -287,19 +287,31 @@ void* mc7700_thread_reg(void* prm)
 
         priv->reg = at_network_registration(priv->q);
 
-        if(priv->reg == MODEM_NETWORK_REG_ROAMING && !priv->conf.roaming_enable)
-        {
-            priv->locked = 1;
+        /* if roaming disabled */
+        if(MODEM_NETWORK_REG_ROAMING == priv->reg && !priv->conf.roaming)
+            /* set registration status as a denied */
             priv->reg = MODEM_NETWORK_REG_DENIED;
 
-            memset(&priv->sq, 0, sizeof(priv->sq));
-            memset(&priv->network_type, 0, sizeof(priv->network_type));
-            memset(&priv->oper, 0, sizeof(priv->oper));
+        switch(priv->reg)
+        {
+            case MODEM_NETWORK_REG_HOME:
+            case MODEM_NETWORK_REG_ROAMING:
+                priv->locked = 0;
+                break;
 
-            continue;
+            case MODEM_NETWORK_REG_FAILED:
+            case MODEM_NETWORK_REG_SEARCHING:
+            case MODEM_NETWORK_REG_DENIED:
+            case MODEM_NETWORK_REG_UNKNOWN:
+            default:
+                memset(&priv->sq, 0, sizeof(priv->sq));
+                memset(&priv->network_type, 0, sizeof(priv->network_type));
+                memset(&priv->oper, 0, sizeof(priv->oper));
+
+                priv->locked = 1;
+
+                continue;
         }
-        else
-            priv->locked = 0;
 
         at_get_signal_quality(priv->q, &priv->sq);
 
@@ -326,15 +338,14 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
     conf->data.auth = PPP_NONE;
     *conf->data.username = 0;
     *conf->data.password = 0;
-    conf->roaming_enable = 0;
+    conf->roaming = 0;
     conf->operator_number = 0;
     conf->access_technology = 0;
     conf->frequency_band = 0;
     conf->from_file = 0;
 
     /* path to config */
-//    snprintf(s, sizeof(s), "/etc/modemd/%s/conf", port);
-    snprintf(s, sizeof(s), "/etc/modemd/1-1/conf");
+    snprintf(s, sizeof(s), "/etc/modemd/%s/conf", port);
 
     if(!(f = fopen(s, "r")))
     {
@@ -397,7 +408,7 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
         }
         else if(strstr(s, CONF_ROAMING))
         {
-            conf->roaming_enable = 1;
+            conf->roaming = 1;
         }
         else if(strstr(s, CONF_OPER) == s)
         {
@@ -420,7 +431,7 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
         "Auth: %d\n"
         "Username: %s\n"
         "Password: %s\n"
-        "roaming_enable: %d\n"
+        "roaming: %d\n"
         "operator_number: %d\n"
         "access_technology: %d\n"
         "frequency_band: %d\n"
@@ -432,7 +443,7 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
         conf->data.auth,
         conf->data.username,
         conf->data.password,
-        conf->roaming_enable,
+        conf->roaming,
         conf->operator_number,
         conf->access_technology,
         conf->frequency_band,
@@ -442,7 +453,7 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
 
 /*------------------------------------------------------------------------*/
 
-int mc7700_open(const char *port)
+int mc7700_open(const char *port, const char *tty)
 {
     if(mc7700_thread_priv.mc7700_clients ++)
         return(mc7700_thread_priv.mc7700_clients);
@@ -450,7 +461,10 @@ int mc7700_open(const char *port)
     strncpy(mc7700_thread_priv.port, port, sizeof(mc7700_thread_priv.port) - 1);
     mc7700_thread_priv.port[sizeof(mc7700_thread_priv.port) - 1] = 0;
 
-    mc7700_thread_priv.fd = serial_open(port, O_RDWR);
+    strncpy(mc7700_thread_priv.tty, tty, sizeof(mc7700_thread_priv.tty) - 1);
+    mc7700_thread_priv.tty[sizeof(mc7700_thread_priv.tty) - 1] = 0;
+
+    mc7700_thread_priv.fd = serial_open(tty, O_RDWR);
     mc7700_thread_priv.q = queue_create();
     mc7700_thread_priv.terminate = 0;
     mc7700_thread_priv.terminate_reg = 0;
