@@ -4,7 +4,7 @@
 
 void log_init(const char* name)
 {
-    openlog(name, LOG_CONS | LOG_PID, LOG_DAEMON);
+    openlog(name, LOG_PID, LOG_DAEMON);
 }
 
 /*------------------------------------------------------------------------*/
