@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <regex.h>
 
+#include "lib/log.h"
 #include "queue.h"
 #include "mc7700.h"
 #include "lib/utils.h"
@@ -49,7 +50,7 @@ void* mc7700_thread_write(void* prm)
         free(buf);
 
 #ifdef __MODEMD_DEBUG
-        printf("(II) write: %s\n", priv->query->query);
+        log_info("write(%d): %s", strlen(priv->query->query), priv->query->query);
 #endif
 
         write(priv->fd, priv->query->query, strlen(priv->query->query));
@@ -83,7 +84,7 @@ void* mc7700_thread_read(void* prm)
 
             if(res == -1)
             {
-                printf("(EE) failed read() %d\n", res);
+                log_err("failed read() %d\n", res);
 
                 continue;
             }
@@ -95,11 +96,7 @@ void* mc7700_thread_read(void* prm)
                 buf[buf_len] = 0;
 
 #ifdef __MODEMD_DEBUG
-#if 0
-                if(strncmp(query->query, buf, buf_len) == 0)
-                    printf("(II) Allowed echo commands is detected!\n");
-#endif
-                printf("(II) read(%d): %s\n", buf_len, buf);
+                log_info("read(%d): %s", buf_len, buf);
 #endif /*__MODEMD_DEBUG */
 
                 regcomp(&re, priv->query->answer_reg, REG_EXTENDED);
@@ -114,7 +111,7 @@ void* mc7700_thread_read(void* prm)
 
                     regerror(re_res, &re, re_err, sizeof(re_err));
 
-                    printf("(EE) regexec() %s [\n%s\n]\n", re_err, buf);
+                    log_err("regexec() %s [\n%s\n]\n", re_err, buf);
 #endif
                     free(priv->query->re_subs);
                     priv->query->re_subs = NULL;
@@ -130,7 +127,7 @@ void* mc7700_thread_read(void* prm)
                 regfree(&re);
 
 #ifdef __MODEMD_DEBUG
-                printf("(II) Matched\n\n\n");
+                log_info("Matched");
 #endif
 
                 if(priv->query->error == -1)
@@ -153,12 +150,12 @@ void* mc7700_thread_read(void* prm)
         {
             if(giveup >= priv->query->timeout)
             {
-                printf("(II) Command [%s] timeout after %d second(s)\n", priv->query->query, giveup);
-                printf("(EE) No match [\n%s\n]\n", buf);
+                log_info("Command %s expired after %d second(s)", priv->query->query, giveup);
+                log_info("No match %s", buf);
             }
             else if(priv->query->error > 0) /* ignore general error */
             {
-                printf("(EE) CME ERROR: %d\n", priv->query->error);
+                log_info("CME ERROR: %d", priv->query->error);
                 priv->last_error = priv->query->error;
             }
 
@@ -198,7 +195,7 @@ void* mc7700_thread_reg(void* prm)
     while(!priv->conf.from_file)
     {
         mc7700_read_config(priv->port, &priv->conf);
-        printf("Waiting configuration for %s port\n", priv->port);
+        log_dbg("Waiting configuration for %s port\n", priv->port);
 
         sleep(5);
     }
@@ -266,7 +263,7 @@ void* mc7700_thread_reg(void* prm)
     /* waiting for IMSI ready */
     while(!*priv->imsi && !priv->terminate_reg)
     {
-        printf("(II) Waiting for IMSI ready..\n");
+        log_dbg("Waiting for IMSI ready..\n");
 
         sleep(1);
 
@@ -381,7 +378,7 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
         {
             strncpy(conf->puk, s + strlen(CONF_PUK), sizeof(conf->puk) - 1);
             conf->puk[sizeof(conf->puk) - 1] = 0;
-            printf("PUK: [%s]\n", conf->puk);
+            log_dbg("PUK: [%s]\n", conf->puk);
             mystrtrmr_a(conf->puk);
         }
         else if(strstr(s, CONF_APN) == s)
@@ -426,7 +423,7 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
 
     fclose(f);
 
-    printf("PIN: %s PUK: %s\n"
+    log_dbg("PIN: %s PUK: %s\n"
         "APN: %s\n"
         "Auth: %d\n"
         "Username: %s\n"

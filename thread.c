@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include "lib/log.h"
 #include "thread.h"
 #include "mc7700.h"
 #include "modem/types.h"
@@ -86,9 +87,9 @@ rpc_packet_t* modem_open_by_port(modem_client_thread_t* priv, rpc_packet_t* p)
     while(!modem_get_at_port_name(port, tty, sizeof(tty)) && modem_wakeup_tries)
     {
 #ifdef __MODEMD_DEBUG
-        printf("(II) Wait modem wakeup on port %s\n", port);
+        log_dbg("Wait modem wakeup on port %s\n", port);
 #endif
-        init_port(port);
+        port_power(port, 1);
         sleep(20);
         -- modem_wakeup_tries;
     }
@@ -96,7 +97,7 @@ rpc_packet_t* modem_open_by_port(modem_client_thread_t* priv, rpc_packet_t* p)
     if(*tty)
     {
 #ifdef __MODEMD_DEBUG
-        printf("==== %s -> %s\n", port, tty);
+        log_dbg("==== %s -> %s\n", port, tty);
 #endif
         strncpy(priv->port, port, sizeof(priv->port) - 1);
         priv->port[sizeof(priv->port) - 1] = 0;
@@ -487,7 +488,7 @@ void* ThreadWrapper(void* prm)
             {
                 if(rpc_func->reg_need && mc7700_thread_priv.locked)
                 {
-                    printf("(WW) Denied function %s Registration is not complete\n",
+                    log_warn("Denied function %s Registration is not complete\n",
                         rpc_func->name);
 
                     break;

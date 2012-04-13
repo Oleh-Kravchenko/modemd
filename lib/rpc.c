@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <string.h>
 
+#include "log.h"
 #include "rpc.h"
 
 /*------------------------------------------------------------------------*/
@@ -174,7 +175,7 @@ rpc_packet_t* rpc_recv_func(int sock, const char* func, int tries)
         -- tries;
 
 #if 0
-        printf("==== %s:%d %s() tries %d left\n", __FILE__, __LINE__, __func__, tries);
+        log_dbg("%s() tries %d left\n", __func__, tries);
 #endif
     }
 
@@ -203,10 +204,10 @@ void rpc_print(rpc_packet_t *p)
     if(!p)
         return;
 
-    printf("==== %s %s(%d) data(%d) = [", p->hdr.type ? "Response" : "Query" , p->func, p->hdr.func_len, p->hdr.data_len);
+    log_dbg("==== %s %s(%d) data(%d) = [", p->hdr.type ? "Response" : "Query" , p->func, p->hdr.func_len, p->hdr.data_len);
 
     for(i = 0; i < p->hdr.data_len; ++ i)
-        printf(" %02x", p->data[i]);
-    puts(" ]");
+        log_dbg(" %02x", p->data[i]);
+    log_dbg(" ]");
 #endif
 }

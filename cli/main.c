@@ -10,8 +10,8 @@
 /*------------------------------------------------------------------------*/
 
 /* default names */
-#define MODEMD_NAME "modemd"
-#define MODEM_CLI "modem_cli"
+#define MODEMD_NAME     "modemd"
+#define MODEMD_CLI_NAME "modemd_cli"
 
 #define BOOL2STR(i) (i ? "Yes" : "No")
 
@@ -19,11 +19,11 @@
 
 const char help[] =
     "Usage:\n"
-    MODEM_CLI " -h\n"
-    MODEM_CLI " [-s SOCKET] [-t] -d\n"
-    MODEM_CLI " [-s SOCKET] [-t] -p PORT\n"
-    MODEM_CLI " [-s SOCKET] -c COMMAND -d\n"
-    MODEM_CLI " [-s SOCKET] -c COMMAND -p PORT \n\n"
+    MODEMD_CLI_NAME " -h\n"
+    MODEMD_CLI_NAME " [-s SOCKET] [-t] -d\n"
+    MODEMD_CLI_NAME " [-s SOCKET] [-t] -p PORT\n"
+    MODEMD_CLI_NAME " [-s SOCKET] -c COMMAND -d\n"
+    MODEMD_CLI_NAME " [-s SOCKET] -c COMMAND -p PORT \n\n"
     "Keys:\n"
     "-h - show this help\n"
     "-s - file socket path (default: /var/run/" MODEMD_NAME ".ctl)\n"
@@ -32,9 +32,9 @@ const char help[] =
     "-c - execute at command\n"
     "-t - perform a standard sequence of commands on modem\n\n"
     "Examples:\n"
-    "modem_cli -d -c ATI                             - show AT information\n"
-    "modem_cli -d -c 'AT+CGDCONT=1,\"IP\",\"apn.com\"'   - set apn\n"
-    "modem_cli -d -c 'AT+CPIN=\"1111\"'                - set pin code";
+    MODEMD_CLI_NAME " -d -c ATI                             - show AT information\n"
+    MODEMD_CLI_NAME " -d -c 'AT+CGDCONT=1,\"IP\",\"apn.com\"'   - set apn\n"
+    MODEMD_CLI_NAME " -d -c 'AT+CPIN=\"1111\"'                - set pin code";
 
 /*------------------------------------------------------------------------*/
 
@@ -46,7 +46,7 @@ static int opt_modems_test;
 
 /*------------------------------------------------------------------------*/
 
-int analyze_parameters(int argc, char** argv)
+int conf_read_cmdline(int argc, char** argv)
 {
     int param;
 
@@ -234,7 +234,7 @@ int main(int argc, char** argv)
     modem_info_t *mi;
     int res = 0;
 
-    if((res = analyze_parameters(argc, argv)))
+    if((res = conf_read_cmdline(argc, argv)))
         goto exit;
 
     /* show configuration */

@@ -8,7 +8,7 @@
 
 /*------------------------------------------------------------------------*/
 
-int its_cell_ctrl_lattice(int cmd, void* arg)
+int hw_c1kmbr_ctl(int cmd, void* arg)
 {
     int res = -1;
     int fd;

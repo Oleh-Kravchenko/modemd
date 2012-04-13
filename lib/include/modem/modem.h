@@ -133,36 +133,4 @@ char* modem_at_command(modem_t* modem, const char* query);
  */
 int modem_get_last_error(modem_t* modem);
 
-#if 0
-
-/***************************************************************************
- * EVENT                                                                   *
- **************************************************************************/
-
-modem_event_t* modem_wait_event(modem_t* modem, modem_event_t* event, int timeout);
-
-int modem_register_event_handler_callback(modem_t* modem, modem_event_handler_t* event_handler);
-
-void modem_unregister_event_handler_callback(modem_t* modem, modem_event_handler_t* event_handler);
-
-/***************************************************************************
- * DATA SESSION                                                            *
- **************************************************************************/
-
-int modem_max_number_of_data_profiles(modem_t* modem);
-
-int modem_data_profile_setup(modem_t* modem, int slot, modem_data_profile_t* profile);
-
-modem_data_profile_t* modem_data_profile_read(modem_t* modem, int slot, modem_data_profile_t* profile);
-
-int modem_data_profile_clear(modem_t* modem, int slot);
-
-int modem_data_profile_connect(modem_t* modem, int slot);
-
-void modem_data_profile_disconnect(modem_t* modem, int slot);
-
-int modem_data_profile_is_active(modem_t* modem, int slot);
-
-#endif /* 0 */
-
 #endif /* __MODEM_H */

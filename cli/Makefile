@@ -3,7 +3,7 @@ ifndef JMKE_ENV_INCLUDED
   include $(JMK_ROOT)/jmk/env_root.mak
 endif
 
-JMK_TARGET=modem_cli
+JMK_TARGET=modemd_cli
 JMK_RAMDISK_BIN_FILES=$(JMK_TARGET)
 
 JMK_O_OBJS=main.o

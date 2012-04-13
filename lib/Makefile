@@ -16,7 +16,7 @@ JMK_CFLAGS_$(JMK_SO_TARGET)=-D__HW_C1KMBR -D__MODEMD_DEBUG
 OBJS=rpc.o modem_str.o
 
 JMK_O_OBJS_$(JMK_SO_TARGET)=$(OBJS) modem.o
-JMK_O_OBJS_$(JMK_A_TARGET)=$(OBJS) modem_int.o utils.o
+JMK_O_OBJS_$(JMK_A_TARGET)=$(OBJS) modem_int.o utils.o log.o
 
 include $(JMK_ROOT)/pkg/modemd/modemd.mak
 $(call JMKE_INCLUDE_RULES)

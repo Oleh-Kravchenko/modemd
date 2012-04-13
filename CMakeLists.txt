@@ -2,7 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 PROJECT(modemd)
 
-ADD_DEFINITIONS(-D__MODEMD_DEBUG)
+ADD_DEFINITIONS(-D_XOPEN_SOURCE=600 -std=gnu99 -pedantic)
 
 INCLUDE_DIRECTORIES(lib/include)
 
@@ -18,23 +18,25 @@ queue.h
 main.c
 hardware.c
 hardware.h
+conf.h
+conf.c
 )
 
 ADD_EXECUTABLE(modemd ${PROJECT_SOURCES})
 
 TARGET_LINK_LIBRARIES(modemd modem_int pthread)
 
-ADD_SUBDIRECTORY(cli modem_cli)
-ADD_SUBDIRECTORY(lib libmodem)
+ADD_SUBDIRECTORY(cli)
+ADD_SUBDIRECTORY(lib)
 
-#INSTALL(TARGETS modemd DESTINATION bin)
+INSTALL(TARGETS modemd DESTINATION bin)
 
-#CONFIGURE_FILE(
-#"${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
-#"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-#IMMEDIATE @ONLY
-#)
+CONFIGURE_FILE(
+"${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
+"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+IMMEDIATE @ONLY
+)
 
-#ADD_CUSTOM_TARGET(uninstall "${CMAKE_COMMAND}"
-#-P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-#)
+ADD_CUSTOM_TARGET(uninstall "${CMAKE_COMMAND}"
+-P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+)

@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-PROJECT(modem_cli)
+PROJECT(modemd_cli)
 
 SET(PROJECT_SOURCES
 ../lib/include/modem/modem.h
@@ -8,8 +8,8 @@ SET(PROJECT_SOURCES
 main.c
 )
 
-ADD_EXECUTABLE(modem_cli ${PROJECT_SOURCES})
+ADD_EXECUTABLE(modemd_cli ${PROJECT_SOURCES})
 
-TARGET_LINK_LIBRARIES(modem_cli modem)
+TARGET_LINK_LIBRARIES(modemd_cli modem)
 
-#INSTALL(TARGETS modem_cli DESTINATION bin)
+INSTALL(TARGETS modemd_cli DESTINATION bin)
