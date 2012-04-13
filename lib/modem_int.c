@@ -392,7 +392,7 @@ int at_get_signal_quality(queue_t *queue, modem_signal_quality_t* sq)
     sq->dbm = 0;
     sq->level = 0;
 
-    q = mc7700_query_create("AT+CSQ\r\n", "([0-9]+),([0-9]+)\r\n\r\nOK\r\n");
+    q = mc7700_query_create("AT+CSQ\r\n", "([0-9]+), ?([0-9]+)\r\n\r\nOK\r\n");
     mc7700_query_execute(queue, q);
 
     /* cutting IMEI number from the reply */
