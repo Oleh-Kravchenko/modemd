@@ -223,6 +223,8 @@ void* mc7700_thread_reg(void* prm)
     }
 
     /* pin && puk handling */
+    res_ok = -1;
+
     switch(at_cpin_state(priv->q))
     {
         case MODEM_CPIN_STATE_PIN:
