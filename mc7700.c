@@ -126,10 +126,6 @@ void* mc7700_thread_read(void* prm)
 
                 regfree(&re);
 
-#ifdef __MODEMD_DEBUG
-                log_info("Matched");
-#endif
-
                 if(priv->query->error == -1)
                 {
                     priv->query->answer = malloc(buf_len + 1);
