@@ -178,7 +178,7 @@ rpc_packet_t* modem_get_network_time(modem_client_thread_t* priv, rpc_packet_t* 
     /* cutting TIME from the reply */
     if(q->answer)
     {
-        __REGMATCH_N_CUT(dt, sizeof(dt), q->answer, q->re_subs[1])
+        regmatch_ncpy(dt, sizeof(dt), q->answer, q->re_subs + 1);
 
         /* parsing date and time */
         strptime(dt, "%Y/%m/%d\r\n%H:%M:%S", &tm);
@@ -338,7 +338,6 @@ rpc_packet_t* modem_at_command(modem_client_thread_t* priv, rpc_packet_t* p)
 rpc_packet_t* modem_get_cell_id(modem_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
-    char cell_ids[0x100];
     mc7700_query_t *q;
     int32_t cell_id;
 
@@ -348,9 +347,7 @@ rpc_packet_t* modem_get_cell_id(modem_client_thread_t* priv, rpc_packet_t* p)
     /* cutting Cell ID number from the reply */
     if(q->answer)
     {
-        __REGMATCH_N_CUT(cell_ids, sizeof(cell_ids), q->answer, q->re_subs[1])
-
-        cell_id = atoi(cell_ids);
+        cell_id = regmatch_atoi(q->answer, q->re_subs + 1);
 
         res = rpc_create(TYPE_RESPONSE, __func__, (uint8_t*)&cell_id, sizeof(cell_id));
     }

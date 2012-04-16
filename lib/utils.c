@@ -160,6 +160,7 @@ int at_parse_cops_list(const char* s, modem_oper_t** opers)
 {
     regmatch_t *re_subs;
     int len = strlen(s);
+    modem_oper_t* oper;
     int next = 0;
     int nopers;
     regex_t re;
@@ -181,17 +182,19 @@ int at_parse_cops_list(const char* s, modem_oper_t** opers)
         if(regexec(&re, s + next, (re.re_nsub + 1), re_subs, 0))
             break;
 
-        ++ nopers;
-
         /* increase memory for result */
-        *opers = realloc(*opers, sizeof(modem_oper_t) * nopers);
+        *opers = realloc(*opers, sizeof(modem_oper_t) * (nopers + 1));
+
+        oper = (*opers + nopers);
 
         /* add new info about operator */
-        (*opers)[nopers - 1].stat = (*(s + next + re_subs[1].rm_so)) - 0x30;
-        __REGMATCH_CUT((*opers)[nopers - 1].longname, s + next, re_subs[2]);
-        __REGMATCH_CUT((*opers)[nopers - 1].shortname, s + next, re_subs[3]);
-        __REGMATCH_CUT((*opers)[nopers - 1].numeric, s + next, re_subs[4]);
-        (*opers)[nopers - 1].act = (*(s + next + re_subs[5].rm_so)) - 0x30;
+        oper->stat = regmatch_atoi(s, re_subs + 1);
+        regmatch_ncpy(oper->longname, sizeof(oper->longname), s, re_subs + 2);
+        regmatch_ncpy(oper->shortname, sizeof(oper->shortname), s, re_subs + 3);
+        regmatch_ncpy(oper->numeric, sizeof(oper->numeric), s, re_subs + 4);
+        oper->act = regmatch_atoi(s, re_subs + 5);
+
+        ++ nopers;
 
         /* length of one operator string */
         next += re_subs[0].rm_eo - re_subs[0].rm_so;
@@ -231,7 +234,7 @@ int at_parse_error(const char* s)
     if(regexec(&re, s, (re.re_nsub + 1), re_subs, 0))
         goto reg_err;
 
-    __REGMATCH_CUT(serror, s, re_subs[1]);
+    regmatch_ncpy(serror, sizeof(serror), s, re_subs + 1);
 
     /* CME error */
     cme_error = atoi(serror);
@@ -318,86 +321,118 @@ exit:
 
 /*------------------------------------------------------------------------*/
 
-char szTrim[] = "\x20\t\r\n";
+static const char escape_symbols[] = "\x20\a\b\t\n\v\f\r";
 
 /*------------------------------------------------------------------------*/
 
-char* mystrtrml_a(char* str)
+char* trim_l(char* s)
 {
-	char* trim = str;
+	char* res = s;
 
-	while (strchr(szTrim, *trim))
-		++ trim;
+	while(*s && strchr(escape_symbols, *s))
+		++ s;
 
-	while ((*str ++ = *trim ++));
+	if(res != s)
+		memmove(res, s, strlen(s) + 1);
 
-	return(str);
+	return(res);
 }
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
-char* mystrtrmr_a(char* str)
+char* trim_r(char* s)
 {
-	char* trim = 0;
+	size_t len = strlen(s);
+	char *res = NULL;
 
-	while (*str)
-	{
-		if (strchr(szTrim, *str))
-		{
-			if (!trim)
-				trim = str;
-		}
-		else
-			trim = 0;
+	while(len -- && strchr(escape_symbols, s[len]))
+		res = &s[len];
 
-		str ++;
-	}
+	if(res)
+		*res = 0;
 
-	if (trim)
-		*trim = 0;
-
-	return(trim ? trim : str);
+	return(res);
 }
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
-size_t mystrtrm_a(char* str)
+char* trim(char *s)
 {
-	char* trimr, *triml = str, *trim = NULL;
-	size_t result = 0;
+	char* l = s;
+	size_t len;
 
-    if(!*str)
-        return(result);
+	while(*l && strchr(escape_symbols, *l))
+		++ l;
 
-	while (strchr(szTrim, *triml))
-		++ triml;
+	len = strlen(l);
 
-	if (*triml)
+	while(len)
 	{
-		trimr = triml + sizeof(char);
+		-- len;
 
-		while (*trimr)
-		{
-			if (strchr(szTrim, *trimr))
-			{
-				if (!trim)
-					trim = trimr;
-			}
-			else
-				trim = 0;
-
-			trimr ++;
-		}
+		if(!strchr(escape_symbols, l[len]))
+			break;
 	}
 
-	if (trim)
-		*trim = 0;
-
-	while ((*str = *triml ++))
+	if(len ++)
 	{
-		++ str;
-		++ result;
+		memmove(s, l, len);
+		s[len] = 0;
 	}
 
-	return(result);
+	return(s + len);
+}
+
+/*------------------------------------------------------------------------*/
+
+int regmatch_atoi(const char* src, const regmatch_t* re_subs)
+{
+    int res = 0;
+    size_t len;
+    char* buf;
+
+    len = re_subs->rm_eo - re_subs->rm_so;
+
+    if(!(buf = malloc(len + 1)))
+        return(res);
+
+    memcpy(buf, src + re_subs->rm_so, len);
+    buf[len] = 0;
+
+    res = atoi(buf);
+
+    free(buf);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+void regmatch_ncpy(char* dst, size_t n, const char* src, const regmatch_t* re_subs)
+{
+    size_t len;
+
+    len = re_subs->rm_eo - re_subs->rm_so;
+    len = (len > n ? n - 1 : len);
+
+    memcpy(dst, src + re_subs->rm_so, len);
+    dst[len] = 0;
+}
+
+/*------------------------------------------------------------------------*/
+
+char* regmatch_strdup(const char* src, const regmatch_t* re_subs)
+{
+    size_t len;
+    char* res;
+
+    len = re_subs->rm_eo - re_subs->rm_so;
+
+    if(!(res = malloc(len + 1)))
+        return(res);
+
+    memcpy(res, src + re_subs->rm_so, len);
+    res[len] = 0;
+
+    return(res);
 }

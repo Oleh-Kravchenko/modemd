@@ -370,20 +370,20 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
         {
             strncpy(conf->pin, s + strlen(CONF_PIN), sizeof(conf->pin) - 1);
             conf->pin[sizeof(conf->pin) - 1] = 0;
-            mystrtrmr_a(conf->pin);
+            trim_r(conf->pin);
         }
         else if(strstr(s, CONF_PUK) == s)
         {
             strncpy(conf->puk, s + strlen(CONF_PUK), sizeof(conf->puk) - 1);
             conf->puk[sizeof(conf->puk) - 1] = 0;
             log_dbg("PUK: [%s]\n", conf->puk);
-            mystrtrmr_a(conf->puk);
+            trim_r(conf->puk);
         }
         else if(strstr(s, CONF_APN) == s)
         {
             strncpy(conf->data.apn, s + strlen(CONF_APN), sizeof(conf->data.apn) - 1);
             conf->data.apn[sizeof(conf->data.apn) - 1] = 0;
-            mystrtrmr_a(conf->data.apn);
+            trim_r(conf->data.apn);
         }
         else if(strstr(s, CONF_AUTH) == s)
         {
@@ -393,13 +393,13 @@ void mc7700_read_config(const char* port, modem_conf_t* conf)
         {
             strncpy(conf->data.username, s + strlen(CONF_USER), sizeof(conf->data.username) - 1);
             conf->data.username[sizeof(conf->data.username) - 1] = 0;
-            mystrtrmr_a(conf->data.username);
+            trim_r(conf->data.username);
         }
         else if(strstr(s, CONF_PASS) == s)
         {
             strncpy(conf->data.password, s + strlen(CONF_PASS), sizeof(conf->data.password) - 1);
             conf->data.password[sizeof(conf->data.password) - 1] = 0;
-            mystrtrmr_a(conf->data.password);
+            trim_r(conf->data.password);
         }
         else if(strstr(s, CONF_ROAMING))
         {

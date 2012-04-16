@@ -7,22 +7,11 @@
 
 /*------------------------------------------------------------------------*/
 
-#define __REGMATCH_CUT(dst, src, re_subs)                                  \
-{                                                                          \
-    memcpy(dst, (src) + re_subs.rm_so, re_subs.rm_eo - re_subs.rm_so);     \
-    dst[re_subs.rm_eo - re_subs.rm_so] = 0;                                \
-}
+int regmatch_atoi(const char* src, const regmatch_t* re_subs);
 
-#define __REGMATCH_N_CUT(dst, n, src, re_subs)                             \
-{                                                                          \
-    size_t len;                                                            \
-                                                                           \
-    len = re_subs.rm_eo - re_subs.rm_so;                                   \
-    len = (len > n ? n - 1 : len);                                         \
-                                                                           \
-    memcpy(dst, src + re_subs.rm_so, len);                                 \
-    dst[len] = 0;                                                          \
-}
+void regmatch_ncpy(char* dst, size_t n, const char* src, const regmatch_t* re_subs);
+
+char* regmatch_strdup(const char* src, const regmatch_t* re_subs);
 
 /*------------------------------------------------------------------------*/
 
@@ -98,8 +87,6 @@ int mnc_get_length(const char *imsi);
 
 /*------------------------------------------------------------------------*/
 
-size_t mystrtrm_a(char* str);
-
-char* mystrtrmr_a(char* str);
+char* trim_r(char* str);
 
 #endif /* __UTILS_H */

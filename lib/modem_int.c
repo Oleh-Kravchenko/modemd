@@ -147,7 +147,7 @@ modem_cpin_state_t at_cpin_state(queue_t* queue)
 
     if(q->answer)
     {
-        __REGMATCH_N_CUT(cpin_st, sizeof(cpin_st), q->answer, q->re_subs[1])
+        regmatch_ncpy(cpin_st, sizeof(cpin_st), q->answer, q->re_subs + 1);
 
         if(strcmp(cpin_st, "READY") == 0)
             res = MODEM_CPIN_STATE_READY;
@@ -231,7 +231,7 @@ char* at_get_imsi(queue_t* queue, char* imsi, size_t len)
     /* cutting IMSI number from the reply */
     if(q->answer)
     {
-        __REGMATCH_N_CUT(imsi, len, q->answer, q->re_subs[1])
+        regmatch_ncpy(imsi, len, q->answer, q->re_subs + 1);
 
         res = imsi;
     }
@@ -253,7 +253,7 @@ char* at_get_imei(queue_t* queue, char* imei, size_t len)
 
     if(q->answer)
     {
-        __REGMATCH_N_CUT(imei, len, q->answer, q->re_subs[1])
+        regmatch_ncpy(imei, len, q->answer, q->re_subs + 1);
 
         res = imei;
     }
@@ -276,19 +276,17 @@ int at_operator_scan(queue_t* queue, modem_oper_t** opers)
 
     mc7700_query_execute(queue, q);
 
-    /* cutting operators from the answer */
     if(!q->answer)
         goto exit;
 
-    if(!(sopers = malloc(q->re_subs[1].rm_eo - q->re_subs[1].rm_so + 1)))
-        goto err_malloc;
+    /* cutting operators from the answer */
+    if(!(sopers = regmatch_strdup(q->answer, q->re_subs + 1)))
+        goto err;
 
     /* parsing operator list */
-    __REGMATCH_CUT(sopers, q->answer, q->re_subs[1]);
-
     nopers = at_parse_cops_list(sopers, opers);
 
-err_malloc:
+err:
     free(sopers);
 
 exit:
@@ -385,7 +383,6 @@ modem_cops_mode_t at_cops_mode(queue_t* queue)
 
 int at_get_signal_quality(queue_t *queue, modem_signal_quality_t* sq)
 {
-    char rssi[16], ber[16];
     mc7700_query_t *q;
     int res = -1, nrssi, nber;
 
@@ -398,27 +395,26 @@ int at_get_signal_quality(queue_t *queue, modem_signal_quality_t* sq)
     /* cutting IMEI number from the reply */
     if(q->answer)
     {
-        __REGMATCH_N_CUT(rssi, sizeof(rssi), q->answer, q->re_subs[1])
-        __REGMATCH_N_CUT(ber, sizeof(ber), q->answer, q->re_subs[2])
+        nrssi = regmatch_atoi(q->answer, q->re_subs + 1);
+        nber = regmatch_atoi(q->answer, q->re_subs + 2);
 
-        nrssi = atoi(rssi);
-        nber = atoi(ber);
+        if(nrssi > 31)
+            goto exit;
 
         /* calculation dBm */
-        sq->dbm = (nrssi > 31) ? 0 : nrssi * 2 - 113;
+        sq->dbm = nrssi * 2 - 113;
 
         /* calculation signal level */
-        if((sq->level = !!sq->dbm))
-        {
-            sq->level += (sq->dbm >= -95);
-            sq->level += (sq->dbm >= -85);
-            sq->level += (sq->dbm >= -73);
-            sq->level += (sq->dbm >= -65);
-        }
+        sq->level += (sq->dbm >= -113);
+        sq->level += (sq->dbm >= -95);
+        sq->level += (sq->dbm >= -85);
+        sq->level += (sq->dbm >= -73);
+        sq->level += (sq->dbm >= -65);
         
         res = 0;
     }
 
+exit:
     mc7700_query_destroy(q);
 
     return(res);
@@ -429,9 +425,8 @@ int at_get_signal_quality(queue_t *queue, modem_signal_quality_t* sq)
 modem_fw_version_t* at_get_fw_version(queue_t *queue, modem_fw_version_t* fw_info)
 {
     modem_fw_version_t* res = NULL;
-    mc7700_query_t *q;
-    char firmware[0x100];
     char release[0x100];
+    mc7700_query_t *q;
     struct tm tm;
 
     q = mc7700_query_create("AT+CGMR\r\n", "\r\n.*(SWI.*) .* .* ([0-9,/]+ [0-9,:]+)\r\n\r\nOK\r\n");
@@ -441,12 +436,9 @@ modem_fw_version_t* at_get_fw_version(queue_t *queue, modem_fw_version_t* fw_inf
     /* cutting Operator name from the answer */
     if(q->answer)
     {
-        __REGMATCH_N_CUT(firmware, sizeof(firmware), q->answer, q->re_subs[1])
-        __REGMATCH_N_CUT(release, sizeof(release), q->answer, q->re_subs[2])
-
         /* create result */
-        strncpy(fw_info->firmware, firmware, sizeof(fw_info->firmware) - 1);
-        fw_info->firmware[sizeof(fw_info->firmware) - 1] = 0;
+        regmatch_ncpy(fw_info->firmware, sizeof(fw_info->firmware), q->answer, q->re_subs + 1);
+        regmatch_ncpy(release, sizeof(release), q->answer, q->re_subs + 2);
 
         /* parsing date and time */
         strptime(release, "%Y/%m/%d\r\n%H:%M:%S", &tm);
@@ -473,7 +465,7 @@ char* at_get_network_type(queue_t *queue, char *network, int len)
 
     if(q->answer)
     {
-        __REGMATCH_N_CUT(network, len, q->answer, q->re_subs[1])
+        regmatch_ncpy(network, len, q->answer, q->re_subs + 1);
 
         res = network;
     }
@@ -506,7 +498,7 @@ char* at_get_operator_name(queue_t *queue, char *oper, int len)
     /* cutting Operator name from the answer */
     if(q->answer)
     {
-        __REGMATCH_N_CUT(oper, len, q->answer, q->re_subs[1])
+        regmatch_ncpy(oper, len, q->answer, q->re_subs + 1);
 
         res = oper;
     }
