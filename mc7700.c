@@ -16,6 +16,7 @@
 #include "mc7700.h"
 #include "lib/utils.h"
 #include "lib/modem_int.h"
+#include "hardware.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -30,8 +31,11 @@ thread_queue_t mc7700_thread_priv;
 void* mc7700_thread_write(void* prm)
 {
     thread_queue_t *priv = prm;
+	void *thread_res;
     size_t buf_len;
     void* buf;
+    int res;
+	int modem_giveup;
 
     while(!priv->terminate)
     {
@@ -53,7 +57,84 @@ void* mc7700_thread_write(void* prm)
         log_info("write(%d): %s", strlen(priv->query->query), priv->query->query);
 #endif
 
-        write(priv->fd, priv->query->query, strlen(priv->query->query));
+        res = write(priv->fd, priv->query->query, strlen(priv->query->query));
+        
+
+		if(res == -1)
+		{
+			log_err("Modem reseted?");
+
+			priv->terminate = 1;
+			queue_busy(priv->q, 1);
+
+			/* terminate read thread */
+			pthread_join(priv->thread_read, &thread_res);
+
+			/* close port */
+			close(priv->fd);
+			priv->fd = -1;
+
+			/* notify registration thread about termination */
+			priv->terminate_reg = 1;
+
+			buf = NULL;
+
+			/* terminate all queue request */
+			do
+			{
+				/* resolve pointer to query */
+				if(buf)
+					priv->query = (mc7700_query_t*)*((mc7700_query_t**)buf);
+
+				free(buf);
+				buf = NULL;
+
+				log_dbg("Dropped query [%s]", priv->query->query);
+
+				/* reporting about failed reply */
+				pthread_mutex_lock(&priv->query->cond_m);
+				pthread_cond_signal(&priv->query->cond);
+				pthread_mutex_unlock(&priv->query->cond_m);
+
+				priv->query = NULL;
+			}
+			while(queue_wait_pop(priv->q, THREAD_WAIT, &buf, &buf_len) == 0);
+
+			/* terminate registration thread */
+			pthread_join(priv->thread_reg, &thread_res);
+
+			priv->terminate = 0;
+			priv->terminate_reg = 0;
+
+			queue_busy(priv->q, 0);
+
+			/* try to restore port */
+			*priv->tty = 0;
+			modem_giveup = 3;
+
+			while(modem_giveup > 0 && !modem_get_at_port_name(priv->port, priv->tty, sizeof(priv->tty)))
+			{
+				log_dbg("Wait modem wakeup on port %s\n", priv->port);
+
+				port_power(priv->port, 1);
+				sleep(20);
+			}
+
+			if(*priv->tty)
+			{
+				log_dbg("Modem at port now is %s\n", priv->tty);
+
+				priv->fd = serial_open(priv->tty, O_RDWR);
+
+				/* creating reg thread */
+				pthread_create(&priv->thread_reg, NULL, mc7700_thread_reg, priv);
+
+				/* creating reading thread */
+				pthread_create(&priv->thread_read, NULL, mc7700_thread_read, priv);
+			}
+
+			continue;
+		}
 
         /* wait for answer */
         pthread_mutex_lock(&priv->mutex);
@@ -224,6 +305,8 @@ void* mc7700_thread_reg(void* prm)
 
     /* pin && puk handling */
     res_ok = -1;
+    
+    sleep(10);
 
     switch(at_cpin_state(priv->q))
     {

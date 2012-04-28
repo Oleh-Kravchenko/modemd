@@ -28,6 +28,8 @@ typedef struct {
     /** pointer to last item of queue */
     queue_item_t *last;
 
+	int busy;
+
     /** mutex for queue managment */
     pthread_mutex_t lock;
 
@@ -85,5 +87,7 @@ int queue_pop(queue_t* q, void** data, size_t* size);
  * data must be freed by function free()
  */
 int queue_wait_pop(queue_t* q, int seconds, void** data, size_t* size);
+
+int queue_busy(queue_t* q, int busy);
 
 #endif /* __QUEUE_H */

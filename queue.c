@@ -12,6 +12,7 @@ queue_t* queue_create(void)
     {
         res->first = NULL;
         res->last = NULL;
+        res->busy = 0;
 
         pthread_mutex_init(&res->lock, NULL);
 
@@ -59,9 +60,15 @@ int queue_add(queue_t* q, const void* data, size_t size)
 {
     queue_item_t *i;
     int res = 0;
+    int busy;
+
+	/* check if queue is busy */
+    pthread_mutex_lock(&q->lock);
+	busy = q->busy;
+    pthread_mutex_unlock(&q->lock);
 
     /* create item */
-    if(!(i = malloc(sizeof(*i))))
+    if(busy || !(i = malloc(sizeof(*i))))
         goto err;
 
     if(!(i->data = malloc(size)))
@@ -159,4 +166,23 @@ int queue_wait_pop(queue_t* q, int seconds, void** data, size_t* size)
     }
 
     return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int queue_busy(queue_t* q, int busy)
+{
+	int res;
+
+    pthread_mutex_lock(&q->lock);
+
+	/* return old value */
+	res = q->busy;
+
+	/* new state */
+	q->busy = busy;
+
+	pthread_mutex_unlock(&q->lock);
+
+	return(res);
 }
