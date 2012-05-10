@@ -161,6 +161,7 @@ int at_parse_cops_list(const char* s, modem_oper_t** opers)
     regmatch_t *re_subs;
     int len = strlen(s);
     modem_oper_t* oper;
+    const char *t = s;
     int next = 0;
     int nopers;
     regex_t re;
@@ -179,7 +180,7 @@ int at_parse_cops_list(const char* s, modem_oper_t** opers)
 
     while(next < len)
     {
-        if(regexec(&re, s + next, (re.re_nsub + 1), re_subs, 0))
+        if(regexec(&re, t, (re.re_nsub + 1), re_subs, 0))
             break;
 
         /* increase memory for result */
@@ -188,16 +189,17 @@ int at_parse_cops_list(const char* s, modem_oper_t** opers)
         oper = (*opers + nopers);
 
         /* add new info about operator */
-        oper->stat = regmatch_atoi(s, re_subs + 1);
-        regmatch_ncpy(oper->longname, sizeof(oper->longname), s, re_subs + 2);
-        regmatch_ncpy(oper->shortname, sizeof(oper->shortname), s, re_subs + 3);
-        regmatch_ncpy(oper->numeric, sizeof(oper->numeric), s, re_subs + 4);
-        oper->act = regmatch_atoi(s, re_subs + 5);
+        oper->stat = regmatch_atoi(t, re_subs + 1);
+        regmatch_ncpy(oper->longname, sizeof(oper->longname), t, re_subs + 2);
+        regmatch_ncpy(oper->shortname, sizeof(oper->shortname), t, re_subs + 3);
+        regmatch_ncpy(oper->numeric, sizeof(oper->numeric), t, re_subs + 4);
+        oper->act = regmatch_atoi(t, re_subs + 5);
 
         ++ nopers;
 
         /* length of one operator string */
         next += re_subs[0].rm_eo - re_subs[0].rm_so;
+        t = s + next;
     }
 
     free(re_subs);
