@@ -351,6 +351,8 @@ void* mc7700_thread_reg(void* prm)
         at_get_imsi(priv->q, priv->imsi, sizeof(priv->imsi));
     }
 
+    sleep(5);
+
     if(priv->conf.operator_number)
     {
         snprintf(s, sizeof(s), "AT+COPS=1,2,%d,%d\r\n", priv->conf.operator_number, priv->conf.access_technology);
