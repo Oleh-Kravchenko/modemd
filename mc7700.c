@@ -154,6 +154,7 @@ void* mc7700_thread_read(void* prm)
     int buf_len = 0, res = 0, giveup = 0, re_res;
     char buf[0xffff];
     regex_t re;
+    int modem_hangup = 0;
 
     while(!priv->terminate)
     {
@@ -229,12 +230,19 @@ void* mc7700_thread_read(void* prm)
             {
                 log_info("Command %s expired after %d second(s)", priv->query->query, giveup);
                 log_info("No match %s", buf);
+                
+                ++ modem_hangup;
+
+				if(modem_hangup > 10)
+					port_reset(priv->port);
             }
             else if(priv->query->error > 0) /* ignore general error */
             {
                 log_info("CME ERROR: %d", priv->query->error);
                 priv->last_error = priv->query->error;
             }
+            else
+				modem_hangup = 0;
 
             /* reporting about reply */
             pthread_mutex_lock(&priv->query->cond_m);
