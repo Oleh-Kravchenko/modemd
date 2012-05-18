@@ -152,8 +152,8 @@ void* mc77x0_thread_reg(modem_t *priv)
 
 	while(!priv->reg.terminate)
 	{
-		printf("State: %s\n", RS_STR[state]);
-		printf("last_error: %d\n", at_q->last_error);
+//		printf("State: %s\n", RS_STR[state]);
+//		printf("last_error: %d\n", at_q->last_error);
 
 		if(state_delay)
 		{
