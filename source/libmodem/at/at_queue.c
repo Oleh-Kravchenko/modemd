@@ -49,9 +49,22 @@ void* at_queue_thread_write(void* prm)
 
 //        printf("(EE) write(%zd): [%s]\n", strlen(priv->query->cmd), priv->query->cmd);
 
-        syslog(LOG_INFO | LOG_LOCAL7, priv->query->cmd);
+        syslog(LOG_INFO | LOG_LOCAL7, "%s", priv->query->cmd);
 
-        write(priv->fd, priv->query->cmd, strlen(priv->query->cmd));
+        if(write(priv->fd, priv->query->cmd, strlen(priv->query->cmd)) == -1)
+        {
+            priv->query->error = 100; /* unknown error */
+            priv->last_error = 100;
+
+            /* reporting about failed command */
+            pthread_mutex_lock(&priv->query->cond_m);
+            pthread_cond_signal(&priv->query->cond);
+            pthread_mutex_unlock(&priv->query->cond_m);
+
+            priv->query = NULL;
+
+            continue;
+        }
 
         /* wait for answer */
         pthread_mutex_lock(&priv->mutex);
@@ -94,7 +107,7 @@ void* at_queue_thread_read(void* prm)
                 buf[buf_len] = 0;
 
 //                printf("(EE) read(%d): %s", buf_len, buf);
-                syslog(LOG_INFO | LOG_LOCAL7, buf);
+                syslog(LOG_INFO | LOG_LOCAL7, "%s", buf);
 
                 regcomp(&re, priv->query->re_res, REG_EXTENDED);
                 priv->query->n_subs = re.re_nsub + 1;
@@ -138,12 +151,15 @@ void* at_queue_thread_read(void* prm)
 //                printf("(EE) Command %s expired after %d second(s)\n", priv->query->cmd, giveup);
 //                printf("(EE) No match %s\n", buf);
                 priv->query->error = 0;
+				priv->last_error = 31;
             }
             else if(priv->query->error > 0) /* ignore general error */
             {
 //                printf("(EE) CME ERROR: %d %p\n", priv->query->error, (void*)priv);
                 priv->last_error = priv->query->error;
             }
+
+//			printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
 
             priv->query->result = malloc(buf_len + 1);
             strncpy(priv->query->result, buf, buf_len );

@@ -9,10 +9,12 @@
 #include "at/at_queue.h"
 #include "at/at_common.h"
 
+
 #include "modems/modem_conf.h"
 #include "modems/mc77x0/registration.h"
 
 #include "utils/str.h"
+#include "utils/re.h"
 
 #include "modem/modem_str.h"
 
@@ -140,14 +142,28 @@ void* mc77x0_thread_reg(modem_t *priv)
 {
 	enum registration_state_e state = RS_INIT;
 	at_queue_t* at_q = priv->priv;
+	int state_delay = 0;
 	modem_conf_t conf;
 	char s[0x100];
 
 	priv->reg.ready = 0;
 	priv->reg.last_error = 258; /* we are busy now */
+	priv->reg.state.reg = MODEM_NETWORK_REG_SEARCHING;
 
 	while(!priv->reg.terminate)
 	{
+		printf("State: %s\n", RS_STR[state]);
+		printf("last_error: %d\n", at_q->last_error);
+
+		if(state_delay)
+		{
+			sleep(state_delay);
+
+			state_delay = 0;
+		}
+
+		state_delay = 1;
+
 		if(state == RS_INIT)
 		{
 			printf("Started registration for modem on port %s\n", priv->port);
@@ -312,9 +328,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 				case MODEM_NETWORK_REG_ROAMING:
 					priv->reg.ready = 1;
 					priv->reg.last_error = -1;
-					
 					state = RS_GET_SIGNAL_QUALITY;
-					
 					break;
 
 				default:
@@ -341,9 +355,6 @@ void* mc77x0_thread_reg(modem_t *priv)
 
 			state = RS_CHECK_REGISTRATION;
 		}
-
-		printf("State: %s\n", RS_STR[state]);
-		sleep(3);
 	}
 
 	return(NULL);

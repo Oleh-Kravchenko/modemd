@@ -285,7 +285,10 @@ char* modem_get_operator_name(modem_t* modem, char *oper, int len)
 
 modem_network_reg_t modem_network_registration(modem_t* modem)
 {
-	return(modem->reg.state.reg);
+//	if(modem->reg.ready)
+		return(modem->reg.state.reg);
+//	else
+//		return(MODEM_NETWORK_REG_SEARCHING);
 }
 
 /*------------------------------------------------------------------------*/
