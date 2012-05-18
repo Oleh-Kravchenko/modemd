@@ -47,7 +47,7 @@ void* at_queue_thread_write(void* prm)
         priv->query = (at_query_t*)*((at_query_t**)buf);
         free(buf);
 
-//        printf("(EE) write(%zd): %s\n", strlen(priv->query->cmd), priv->query->cmd);
+//        printf("(EE) write(%zd): [%s]\n", strlen(priv->query->cmd), priv->query->cmd);
 
         syslog(LOG_INFO | LOG_LOCAL7, priv->query->cmd);
 

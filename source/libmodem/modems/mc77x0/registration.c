@@ -70,13 +70,54 @@ static const char *RS_STR[] =
 
 /*------------------------------------------------------------------------*/
 
+int at_get_signal_quality_mc7750(queue_t *queue, modem_signal_quality_t* sq)
+{
+    at_query_t *q;
+    int res = -1, nrssi, nber;
+
+    sq->dbm = 0;
+    sq->level = 0;
+
+    q = at_query_create("AT+CSQ\r\n", "([0-9]+), ?([0-9]+)\r\n\r\nOK\r\n");
+    at_query_exec(queue, q);
+
+    /* cutting IMEI number from the reply */
+    if(!at_query_is_error(q))
+    {
+        nrssi = regmatch_atoi(q->result, q->re_subs + 1);
+        nber = regmatch_atoi(q->result, q->re_subs + 2);
+
+        if(nrssi > 31)
+            goto exit;
+
+        /* calculation dBm */
+        sq->dbm = nrssi * 2 - 113;
+
+        /* calculation signal level */
+        sq->level += !!(sq->dbm >= -109);
+        sq->level += !!(sq->dbm >= -95);
+        sq->level += !!(sq->dbm >= -85);
+        sq->level += !!(sq->dbm >= -73);
+        sq->level += !!(sq->dbm >= -65);
+
+        res = 0;
+    }
+
+exit:
+    at_query_free(q);
+
+    return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
 modem_network_reg_t at_network_registration_mc7750(queue_t* queue)
 {
     modem_network_reg_t nr = MODEM_NETWORK_REG_UNKNOWN;
     at_query_t *q;
     int nnr;
 
-    q = at_query_create("AT+CEREG?\r\n", "([0-9]+), ?([0-9]+)\r\n\r\nOK\r\n");
+    q = at_query_create("AT+CEREG?\r\n", "\r\n\\+CEREG: [0-9],([0-9])\r\n\r\nOK\r\n");
 
     at_query_exec(queue, q);
 
@@ -258,6 +299,8 @@ void* mc77x0_thread_reg(modem_t *priv)
 		{
 			priv->reg.state.reg = at_network_registration_mc7750(at_q->q);
 
+//            printf("%s\n", str_network_registration(priv->reg.state.reg));
+
 			/* if roaming disabled */
 			if(MODEM_NETWORK_REG_ROAMING == priv->reg.state.reg && !conf.roaming)
 				/* set registration status as a denied */
@@ -282,7 +325,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_GET_SIGNAL_QUALITY)
 		{
-			at_get_signal_quality(at_q->q, &priv->reg.state.sq);
+			at_get_signal_quality_mc7750(at_q->q, &priv->reg.state.sq);
 
 			state = RS_GET_NETWORK_TYPE;
 		}

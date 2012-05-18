@@ -270,6 +270,25 @@ void modem_close(modem_t* modem)
 
 /*------------------------------------------------------------------------*/
 
+void modem_conf_reload(modem_t* modem)
+{
+    rpc_packet_t* p;
+
+    if(!modem)
+        return;
+
+    /* build packet and send it */
+    p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
+    rpc_send(sock, p);
+    rpc_free(p);
+
+    /* receive result and unpack it */
+    p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
+    rpc_free(p);
+}
+
+/*------------------------------------------------------------------------*/
+
 int modem_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 {
     rpc_packet_t* p;
@@ -461,7 +480,7 @@ char* modem_at_command(modem_t* modem, const char* query)
     char* res = NULL;
 
     /* build packet and send it */
-    p = rpc_create(TYPE_QUERY, __func__, (uint8_t*)query, strlen(query));
+    p = rpc_create(TYPE_QUERY, __func__, (uint8_t*)query, strlen(query) + 1);
     rpc_send(sock, p);
     rpc_free(p);
 

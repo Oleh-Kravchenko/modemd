@@ -99,6 +99,15 @@ rpc_packet_t* modem_close_packet(modemd_client_thread_t* priv, rpc_packet_t* p)
 
 /*------------------------------------------------------------------------*/
 
+rpc_packet_t* modem_conf_reload_packet(modemd_client_thread_t* priv, rpc_packet_t* p)
+{
+	modem_conf_reload(priv->modem);
+
+    return(rpc_create(TYPE_RESPONSE, p->func, NULL, 0));
+}
+
+/*------------------------------------------------------------------------*/
+
 rpc_packet_t* modem_get_imei_packet(modemd_client_thread_t* priv, rpc_packet_t* p)
 {
     rpc_packet_t *res = NULL;
@@ -342,6 +351,7 @@ const rpc_function_info_t rpc_functions[] = {
     {"modem_get_operator_name", modem_get_operator_name_packet,        1},
     {"modem_get_network_type", modem_get_network_type_packet,          1},
     {"modem_get_cell_id", modem_get_cell_id_packet,                    1},
+    {"modem_conf_reload", modem_conf_reload_packet,                    0},
     {{0, 0, 0}},
 };
 
