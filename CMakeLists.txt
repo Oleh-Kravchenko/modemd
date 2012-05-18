@@ -2,35 +2,28 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 PROJECT(modemd)
 
-INCLUDE_DIRECTORIES(lib/include)
+ADD_DEFINITIONS(-D_XOPEN_SOURCE=600 -std=gnu99 -pedantic -Werror -D_DEV_EDITION)
 
-SET(PROJECT_SOURCES
-lib/include/modem/modem.h
-lib/include/modem/types.h
-mc7700.c
-mc7700.h
-thread.c
-thread.h
-queue.c
-queue.h
-main.c
+INCLUDE_DIRECTORIES(include
+source/libmodem
+source/libmodem/at
+source/libmodem/utils)
+
+ADD_SUBDIRECTORY(source/libmodem)
+ADD_SUBDIRECTORY(source/modemd)
+ADD_SUBDIRECTORY(source/modemd_cli)
+
+INSTALL(DIRECTORY include/modem
+DESTINATION include
+FILES_MATCHING PATTERN "*.h" 
+PATTERN ".svn" EXCLUDE)
+
+CONFIGURE_FILE(
+"${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
+"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+IMMEDIATE @ONLY
 )
 
-ADD_EXECUTABLE(modemd ${PROJECT_SOURCES})
-
-TARGET_LINK_LIBRARIES(modemd modem_int pthread)
-
-ADD_SUBDIRECTORY(cli modem_cli)
-ADD_SUBDIRECTORY(lib libmodem)
-
-#INSTALL(TARGETS modemd DESTINATION bin)
-
-#CONFIGURE_FILE(
-#"${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
-#"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-#IMMEDIATE @ONLY
-#)
-
-#ADD_CUSTOM_TARGET(uninstall "${CMAKE_COMMAND}"
-#-P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-#)
+ADD_CUSTOM_TARGET(uninstall "${CMAKE_COMMAND}"
+-P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+)
