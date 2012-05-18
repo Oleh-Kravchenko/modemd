@@ -169,8 +169,10 @@ modem_network_reg_t modem_network_registration_res_unpack(rpc_packet_t* p)
 
 modem_find_t* modem_find_first(usb_device_info_t* mi)
 {
-	modem_find_first_next_t res = {0};
+	modem_find_first_next_t res;
     rpc_packet_t* p;
+
+    memset(&res, 0, sizeof(res));
 
     /* build packet and send it */
     p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
@@ -197,8 +199,10 @@ modem_find_t* modem_find_first(usb_device_info_t* mi)
 
 modem_find_t* modem_find_next(modem_find_t* find, usb_device_info_t* mi)
 {
-	modem_find_first_next_t res = {0};
+	modem_find_first_next_t res;
     rpc_packet_t* p;
+
+    memset(&res, 0, sizeof(res));
 
     /* build packet and send it */
     p = rpc_create(TYPE_QUERY, __func__, (uint8_t*)&find, sizeof(find));

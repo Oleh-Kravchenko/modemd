@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <regex.h>
+#include <syslog.h>
 
 #include "queue.h"
 #include "at_queue.h"
@@ -47,6 +48,8 @@ void* at_queue_thread_write(void* prm)
         free(buf);
 
 //        printf("(EE) write(%zd): %s\n", strlen(priv->query->cmd), priv->query->cmd);
+
+        syslog(LOG_INFO | LOG_LOCAL7, priv->query->cmd);
 
         write(priv->fd, priv->query->cmd, strlen(priv->query->cmd));
 
@@ -91,6 +94,7 @@ void* at_queue_thread_read(void* prm)
                 buf[buf_len] = 0;
 
 //                printf("(EE) read(%d): %s", buf_len, buf);
+                syslog(LOG_INFO | LOG_LOCAL7, buf);
 
                 regcomp(&re, priv->query->re_res, REG_EXTENDED);
                 priv->query->n_subs = re.re_nsub + 1;

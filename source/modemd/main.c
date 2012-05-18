@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/select.h>
 #include <string.h>
+#include <syslog.h>
 
 #include "conf.h"
 #include "thread.h"
@@ -198,7 +199,8 @@ int main(int argc, char** argv)
     if(*conf.pid_path)
         create_pid_file(conf.pid_path);
 
-    if(conf.syslog);
+    if(conf.syslog)
+        openlog(argv[0], LOG_PID, LOG_DAEMON);
 
     if(!stat(conf.sock_path, &(struct stat) {0}))
     {
@@ -213,8 +215,9 @@ int main(int argc, char** argv)
         perror(conf.basename);
 
 	modem_cleanup();
-	
-    if(conf.syslog);
+
+    if(conf.syslog)
+        closelog();
 
     return 0;
 }

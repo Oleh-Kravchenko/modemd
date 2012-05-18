@@ -4,7 +4,7 @@
 
 #include <modem/types.h>
 
-#include "re.h"
+#include "utils/re.h"
 #include "queue.h"
 #include "at_query.h"
 #include "at_common.h"

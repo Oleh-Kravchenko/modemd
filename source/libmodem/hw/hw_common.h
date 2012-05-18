@@ -1,8 +1,8 @@
-#ifndef __HARDWARE_H
-#define __HARDWARE_H
+#ifndef __HW_COMMON_H
+#define __HW_COMMON_H
 
 void port_power(const char* port, int state);
 
 void port_reset(const char* port);
 
-#endif /* __HARDWARE_H */
+#endif /* __HW_COMMON_H */

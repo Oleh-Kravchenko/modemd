@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "hw_common.h"
-
 #ifdef __HW_C1KMBR
-    #include "hw_c1kmbr.h"
+#   include "hw_c1kmbr.h"
 #endif /* __HW_C1KMBR */
 
 /*------------------------------------------------------------------------*/

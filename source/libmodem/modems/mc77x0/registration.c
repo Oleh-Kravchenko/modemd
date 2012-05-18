@@ -70,6 +70,31 @@ static const char *RS_STR[] =
 
 /*------------------------------------------------------------------------*/
 
+modem_network_reg_t at_network_registration_mc7750(queue_t* queue)
+{
+    modem_network_reg_t nr = MODEM_NETWORK_REG_UNKNOWN;
+    at_query_t *q;
+    int nnr;
+
+    q = at_query_create("AT+CEREG?\r\n", "([0-9]+), ?([0-9]+)\r\n\r\nOK\r\n");
+
+    at_query_exec(queue, q);
+
+    if(!at_query_is_error(q))
+    {
+        /* cutting registration status from the reply and check value */
+        /* fast ASCII digit conversion (char - 0x30) */
+        nnr = *(q->result + q->re_subs[1].rm_so) - 0x30;
+        nr = (nnr >= 0 && nnr <= 5) ? nnr : MODEM_NETWORK_REG_UNKNOWN;
+    }
+
+    at_query_free(q);
+
+    return(nr);
+}
+
+/*------------------------------------------------------------------------*/
+
 void* mc77x0_thread_reg(modem_t *priv)
 {
 	enum registration_state_e state = RS_INIT;
@@ -231,7 +256,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_CHECK_REGISTRATION)
 		{
-			priv->reg.state.reg = at_network_registration(at_q->q);
+			priv->reg.state.reg = at_network_registration_mc7750(at_q->q);
 
 			/* if roaming disabled */
 			if(MODEM_NETWORK_REG_ROAMING == priv->reg.state.reg && !conf.roaming)
@@ -274,8 +299,8 @@ void* mc77x0_thread_reg(modem_t *priv)
 			state = RS_CHECK_REGISTRATION;
 		}
 
-		//printf("State: %s\n", RS_STR[state]);
-		sleep(1);
+		printf("State: %s\n", RS_STR[state]);
+		sleep(3);
 	}
 
 	return(NULL);

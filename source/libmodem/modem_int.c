@@ -205,7 +205,7 @@ void modem_close(modem_t* modem)
 	free(modem);
 
 	/* removing modem from list */
-	for(item = modems; item; prev = item, item = item->next)
+	for(prev = item = modems; item; prev = item, item = item->next)
 	{
 		if(modem == item->modem)
 		{
