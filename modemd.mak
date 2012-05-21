@@ -1,1 +1,1 @@
-JMK_CFLAGS+=-I$(JMK_ROOT)/pkg/modemd/lib/include
+JMK_CFLAGS+=-I$(JMK_ROOT)/pkg/modemd/include

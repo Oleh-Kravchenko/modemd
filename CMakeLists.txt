@@ -2,34 +2,21 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 PROJECT(modemd)
 
-ADD_DEFINITIONS(-D_XOPEN_SOURCE=600 -std=gnu99 -pedantic)
+ADD_DEFINITIONS(-D_XOPEN_SOURCE=600 -std=gnu99 -pedantic -Werror -D_DEV_EDITION)
 
-INCLUDE_DIRECTORIES(lib/include)
+INCLUDE_DIRECTORIES(include
+source/libmodem
+source/libmodem/at
+source/libmodem/utils)
 
-SET(PROJECT_SOURCES
-lib/include/modem/modem.h
-lib/include/modem/types.h
-mc7700.c
-mc7700.h
-thread.c
-thread.h
-queue.c
-queue.h
-main.c
-hardware.c
-hardware.h
-conf.h
-conf.c
-)
+ADD_SUBDIRECTORY(source/libmodem)
+ADD_SUBDIRECTORY(source/modemd)
+ADD_SUBDIRECTORY(source/modemd_cli)
 
-ADD_EXECUTABLE(modemd ${PROJECT_SOURCES})
-
-TARGET_LINK_LIBRARIES(modemd modem_int pthread)
-
-ADD_SUBDIRECTORY(cli)
-ADD_SUBDIRECTORY(lib)
-
-INSTALL(TARGETS modemd DESTINATION bin)
+INSTALL(DIRECTORY include/modem
+DESTINATION include
+FILES_MATCHING PATTERN "*.h" 
+PATTERN ".svn" EXCLUDE)
 
 CONFIGURE_FILE(
 "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
