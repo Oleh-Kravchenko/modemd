@@ -153,7 +153,7 @@ void* at_queue_thread_read(void* prm)
                 priv->query->error = 0;
 				priv->last_error = 31;
             }
-            else if(priv->query->error > 0) /* ignore general error */
+            else //if(priv->query->error > 0) /* ignore general error */
             {
 //                printf("(EE) CME ERROR: %d %p\n", priv->query->error, (void*)priv);
                 priv->last_error = priv->query->error;

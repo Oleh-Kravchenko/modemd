@@ -184,6 +184,8 @@ typedef struct
 
     int refs;
 
+	usb_device_info_t usb;
+
 	void* priv;
 
 	struct

@@ -4,8 +4,10 @@
 #include <stdio.h>
 #include <signal.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include "hw/hw_common.h"
+#include "utils/file.h"
 #include "utils/sysfs.h"
 #include "at/at_common.h"
 #include "at/at_queue.h"
@@ -91,7 +93,7 @@ modem_t* modem_open_by_port(const char* port)
 		port_power(port, 1);
 
 		/* timeout for modem */
-		i = 20;
+		i = 10;
 
 		/* waiting for device ready */
 		do
@@ -146,6 +148,8 @@ modem_t* modem_open_by_port(const char* port)
 	/* allocating memory for modem_t */
 	res = malloc(sizeof(*res));
 	memset(res, 0, sizeof(*res));
+
+	usb_device_get_info(port, &res->usb);
 
 	strncpy(res->port, port, sizeof(res->port) - 1);
 	res->port[sizeof(res->port) - 1] = 0;
@@ -405,6 +409,9 @@ char* modem_at_command(modem_t* modem, const char* query)
 	at_query_t *q;
 	char *cmd;
 
+	if(!at_q)
+        return(NULL);
+
     /* formating query */
     if(!(cmd = malloc(strlen(query) + 1 + 2))) /* +2 for "\r\n" */
         return(NULL);
@@ -448,7 +455,7 @@ void modem_conf_reload(modem_t* modem)
 
 	modem->reg.terminate = 1;
 	pthread_join(modem->reg.thread, &thread_res);
-	
+
 	usb_device_get_info(modem->port, &mi);
 	mdd = modem_db_get_info(mi.id_vendor, mi.id_product);
 
@@ -459,4 +466,54 @@ void modem_conf_reload(modem_t* modem)
 		pthread_create(&modem->reg.thread, NULL, (pthread_func_t)mdd->thread_reg, modem);
 	else
 		modem->reg.thread = 0;
+}
+
+/*------------------------------------------------------------------------*/
+
+void modem_reset(modem_t* modem)
+{
+	const modem_db_device_t* mdd;
+	void *thread_res;
+	char tty[0x100];
+	at_queue_t* at_q = modem->priv;
+	int i;
+
+	/* termination scan routine */
+	if(modem->scan.thread)
+		pthread_join(modem->scan.thread, &thread_res);
+
+	/* terminating queues */
+//	at_queue_destroy(modem->priv);
+	queue_busy(at_q->q, 1);
+	close(at_q->fd);
+
+
+	/* reseting modem */
+	port_reset(modem->port);
+
+	sleep(10);
+
+	mdd = modem_db_get_info(modem->usb.id_vendor, modem->usb.id_product);
+
+	for(i = 0; mdd->iface[i].type != MODEM_PROTO_NONE && i < __MODEM_IFACE_MAX; ++ i)
+	{
+		switch(mdd->iface[i].type)
+		{
+			case MODEM_PROTO_WAN:
+				break;
+
+			case MODEM_PROTO_AT:
+			case MODEM_PROTO_CNS:
+				if(modem_get_iface_tty(modem->port, mdd->iface[i].num, tty, sizeof(tty)))
+					break;
+
+			default:
+				printf("(EE) Device driver not loaded..\n");
+				break;
+		}
+	}
+
+//	modem->priv = at_queue_open(tty);
+	at_q->fd = serial_open(tty, O_RDWR);
+	queue_busy(at_q->q, 0);
 }

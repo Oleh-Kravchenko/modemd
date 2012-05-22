@@ -20,6 +20,10 @@
 
 /*------------------------------------------------------------------------*/
 
+void modem_reset(modem_t* modem);
+
+/*------------------------------------------------------------------------*/
+
 #define __STR(x) #x
 
 /*------------------------------------------------------------------------*/
@@ -44,7 +48,8 @@ enum registration_state_e
 	RS_CHECK_REGISTRATION,
 	RS_GET_SIGNAL_QUALITY,
 	RS_GET_NETWORK_TYPE,
-	RS_GET_OPERATOR_NAME
+	RS_GET_OPERATOR_NAME,
+	RS_RESET
 };
 
 static const char *RS_STR[] =
@@ -67,7 +72,8 @@ static const char *RS_STR[] =
 	__STR(RS_CHECK_REGISTRATION),
 	__STR(RS_GET_SIGNAL_QUALITY),
 	__STR(RS_GET_NETWORK_TYPE),
-	__STR(RS_GET_OPERATOR_NAME)
+	__STR(RS_GET_OPERATOR_NAME),
+	__STR(RS_RESET)
 };
 
 /*------------------------------------------------------------------------*/
@@ -142,9 +148,13 @@ void* mc77x0_thread_reg(modem_t *priv)
 {
 	enum registration_state_e state = RS_INIT;
 	at_queue_t* at_q = priv->priv;
+	int periodical_reset;
 	int state_delay = 0;
 	modem_conf_t conf;
 	char s[0x100];
+
+	int prev_last_error = 0;
+	int cnt_last_error = 0;
 
 	priv->reg.ready = 0;
 	priv->reg.last_error = 258; /* we are busy now */
@@ -152,17 +162,63 @@ void* mc77x0_thread_reg(modem_t *priv)
 
 	while(!priv->reg.terminate)
 	{
-//		printf("State: %s\n", RS_STR[state]);
-//		printf("last_error: %d\n", at_q->last_error);
-
-		if(state_delay)
+		if(at_q->last_error != -1 && at_q->last_error == prev_last_error)
 		{
-			sleep(state_delay);
-
-			state_delay = 0;
+			++ cnt_last_error;
+#ifdef _DEV_EDITION
+			printf("cnt_last_error: %d\n", cnt_last_error);
+#endif
+		}
+		else
+		{
+			cnt_last_error = 0;
+			prev_last_error = at_q->last_error;
 		}
 
-		state_delay = 1;
+		if(cnt_last_error > 10)
+		{
+			cnt_last_error = 0;
+			prev_last_error = at_q->last_error;
+
+			printf("Too many errors, reseting modem..\n");
+
+			state = RS_RESET;
+		}
+
+		if(conf.periodical_reset && state_delay)
+		{
+			if(periodical_reset == 0)
+			{
+				printf("Periodical reset modem..\n");
+
+				state = RS_RESET;
+			}
+			else
+			{
+				-- periodical_reset;
+
+#ifdef _DEV_EDITION
+				printf("Periodical reset modem: %d\n", periodical_reset);
+#endif
+			}
+		}
+		
+		if(state_delay)
+		{
+			sleep(1);
+
+#ifdef _DEV_EDITION
+			printf("Delay: %d\n", state_delay);
+#endif
+			-- state_delay;
+
+			continue;
+		}
+
+#ifdef _DEV_EDITION
+		printf("State: %s\n", RS_STR[state]);
+		printf("last_error: %d\n", at_q->last_error);
+#endif
 
 		if(state == RS_INIT)
 		{
@@ -203,8 +259,16 @@ void* mc77x0_thread_reg(modem_t *priv)
 		else if(state == RS_READ_CONFIG)
 		{
 			/* waiting for config */
-			if(!modem_conf_read(priv->port, &conf))
-				state = RS_SET_BAND;
+			if(modem_conf_read(priv->port, &conf))
+			{
+				state_delay = 1;
+
+				continue;
+			}
+
+			periodical_reset = conf.periodical_reset * 3600;
+				
+			state = RS_SET_BAND;
 		}
 		else if(state == RS_SET_BAND)
 		{
@@ -260,7 +324,9 @@ void* mc77x0_thread_reg(modem_t *priv)
 					state = RS_GET_IMSI;
 					break;
 
-				default:;
+				default:
+					if(at_q->last_error == 14) /* sim busy */
+						state_delay = 4;
 			}
 		}
 		else if(state == RS_SET_PIN)
@@ -334,6 +400,8 @@ void* mc77x0_thread_reg(modem_t *priv)
 				default:
 					priv->reg.ready = 0;
 					priv->reg.last_error = 0;
+
+					state_delay = 5;
 					break;
 			}
 		}
@@ -354,6 +422,16 @@ void* mc77x0_thread_reg(modem_t *priv)
 			at_get_operator_name(at_q->q, priv->reg.state.oper, sizeof(priv->reg.state.oper));
 
 			state = RS_CHECK_REGISTRATION;
+
+			state_delay = 10;
+		}
+		else if(state == RS_RESET)
+		{
+			modem_reset(priv);
+
+			periodical_reset = conf.periodical_reset * 3600;
+
+			state = RS_INIT;
 		}
 	}
 
