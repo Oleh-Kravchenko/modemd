@@ -114,8 +114,6 @@ modem_find_t* modem_find_first(usb_device_info_t* mi)
 {
     struct dirent *sysfs_item;
     DIR *res;
-    regex_t reg;
-    int reg_res;
 
     if(!(res = opendir("/sys/bus/usb/devices/")))
         goto failed_open;
@@ -123,11 +121,7 @@ modem_find_t* modem_find_first(usb_device_info_t* mi)
     while((sysfs_item = readdir(res)))
     {
         /* directory name must be in format BUS-DEV */
-        regcomp(&reg, "^[0-9]-[0-9]$", 0);
-        reg_res = regexec(&reg, sysfs_item->d_name, 0, NULL, 0);
-        regfree(&reg);
-
-        if(reg_res != 0)
+        if(regmatch_cmp(sysfs_item->d_name, "^[0-9]-[0-9]$") != 0)
             continue;
 
         if(!(usb_device_get_info(sysfs_item->d_name, mi)))
@@ -154,17 +148,11 @@ failed_open:
 modem_find_t* modem_find_next(modem_find_t* find, usb_device_info_t* mi)
 {
     struct dirent *sysfs_item;
-    regex_t reg;
-    int reg_res;
 
     while((sysfs_item = readdir(find)))
     {
-        /* name if directory must be in BUS-DEV format */
-        regcomp(&reg, "^[0-9]-[0-9]$", 0);
-        reg_res = regexec(&reg, sysfs_item->d_name, 0, NULL, 0);
-        regfree(&reg);
-
-        if(reg_res != 0)
+        /* directory name must be in format BUS-DEV */
+        if(regmatch_cmp(sysfs_item->d_name, "^[0-9]-[0-9]$") != 0)
             continue;
 
         if(!usb_device_get_info(sysfs_item->d_name, mi))

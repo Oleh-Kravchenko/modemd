@@ -58,3 +58,17 @@ char* regmatch_strdup(const char* src, const regmatch_t* re_subs)
 
     return(res);
 }
+
+/*------------------------------------------------------------------------*/
+
+int regmatch_cmp(const char* s, const char* mask)
+{
+	regex_t re;
+	int res;
+
+	regcomp(&re, mask, REG_EXTENDED);
+	res = regexec(&re, s, 0, NULL, 0);
+	regfree(&re);
+
+	return(res);
+}
