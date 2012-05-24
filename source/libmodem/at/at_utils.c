@@ -20,7 +20,7 @@ int at_parse_cops_list(const char* s, modem_oper_t** opers)
 
     while(*s)
     {
-        if(regmatch_parse(s, "\\(([0123]),\"(.{0,16})\",\"(.{0,16})\",\"([0-9]{5,16})\",([012])),?", &nmatch, &pmatch))
+        if(re_parse(s, "\\(([0123]),\"(.{0,16})\",\"(.{0,16})\",\"([0-9]{5,16})\",([012])),?", &nmatch, &pmatch))
 			break;
 
         /* increase memory for result */
@@ -29,11 +29,11 @@ int at_parse_cops_list(const char* s, modem_oper_t** opers)
         oper = (*opers + nopers);
 
         /* add new info about operator */
-        oper->stat = regmatch_atoi(s, pmatch + 1);
-        regmatch_ncpy(oper->longname, sizeof(oper->longname), s, pmatch + 2);
-        regmatch_ncpy(oper->shortname, sizeof(oper->shortname), s, pmatch + 3);
-        regmatch_ncpy(oper->numeric, sizeof(oper->numeric), s, pmatch + 4);
-        oper->act = regmatch_atoi(s, pmatch + 5);
+        oper->stat = re_atoi(s, pmatch + 1);
+        re_strncpy(oper->longname, sizeof(oper->longname), s, pmatch + 2);
+        re_strncpy(oper->shortname, sizeof(oper->shortname), s, pmatch + 3);
+        re_strncpy(oper->numeric, sizeof(oper->numeric), s, pmatch + 4);
+        oper->act = re_atoi(s, pmatch + 5);
 
         ++ nopers;
 
@@ -58,11 +58,11 @@ int at_parse_error(const char* s)
         /* modem failure (general error) or reporting is AT+CMEE=0 */
         return(0);
 
-	if(regmatch_parse(s, "\\+CME ERROR: ([0-9]{1,5})\r\n", &nmatch, &pmatch))
+	if(re_parse(s, "\\+CME ERROR: ([0-9]{1,5})\r\n", &nmatch, &pmatch))
         return(0);
 
     /* getting parsed integer value of CME error */
-    cme_error = regmatch_atoi(s, pmatch + 1);
+    cme_error = re_atoi(s, pmatch + 1);
 
     free(pmatch);
 

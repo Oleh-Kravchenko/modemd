@@ -121,7 +121,7 @@ modem_find_t* modem_find_first(usb_device_info_t* mi)
     while((sysfs_item = readdir(res)))
     {
         /* directory name must be in format BUS-DEV */
-        if(regmatch_cmp(sysfs_item->d_name, "^[0-9]-[0-9]$") != 0)
+        if(re_strcmp(sysfs_item->d_name, "^[0-9]-[0-9]$") != 0)
             continue;
 
         if(!(usb_device_get_info(sysfs_item->d_name, mi)))
@@ -152,7 +152,7 @@ modem_find_t* modem_find_next(modem_find_t* find, usb_device_info_t* mi)
     while((sysfs_item = readdir(find)))
     {
         /* directory name must be in format BUS-DEV */
-        if(regmatch_cmp(sysfs_item->d_name, "^[0-9]-[0-9]$") != 0)
+        if(re_strcmp(sysfs_item->d_name, "^[0-9]-[0-9]$") != 0)
             continue;
 
         if(!usb_device_get_info(sysfs_item->d_name, mi))

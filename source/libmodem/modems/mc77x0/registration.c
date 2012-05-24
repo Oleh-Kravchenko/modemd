@@ -92,8 +92,8 @@ int at_get_signal_quality_mc7750(queue_t *queue, modem_signal_quality_t* sq)
     /* cutting IMEI number from the reply */
     if(!at_query_is_error(q))
     {
-        nrssi = regmatch_atoi(q->result, q->re_subs + 1);
-        nber = regmatch_atoi(q->result, q->re_subs + 2);
+        nrssi = re_atoi(q->result, q->re_subs + 1);
+        nber = re_atoi(q->result, q->re_subs + 2);
 
         if(nrssi > 31)
             goto exit;

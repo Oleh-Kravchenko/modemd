@@ -3,11 +3,11 @@
 
 #include <regex.h>
 
-int regmatch_atoi(const char* src, const regmatch_t* re_subs);
+int re_atoi(const char* src, const regmatch_t* re_subs);
 
-char* regmatch_ncpy(char* dst, size_t n, const char* src, const regmatch_t* re_subs);
+char* re_strncpy(char* dst, size_t n, const char* src, const regmatch_t* re_subs);
 
-char* regmatch_strdup(const char* src, const regmatch_t* re_subs);
+char* re_strdup(const char* src, const regmatch_t* re_subs);
 
 /**
  * @brief compare string with regular expression mask
@@ -15,7 +15,7 @@ char* regmatch_strdup(const char* src, const regmatch_t* re_subs);
  * @param mask regular expression mask
  * @return zero if string is macthed
  */
-int regmatch_cmp(const char* s, const char* mask);
+int re_strcmp(const char* s, const char* mask);
 
 /**
  * @brief parse the string using regular expression
@@ -27,6 +27,6 @@ int regmatch_cmp(const char* s, const char* mask);
  *
  * pmatch must be freed by function free()
  */
-int regmatch_parse(const char* s, const char* mask, size_t* nmatch, regmatch_t** pmatch);
+int re_parse(const char* s, const char* mask, size_t* nmatch, regmatch_t** pmatch);
 
 #endif /* __RE_H */

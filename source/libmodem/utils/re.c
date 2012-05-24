@@ -5,7 +5,7 @@
 
 /*------------------------------------------------------------------------*/
 
-int regmatch_atoi(const char* src, const regmatch_t* re_subs)
+int re_atoi(const char* src, const regmatch_t* re_subs)
 {
     int res = 0;
     size_t len;
@@ -28,7 +28,7 @@ int regmatch_atoi(const char* src, const regmatch_t* re_subs)
 
 /*------------------------------------------------------------------------*/
 
-char* regmatch_ncpy(char* dst, size_t n, const char* src, const regmatch_t* re_subs)
+char* re_strncpy(char* dst, size_t n, const char* src, const regmatch_t* re_subs)
 {
     size_t len;
 
@@ -43,7 +43,7 @@ char* regmatch_ncpy(char* dst, size_t n, const char* src, const regmatch_t* re_s
 
 /*------------------------------------------------------------------------*/
 
-char* regmatch_strdup(const char* src, const regmatch_t* re_subs)
+char* re_strdup(const char* src, const regmatch_t* re_subs)
 {
     size_t len;
     char* res;
@@ -61,7 +61,7 @@ char* regmatch_strdup(const char* src, const regmatch_t* re_subs)
 
 /*------------------------------------------------------------------------*/
 
-int regmatch_cmp(const char* s, const char* mask)
+int re_strcmp(const char* s, const char* mask)
 {
 	regex_t re;
 	int res;
@@ -75,7 +75,7 @@ int regmatch_cmp(const char* s, const char* mask)
 
 /*------------------------------------------------------------------------*/
 
-int regmatch_parse(const char* s, const char* mask, size_t* nmatch, regmatch_t** pmatch)
+int re_parse(const char* s, const char* mask, size_t* nmatch, regmatch_t** pmatch)
 {
 	regex_t re;
 	int res;
