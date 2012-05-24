@@ -17,4 +17,16 @@ char* regmatch_strdup(const char* src, const regmatch_t* re_subs);
  */
 int regmatch_cmp(const char* s, const char* mask);
 
+/**
+ * @brief parse the string using regular expression
+ * @param s string
+ * @param mask regular expression
+ * @param nmatch numbers of parsed items
+ * @param pmatch pointer to array of indexes
+ * @return zero if successful
+ *
+ * pmatch must be freed by function free()
+ */
+int regmatch_parse(const char* s, const char* mask, size_t* nmatch, regmatch_t** pmatch);
+
 #endif /* __RE_H */

@@ -72,3 +72,30 @@ int regmatch_cmp(const char* s, const char* mask)
 
 	return(res);
 }
+
+/*------------------------------------------------------------------------*/
+
+int regmatch_parse(const char* s, const char* mask, size_t* nmatch, regmatch_t** pmatch)
+{
+	regex_t re;
+	int res;
+
+	if((res = regcomp(&re, mask, REG_EXTENDED)))
+		return(res);
+
+	*nmatch = re.re_nsub + 1;
+
+	if((*pmatch = malloc(sizeof(regmatch_t) * (*nmatch))) == NULL)
+	{
+		res = -1;
+		goto err;
+	}
+
+	if((res = regexec(&re, s, *nmatch, *pmatch, 0)))
+		free(*pmatch);
+
+err:
+	regfree(&re);
+
+	return(res);
+}
