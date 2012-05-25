@@ -23,8 +23,8 @@ at_query_t* at_query_create(const char* q, const char* reply_re)
     res->re_res[strlen(reply_re)] = 0;
 
     res->result = NULL;
-    res->re_subs = NULL;
-    res->n_subs = 0;
+    res->pmatch = NULL;
+    res->nmatch = 0;
     res->timeout = 2; /* default timeout for command */
     res->error = -1;  /* -1 is no error */
 
@@ -82,6 +82,6 @@ void at_query_free(at_query_t* q)
     free(q->cmd);
     pthread_cond_destroy(&q->cond);
     pthread_mutex_destroy(&q->cond_m);
-    free(q->re_subs);
+    free(q->pmatch);
     free(q);
 }

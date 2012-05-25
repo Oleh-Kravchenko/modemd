@@ -92,8 +92,8 @@ int at_get_signal_quality_mc7750(queue_t *queue, modem_signal_quality_t* sq)
     /* cutting IMEI number from the reply */
     if(!at_query_is_error(q))
     {
-        nrssi = re_atoi(q->result, q->re_subs + 1);
-        nber = re_atoi(q->result, q->re_subs + 2);
+        nrssi = re_atoi(q->result, q->pmatch + 1);
+        nber = re_atoi(q->result, q->pmatch + 2);
 
         if(nrssi > 31)
             goto exit;
@@ -133,7 +133,7 @@ modem_network_reg_t at_network_registration_mc7750(queue_t* queue)
     {
         /* cutting registration status from the reply and check value */
         /* fast ASCII digit conversion (char - 0x30) */
-        nnr = *(q->result + q->re_subs[1].rm_so) - 0x30;
+        nnr = *(q->result + q->pmatch[1].rm_so) - 0x30;
         nr = (nnr >= 0 && nnr <= 5) ? nnr : MODEM_NETWORK_REG_UNKNOWN;
     }
 

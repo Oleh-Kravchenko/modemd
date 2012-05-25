@@ -14,6 +14,7 @@
 
 #include "queue.h"
 #include "at_queue.h"
+#include "utils/re.h"
 #include "utils/str.h"
 #include "utils/file.h"
 #include "at/at_utils.h"
@@ -83,7 +84,6 @@ void* at_queue_thread_read(void* prm)
     struct pollfd p = {priv->fd, POLLIN, 0};
     int buf_len = 0, res = 0, giveup = 0, re_res = -1;
     char buf[0xffff];
-    regex_t re;
 
     while(!priv->terminate)
     {
@@ -109,31 +109,14 @@ void* at_queue_thread_read(void* prm)
 //                printf("(EE) read(%d): %s", buf_len, buf);
                 syslog(LOG_INFO | LOG_LOCAL7, "%s", buf);
 
-                regcomp(&re, priv->query->re_res, REG_EXTENDED);
-                priv->query->n_subs = re.re_nsub + 1;
-                priv->query->re_subs = malloc(sizeof(regmatch_t) * priv->query->n_subs);
-                re_res = regexec(&re, buf, priv->query->n_subs, priv->query->re_subs, 0);
-
-                if(re_res)
+				if((re_res = re_parse(buf, priv->query->re_res, &priv->query->nmatch, &priv->query->pmatch)))
                 {
-                    char re_err[0x100];
-
-                    regerror(re_res, &re, re_err, sizeof(re_err));
-
-//                    printf("(EE) regexec() %s [\n%s\n]\n", re_err, buf);
-
-                    free(priv->query->re_subs);
-                    priv->query->re_subs = NULL;
-                    regfree(&re);
-
                     priv->query->error = at_parse_error(buf);
 
                     if(priv->query->error == -1)
                         /* no error detected, proceed collecting data */
                         continue;
                 }
-
-                regfree(&re);
             }
         }
 

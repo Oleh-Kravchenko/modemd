@@ -80,6 +80,9 @@ int re_parse(const char* s, const char* mask, size_t* nmatch, regmatch_t** pmatc
 	regex_t re;
 	int res;
 
+	*nmatch = 0;
+	*pmatch = NULL;
+
 	if((res = regcomp(&re, mask, REG_EXTENDED)))
 		return(res);
 

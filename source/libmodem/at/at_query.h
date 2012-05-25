@@ -14,9 +14,9 @@ typedef struct at_query_s
 
     char* re_res;
 
-    int n_subs;
+    size_t nmatch;
 
-    regmatch_t *re_subs;
+    regmatch_t *pmatch;
 
     /** timeout for command in seconds */
     int timeout;

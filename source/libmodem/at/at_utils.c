@@ -52,21 +52,22 @@ int at_parse_error(const char* s)
 {
 	regmatch_t* pmatch;
 	size_t nmatch;
-    int cme_error;
+    int res = -1;
 
     if(strstr(s, "\r\nERROR\r\n"))
         /* modem failure (general error) or reporting is AT+CMEE=0 */
         return(0);
 
 	if(re_parse(s, "\\+CME ERROR: ([0-9]{1,5})\r\n", &nmatch, &pmatch))
-        return(0);
+		/* can't parse, return -1 */
+        return(res);
 
     /* getting parsed integer value of CME error */
-    cme_error = re_atoi(s, pmatch + 1);
+    res = re_atoi(s, pmatch + 1);
 
     free(pmatch);
 
-    return(cme_error);
+    return(res);
 }
 
 /*------------------------------------------------------------------------*/

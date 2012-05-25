@@ -23,7 +23,7 @@ modem_cpin_state_t at_cpin_state(queue_t* queue)
 
     if(!at_query_is_error(q))
     {
-        re_strncpy(cpin_st, sizeof(cpin_st), q->result, q->re_subs + 1);
+        re_strncpy(cpin_st, sizeof(cpin_st), q->result, q->pmatch + 1);
 
         if(strcmp(cpin_st, "READY") == 0)
             res = MODEM_CPIN_STATE_READY;
@@ -107,7 +107,7 @@ char* at_get_imsi(queue_t* queue, char* imsi, size_t len)
     /* cutting IMSI number from the reply */
     if(!at_query_is_error(q))
     {
-        re_strncpy(imsi, len, q->result, q->re_subs + 1);
+        re_strncpy(imsi, len, q->result, q->pmatch + 1);
 
         res = imsi;
     }
@@ -129,7 +129,7 @@ char* at_get_imei(queue_t* queue, char* imei, size_t len)
 
     if(!at_query_is_error(q))
     {
-        re_strncpy(imei, len, q->result, q->re_subs + 1);
+        re_strncpy(imei, len, q->result, q->pmatch + 1);
 
         res = imei;
     }
@@ -156,7 +156,7 @@ int at_operator_scan(queue_t* queue, modem_oper_t** opers)
         goto exit;
 
     /* cutting operators from the answer */
-    if(!(sopers = re_strdup(q->result, q->re_subs + 1)))
+    if(!(sopers = re_strdup(q->result, q->pmatch + 1)))
         goto err;
 
     /* parsing operator list */
@@ -217,7 +217,7 @@ modem_network_reg_t at_network_registration(queue_t* queue)
     {
         /* cutting registration status from the reply and check value */
         /* fast ASCII digit conversion (char - 0x30) */
-        nnr = *(q->result + q->re_subs[1].rm_so) - 0x30;
+        nnr = *(q->result + q->pmatch[1].rm_so) - 0x30;
         nr = (nnr >= 0 && nnr <= 5) ? nnr : MODEM_NETWORK_REG_UNKNOWN;
     }
 
@@ -242,7 +242,7 @@ modem_cops_mode_t at_cops_mode(queue_t* queue)
     {
         /* cutting registration status from the reply and check value */
         /* fast ASCII digit conversion (char - 0x30) */
-        nnr = *(q->result + q->re_subs[1].rm_so) - 0x30;
+        nnr = *(q->result + q->pmatch[1].rm_so) - 0x30;
         nr = (nnr >= 0 && nnr <= 4) ? nnr : MODEM_COPS_MODE_UNKNOWN;
     }
 
@@ -267,8 +267,8 @@ int at_get_signal_quality(queue_t *queue, modem_signal_quality_t* sq)
     /* cutting IMEI number from the reply */
     if(!at_query_is_error(q))
     {
-        nrssi = re_atoi(q->result, q->re_subs + 1);
-        nber = re_atoi(q->result, q->re_subs + 2);
+        nrssi = re_atoi(q->result, q->pmatch + 1);
+        nber = re_atoi(q->result, q->pmatch + 2);
 
         if(nrssi > 31)
             goto exit;
@@ -309,8 +309,8 @@ modem_fw_ver_t* at_get_fw_version(queue_t *queue, modem_fw_ver_t* fw_info)
     if(!at_query_is_error(q))
     {
         /* create result */
-        re_strncpy(fw_info->firmware, sizeof(fw_info->firmware), q->result, q->re_subs + 1);
-        re_strncpy(release, sizeof(release), q->result, q->re_subs + 2);
+        re_strncpy(fw_info->firmware, sizeof(fw_info->firmware), q->result, q->pmatch + 1);
+        re_strncpy(release, sizeof(release), q->result, q->pmatch + 2);
 
         /* parsing date and time */
         strptime(release, "%Y/%m/%d\r\n%H:%M:%S", &tm);
@@ -337,7 +337,7 @@ char* at_get_network_type(queue_t *queue, char *network, int len)
 
     if(!at_query_is_error(q))
     {
-        re_strncpy(network, len, q->result, q->re_subs + 1);
+        re_strncpy(network, len, q->result, q->pmatch + 1);
 
         res = network;
     }
@@ -370,7 +370,7 @@ char* at_get_operator_name(queue_t *queue, char *oper, int len)
     /* cutting Operator name from the answer */
     if(!at_query_is_error(q))
     {
-        re_strncpy(oper, len, q->result, q->re_subs + 1);
+        re_strncpy(oper, len, q->result, q->pmatch + 1);
 
         res = oper;
     }
@@ -395,7 +395,7 @@ time_t at_get_network_time(queue_t *queue)
     /* cutting TIME from the reply */
     if(!at_query_is_error(q))
     {
-        re_strncpy(dt, sizeof(dt), q->result, q->re_subs + 1);
+        re_strncpy(dt, sizeof(dt), q->result, q->pmatch + 1);
 
         /* parsing date and time */
         strptime(dt, "%Y/%m/%d\r\n%H:%M:%S", &tm);
@@ -420,7 +420,7 @@ int at_get_cell_id(queue_t *queue)
 
     /* cutting Cell ID number from the reply */
     if(!at_query_is_error(q))
-        cell_id = re_atoi(q->result, q->re_subs + 1);
+        cell_id = re_atoi(q->result, q->pmatch + 1);
 
     at_query_free(q);
 
