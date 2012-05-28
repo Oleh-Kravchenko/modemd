@@ -6,6 +6,7 @@
 #include "at/at_query.h"
 #include "modem/types.h"
 #include "../libmodem/queue.h"
+#include "utils/event.h"
  
 /*------------------------------------------------------------------------*/
 
@@ -13,11 +14,9 @@ typedef struct
 {
     int fd;
 
-    pthread_cond_t processed;
+	event_t* event;
 
-    pthread_mutex_t mutex;
-
-    queue_t *q;
+    queue_t *queue;
 
     at_query_t* query;
 

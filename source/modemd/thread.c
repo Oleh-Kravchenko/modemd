@@ -114,8 +114,7 @@ rpc_packet_t* modem_get_imei_packet(modemd_client_thread_t* priv, rpc_packet_t* 
 	char imei[0x100];
 
     if(modem_get_imei(priv->modem, imei, sizeof(imei)))
-        res = rpc_create(TYPE_RESPONSE, p->func,
-            (uint8_t*)imei, strlen(imei));
+        res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)imei, strlen(imei));
 
     return(res);
 }
@@ -127,12 +126,10 @@ rpc_packet_t* modem_get_imsi_packet(modemd_client_thread_t* priv, rpc_packet_t* 
     rpc_packet_t *res = NULL;
 	char imsi[0x100];
 
-    if(modem_get_imei(priv->modem, imsi, sizeof(imsi)))
-        res = rpc_create(TYPE_RESPONSE, p->func,
-            (uint8_t*)imsi, strlen(imsi));
+    if(modem_get_imsi(priv->modem, imsi, sizeof(imsi)))
+        res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)imsi, strlen(imsi));
 
     return(res);
-
 }
 
 /*------------------------------------------------------------------------*/

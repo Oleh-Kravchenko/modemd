@@ -1,9 +1,10 @@
 #ifndef __QUEUE_H
 #define __QUEUE_H
 
-#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "utils/event.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -34,11 +35,7 @@ typedef struct {
     /** mutex for queue managment */
     pthread_mutex_t lock;
 
-    /** mutex for wait condition queue population */
-    pthread_mutex_t cond_lock;
-
-    /** condition for wait queue population */
-    pthread_cond_t cond;
+    event_t* event;
 } queue_t;
 
 /*------------------------------------------------------------------------*/

@@ -11,7 +11,8 @@ JMK_O_OBJS = \
     file.o \
     re.o \
     str.o \
-    sysfs.o
+    sysfs.o \
+    event.o
 
 include $(JMK_ROOT)/pkg/modemd/modemd.mak
 

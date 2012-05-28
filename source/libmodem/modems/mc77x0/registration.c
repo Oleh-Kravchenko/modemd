@@ -125,18 +125,20 @@ modem_network_reg_t at_network_registration_mc7750(queue_t* queue)
     int status, roaming;
     at_query_t *q;
 
-    q = at_query_create("AT^SYSINFO\r\n", "\\^SYSINFO: ([0-9]),([0-9]),([0-9]),([0-9]),([0-9])\r\n\r\nOK\r\n");
+    q = at_query_create("AT^SYSINFO\r\n", "\\^SYSINFO: ?([0-9]+),([0-9]+),([0-9]+),([0-9]+),([0-9]+)\r\n\r\nOK\r\n");
 
     at_query_exec(queue, q);
 
     if(!at_query_is_error(q))
     {
-        status = re_atoi(q->result, q->pmatch + 1);
-        roaming = re_atoi(q->result, q->pmatch + 3);
+		status = re_atoi(q->result, q->pmatch + 1);
+		roaming = re_atoi(q->result, q->pmatch + 3);
 
-		if(status == 0) /* No service */
+		if(status == 0)			/* No service */
 			nr = MODEM_NETWORK_REG_SEARCHING;
-		else if(status == 2) /* Service */
+		else if(status == 1)	/* Limited service */
+			nr = MODEM_NETWORK_REG_SEARCHING;
+		else if(status == 2)	/* Service */
 			nr = roaming ? MODEM_NETWORK_REG_ROAMING : MODEM_NETWORK_REG_HOME;
 	}
 
@@ -231,31 +233,31 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_DISABLE_ECHO)
 		{
-			at_raw_ok(at_q->q, "ATE0\r\n");
+			at_raw_ok(at_q->queue, "ATE0\r\n");
 
 			state = RS_CMEE_NUMBER;
 		}
 		else if(state == RS_CMEE_NUMBER)
 		{
-			at_raw_ok(at_q->q, "AT+CMEE=1\r\n");
+			at_raw_ok(at_q->queue, "AT+CMEE=1\r\n");
 
 			state = RS_GET_FIRMWARE_VER;
 		}
 		else if(state == RS_GET_FIRMWARE_VER)
 		{
-			at_get_fw_version(at_q->q, &priv->reg.state.fw_info);
+			at_get_fw_version(at_q->queue, &priv->reg.state.fw_info);
 
 			state = RS_GET_IMEI;
 		}
 		else if(state == RS_GET_IMEI)
 		{
-			at_get_imei(at_q->q, priv->reg.state.imei, sizeof(priv->reg.state.imei));
+			at_get_imei(at_q->queue, priv->reg.state.imei, sizeof(priv->reg.state.imei));
 
 			state = RS_SET_CFUN;
 		}
 		else if(state == RS_SET_CFUN)
 		{
-			at_raw_ok(at_q->q, "AT+CFUN=1\r\n");
+			at_raw_ok(at_q->queue, "AT+CFUN=1\r\n");
 
 			state = RS_READ_CONFIG;
 		}
@@ -277,7 +279,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		{
 			/* band selection */
 			snprintf(s, sizeof(s), "AT!BAND=%02X\r\n", conf.frequency_band);
-			at_raw_ok(at_q->q, s);
+			at_raw_ok(at_q->queue, s);
 
 			state = RS_SET_APN;
 		}
@@ -287,7 +289,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 			if(*conf.data.apn)
 			{
 				snprintf(s, sizeof(s), "AT+CGDCONT=3,\"IPV4V6\",\"%s\"\r\n", conf.data.apn);
-				at_raw_ok(at_q->q, s);
+				at_raw_ok(at_q->queue, s);
 				
 				state = RS_SET_AUTH;
 			}
@@ -302,18 +304,18 @@ void* mc77x0_thread_reg(modem_t *priv)
 				snprintf(s, sizeof(s), "AT$QCPDPP=3,%d,\"%s\",\"%s\"\r\n",
 					conf.data.auth, conf.data.password, conf.data.username);
 
-				at_raw_ok(at_q->q, s);
+				at_raw_ok(at_q->queue, s);
 			}
 			else
 			{
-				at_raw_ok(at_q->q, "AT$QCPDPP=3,0\r\n");
+				at_raw_ok(at_q->queue, "AT$QCPDPP=3,0\r\n");
 			}
 
 			state = RS_CHECK_PIN;
 		}
 		else if(state == RS_CHECK_PIN)
 		{
-			switch(at_cpin_state(at_q->q))
+			switch(at_cpin_state(at_q->queue))
 			{
 				case MODEM_CPIN_STATE_PIN:
 					state = RS_SET_PIN;
@@ -336,7 +338,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		{
             if(*conf.pin)
 			{
-                at_cpin_pin(at_q->q, conf.pin);
+                at_cpin_pin(at_q->queue, conf.pin);
 
 				state = RS_GET_IMSI;
 			}
@@ -351,7 +353,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		{
             if(*conf.pin && *conf.puk)
 			{
-                at_cpin_puk(at_q->q, conf.puk, conf.pin);
+                at_cpin_puk(at_q->queue, conf.puk, conf.pin);
 
 				state = RS_GET_IMSI;
 			}
@@ -364,7 +366,13 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_GET_IMSI)
 		{
-			at_get_imsi(at_q->q, priv->reg.state.imsi, sizeof(priv->reg.state.imsi));
+			if(!at_get_imsi(at_q->queue, priv->reg.state.imsi, sizeof(priv->reg.state.imsi)))
+			{
+				/* SIM busy? */
+				state_delay = 5;
+
+				continue;
+			}
 
 			state = RS_OPERATOR_SELECT;
 		}
@@ -373,16 +381,16 @@ void* mc77x0_thread_reg(modem_t *priv)
 			if(conf.operator_number)
 			{
 				snprintf(s, sizeof(s), "AT+COPS=1,2,%d,%d\r\n", conf.operator_number, conf.access_technology);
-				at_raw_ok(at_q->q, s);
+				at_raw_ok(at_q->queue, s);
 			}
 			else
-				at_raw_ok(at_q->q, "AT+COPS=0\r\n");
+				at_raw_ok(at_q->queue, "AT+COPS=0\r\n");
 
 			state = RS_CHECK_REGISTRATION;
 		}
 		else if(state == RS_CHECK_REGISTRATION)
 		{
-			priv->reg.state.reg = at_network_registration_mc7750(at_q->q);
+			priv->reg.state.reg = at_network_registration_mc7750(at_q->queue);
 
 //            printf("%s\n", str_network_registration(priv->reg.state.reg));
 
@@ -410,19 +418,19 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_GET_SIGNAL_QUALITY)
 		{
-			at_get_signal_quality_mc7750(at_q->q, &priv->reg.state.sq);
+			at_get_signal_quality_mc7750(at_q->queue, &priv->reg.state.sq);
 
 			state = RS_GET_NETWORK_TYPE;
 		}
 		else if(state == RS_GET_NETWORK_TYPE)
 		{
-			at_get_network_type(at_q->q, priv->reg.state.network_type, sizeof(priv->reg.state.network_type));
+			at_get_network_type(at_q->queue, priv->reg.state.network_type, sizeof(priv->reg.state.network_type));
 
 			state = RS_GET_OPERATOR_NAME;
 		}
 		else if(state == RS_GET_OPERATOR_NAME)
 		{
-			at_get_operator_name(at_q->q, priv->reg.state.oper, sizeof(priv->reg.state.oper));
+			at_get_operator_name(at_q->queue, priv->reg.state.oper, sizeof(priv->reg.state.oper));
 
 			state = RS_CHECK_REGISTRATION;
 

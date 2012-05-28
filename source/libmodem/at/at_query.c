@@ -1,5 +1,5 @@
 #include "../queue.h"
-#include "at_query.h"
+#include "at/at_query.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -28,8 +28,7 @@ at_query_t* at_query_create(const char* q, const char* reply_re)
     res->timeout = 2; /* default timeout for command */
     res->error = -1;  /* -1 is no error */
 
-    pthread_cond_init(&res->cond, NULL);
-    pthread_mutex_init(&res->cond_m, NULL);
+	res->event = event_create();
 
     goto exit;
 
@@ -55,9 +54,7 @@ int at_query_exec(queue_t* queue, at_query_t* query)
         goto err;
 
     /* wait for processing */
-    pthread_mutex_lock(&query->cond_m);
-    pthread_cond_wait(&query->cond, &query->cond_m);
-    pthread_mutex_unlock(&query->cond_m);
+    event_wait(query->event);
 
 err:
     return(res);
@@ -77,11 +74,11 @@ void at_query_free(at_query_t* q)
     if(!q)
         return;
 
+	event_destroy(q->event);
+
     free(q->result);
     free(q->re_res);
     free(q->cmd);
-    pthread_cond_destroy(&q->cond);
-    pthread_mutex_destroy(&q->cond_m);
     free(q->pmatch);
     free(q);
 }

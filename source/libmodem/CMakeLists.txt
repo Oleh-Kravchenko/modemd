@@ -22,6 +22,8 @@ utils/re.c
 utils/str.c
 utils/file.c
 utils/sysfs.c
+utils/event.h
+utils/event.c
 at/at_query.c
 at/at_query.h
 at/at_utils.c

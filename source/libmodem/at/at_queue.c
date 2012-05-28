@@ -34,7 +34,7 @@ void* at_queue_thread_write(void* prm)
     while(!priv->terminate)
     {
         /* receive pointer to query */
-        if(queue_wait_pop(priv->q, THREAD_WAIT, &buf, &buf_len))
+        if(queue_wait_pop(priv->queue, THREAD_WAIT, &buf, &buf_len))
             continue;
 
         if(buf_len != sizeof(void**))
@@ -57,9 +57,7 @@ void* at_queue_thread_write(void* prm)
             priv->last_error = 100;
 
             /* reporting about failed command */
-            pthread_mutex_lock(&priv->query->cond_m);
-            pthread_cond_signal(&priv->query->cond);
-            pthread_mutex_unlock(&priv->query->cond_m);
+			event_signal(priv->query->event);
 
             priv->query = NULL;
 
@@ -67,9 +65,7 @@ void* at_queue_thread_write(void* prm)
         }
 
         /* wait for answer */
-        pthread_mutex_lock(&priv->mutex);
-        pthread_cond_wait(&priv->processed, &priv->mutex);
-        pthread_mutex_unlock(&priv->mutex);
+		event_wait(priv->event);
     }
 
     return(NULL);
@@ -168,18 +164,14 @@ void* at_queue_thread_read(void* prm)
 			re_res = -1;
 			
             /* reporting about reply */
-            pthread_mutex_lock(&priv->query->cond_m);
-            pthread_cond_signal(&priv->query->cond);
-            pthread_mutex_unlock(&priv->query->cond_m);
+			event_signal(priv->query->event);
 
             buf_len = 0;
             giveup = 0;
             priv->query = NULL;
 
             /* notify writing thread */
-            pthread_mutex_lock(&priv->mutex);
-            pthread_cond_signal(&priv->processed);
-            pthread_mutex_unlock(&priv->mutex);
+			event_signal(priv->event);
         }
         else if(priv->query)
             ++ giveup;
@@ -198,13 +190,12 @@ at_queue_t* at_queue_open(const char *tty)
 		return(res);
 
     res->fd = serial_open(tty, O_RDWR);
-    res->q = queue_create();
+    res->queue = queue_create();
     res->terminate = 0;
     res->query = NULL;
     res->last_error = -1;
 
-    pthread_cond_init(&res->processed, NULL);
-    pthread_mutex_init(&res->mutex, NULL);
+	res->event = event_create();
 
     /* creating reading thread */
     pthread_create(&res->thread_read, NULL, at_queue_thread_read, res);
@@ -232,10 +223,8 @@ void at_queue_destroy(at_queue_t* priv)
     /* cleanup used resources */
     close(priv->fd);
 
-    queue_destroy(priv->q);
-
-    pthread_mutex_destroy(&priv->mutex);
-    pthread_cond_destroy(&priv->processed);
+    queue_destroy(priv->queue);
+	event_destroy(priv->event);
 
     free(priv);
 }

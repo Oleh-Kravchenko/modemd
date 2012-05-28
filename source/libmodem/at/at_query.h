@@ -4,6 +4,7 @@
 #include <regex.h>
 
 #include "modem/types.h"
+#include "utils/event.h"
 #include "../queue.h"
 
 /*------------------------------------------------------------------------*/
@@ -23,9 +24,7 @@ typedef struct at_query_s
 
     char* result;
 
-    pthread_cond_t cond;
-
-    pthread_mutex_t cond_m;
+    event_t* event;
 
     /** must be -1 if no errors after execute */
     int error;

@@ -15,8 +15,8 @@ queue_t* queue_create(void)
         res->busy = 0;
 
         pthread_mutex_init(&res->lock, NULL);
-        pthread_mutex_init(&res->cond_lock, NULL);
-        pthread_cond_init(&res->cond, NULL);
+
+		res->event = event_create();
     }
 
     return(res);
@@ -44,8 +44,8 @@ void queue_destroy(queue_t* q)
     }
 
     pthread_mutex_destroy(&q->lock);
-    pthread_mutex_destroy(&q->cond_lock);
-    pthread_cond_destroy(&q->cond);
+
+	event_destroy(q->event);
 
     free(q);
 }
@@ -93,9 +93,7 @@ int queue_add(queue_t* q, const void* data, size_t size)
     }
 
     /* notify about new item */
-    pthread_mutex_lock(&q->cond_lock);
-    pthread_cond_signal(&q->cond);
-    pthread_mutex_unlock(&q->cond_lock);
+    event_signal(q->event);
 
     pthread_mutex_unlock(&q->lock);
 
@@ -140,7 +138,7 @@ err:
 int queue_wait_pop(queue_t* q, int seconds, void** data, size_t* size)
 {
     struct timespec timeout;
-    int res, mutex_res;
+    int res;
 
     /* try pop message */
     while((res = queue_pop(q, data, size)))
@@ -150,11 +148,7 @@ int queue_wait_pop(queue_t* q, int seconds, void** data, size_t* size)
         timeout.tv_nsec = 0;
 
         /* pop failed wait sec and try it again */
-        pthread_mutex_lock(&q->cond_lock);
-        mutex_res = pthread_cond_timedwait(&q->cond, &q->cond_lock, &timeout);
-        pthread_mutex_unlock(&q->cond_lock);
-
-        if(mutex_res)
+		if(event_wait_time(q->event, seconds))
             /* if timeout exit */
             break;
     }

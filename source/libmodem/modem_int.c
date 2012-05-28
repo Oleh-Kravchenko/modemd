@@ -229,12 +229,12 @@ void modem_close(modem_t* modem)
 
 char* modem_get_imei(modem_t* modem, char* imei, int len)
 {
-	if(*modem->reg.state.imei)
+	if(!*modem->reg.state.imei)
 		return(NULL);
 
 	strncpy(imei, modem->reg.state.imei, len - 1);
 	imei[len - 1] = 0;
-	
+
 	return(imei);
 }
 
@@ -256,14 +256,14 @@ time_t modem_get_network_time(modem_t* modem)
 {
 	at_queue_t* q = modem->priv;
 
-	return(at_get_network_time(q->q));
+	return(at_get_network_time(q->queue));
 }
 
 /*------------------------------------------------------------------------*/
 
 char* modem_get_imsi(modem_t* modem, char* imsi, int len)
 {
-	if(*modem->reg.state.imsi)
+	if(!*modem->reg.state.imsi)
 		return(NULL);
 
 	strncpy(imsi, modem->reg.state.imsi, len - 1);
@@ -314,7 +314,7 @@ int modem_change_pin(modem_t* modem, const char* old_pin, const char* new_pin)
 {
 	at_queue_t* at_q = modem->priv;
 
-	return(at_change_pin(at_q->q, old_pin, new_pin));
+	return(at_change_pin(at_q->queue, old_pin, new_pin));
 }
 
 /*------------------------------------------------------------------------*/
@@ -340,7 +340,7 @@ int modem_operator_scan(modem_t* modem, modem_oper_t** opers)
 {
 	at_queue_t* q = modem->priv;
 
-	return(at_operator_scan(q->q, opers));
+	return(at_operator_scan(q->queue, opers));
 }
 
 /*------------------------------------------------------------------------*/
@@ -360,7 +360,7 @@ int modem_operator_scan_start(modem_t* modem, const char* file)
     /* filename */
     strncpy(at_priv->file, file, sizeof(at_priv->file) - 1);
     at_priv->file[sizeof(at_priv->file) - 1] = 0;
-    at_priv->queue = at_q->q;
+    at_priv->queue = at_q->queue;
 
     /* creating thread with a query AT+COPS=? */
     if((res = pthread_create(&modem->scan.thread, NULL, at_thread_operator_scan, at_priv)))
@@ -398,7 +398,7 @@ int modem_get_cell_id(modem_t* modem)
 {
 	at_queue_t* q = modem->priv;
 
-	return(at_get_cell_id(q->q));
+	return(at_get_cell_id(q->queue));
 }
 
 /*------------------------------------------------------------------------*/
@@ -422,7 +422,7 @@ char* modem_at_command(modem_t* modem, const char* query)
     q = at_query_create(cmd, "OK\r\n");
     q->timeout = 10;
 
-    at_query_exec(at_q->q, q);
+    at_query_exec(at_q->queue, q);
 
     free(cmd);
 	cmd = NULL;
@@ -484,7 +484,7 @@ void modem_reset(modem_t* modem)
 
 	/* terminating queues */
 //	at_queue_destroy(modem->priv);
-	queue_busy(at_q->q, 1);
+	queue_busy(at_q->queue, 1);
 	close(at_q->fd);
 
 
@@ -515,5 +515,5 @@ void modem_reset(modem_t* modem)
 
 //	modem->priv = at_queue_open(tty);
 	at_q->fd = serial_open(tty, O_RDWR);
-	queue_busy(at_q->q, 0);
+	queue_busy(at_q->queue, 0);
 }
