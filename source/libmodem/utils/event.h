@@ -22,6 +22,8 @@ int event_wait_time(event_t* event, int seconds);
 
 void event_signal(event_t* event);
 
+void event_signal_all(event_t* event);
+
 void event_destroy(event_t* event);
 
 #endif /* __EVENT_H */

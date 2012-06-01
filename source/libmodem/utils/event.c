@@ -56,6 +56,15 @@ void event_signal(event_t* event)
 
 /*------------------------------------------------------------------------*/
 
+void event_signal_all(event_t* event)
+{
+	pthread_mutex_lock(&event->mutex);
+	pthread_cond_broadcast(&event->cond);
+	pthread_mutex_unlock(&event->mutex);
+}
+
+/*------------------------------------------------------------------------*/
+
 void event_destroy(event_t* event)
 {
 	if(!event)
