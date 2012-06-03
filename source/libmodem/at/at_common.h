@@ -8,9 +8,9 @@
 
 typedef struct
 {
-    char file[0x100];
+	char file[0x100];
 
-    queue_t* queue;
+	queue_t* queue;
 } at_operator_scan_t;
 
 /*------------------------------------------------------------------------*/

@@ -19,32 +19,32 @@ typedef void *(*pthread_func_t)(void*);
 
 typedef enum
 {
-    MODEM_PROTO_NONE	= 0,
-    MODEM_PROTO_AT,
-    MODEM_PROTO_CNS,
-    MODEM_PROTO_WAN
+	MODEM_PROTO_NONE	= 0,
+	MODEM_PROTO_AT,
+	MODEM_PROTO_CNS,
+	MODEM_PROTO_WAN
 } modem_proto_t;
 
 /*------------------------------------------------------------------------*/
 
 typedef struct
 {
-    int num;
+	int num;
 
-    modem_proto_t type;
+	modem_proto_t type;
 } modem_iface_t;
 
 /*------------------------------------------------------------------------*/
 
 typedef struct
 {
-    uint16_t vendor;
+	uint16_t vendor;
 
-    uint16_t product;
+	uint16_t product;
 
-    registration_func_t thread_reg;
+	registration_func_t thread_reg;
 
-    modem_iface_t iface[__MODEM_IFACE_MAX];
+	modem_iface_t iface[__MODEM_IFACE_MAX];
 } modem_db_device_t;
  
 /*------------------------------------------------------------------------*/

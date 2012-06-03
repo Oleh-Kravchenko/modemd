@@ -3,15 +3,15 @@
 
 typedef struct
 {
-    char sock_path[0x100];
+	char sock_path[0x100];
 
-    char pid_path[0x100];
+	char pid_path[0x100];
 
-    char basename[0x100];
+	char basename[0x100];
 
-    int syslog;
+	int syslog;
 
-    int daemonize;
+	int daemonize;
 } modemd_conf_t;
 
 /*------------------------------------------------------------------------*/

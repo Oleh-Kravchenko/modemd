@@ -10,32 +10,32 @@
 
 typedef struct queue_item_s
 {
-    /** pointer to data */
-    void *data;
+	/** pointer to data */
+	void *data;
 
-    /** size of data */
-    size_t size;
+	/** size of data */
+	size_t size;
 
-    /** pointer to next item */
-    struct queue_item_s *next;
+	/** pointer to next item */
+	struct queue_item_s *next;
 } queue_item_t;
 
 /*------------------------------------------------------------------------*/
 
 typedef struct {
-    /** pointer to first item of queue */
-    queue_item_t *first;
+	/** pointer to first item of queue */
+	queue_item_t *first;
 
-    /** pointer to last item of queue */
-    queue_item_t *last;
+	/** pointer to last item of queue */
+	queue_item_t *last;
 
-    /** queue busy flag for adding */
-    int busy;
+	/** queue busy flag for adding */
+	int busy;
 
-    /** mutex for queue managment */
-    pthread_mutex_t lock;
+	/** mutex for queue managment */
+	pthread_mutex_t lock;
 
-    event_t* event;
+	event_t* event;
 } queue_t;
 
 /*------------------------------------------------------------------------*/

@@ -61,8 +61,8 @@ void modem_cleanup(void)
 
 modem_t* modem_open_by_port(const char* port)
 {
-    usb_device_info_t mi;
-    modem_t* res = NULL;
+	usb_device_info_t mi;
+	modem_t* res = NULL;
 	char tty[0x100];
 	const modem_db_device_t* mdd;
 	int i;
@@ -173,7 +173,7 @@ modem_t* modem_open_by_port(const char* port)
 	item->next = modems;
 	modems = item;
 
-    return(res);
+	return(res);
 }
 
 /*------------------------------------------------------------------------*/
@@ -347,49 +347,49 @@ int modem_operator_scan(modem_t* modem, modem_oper_t** opers)
 
 int modem_operator_scan_start(modem_t* modem, const char* file)
 {
-    at_operator_scan_t *at_priv;
-    at_queue_t* at_q = modem->priv;
+	at_operator_scan_t *at_priv;
+	at_queue_t* at_q = modem->priv;
 	int res = 0;
 
-    if(modem->scan.thread)
-        goto exit;
+	if(modem->scan.thread)
+		goto exit;
 
-    if(!(at_priv = malloc(sizeof(*at_priv))))
-        goto exit;
+	if(!(at_priv = malloc(sizeof(*at_priv))))
+		goto exit;
 
-    /* filename */
-    strncpy(at_priv->file, file, sizeof(at_priv->file) - 1);
-    at_priv->file[sizeof(at_priv->file) - 1] = 0;
-    at_priv->queue = at_q->queue;
+	/* filename */
+	strncpy(at_priv->file, file, sizeof(at_priv->file) - 1);
+	at_priv->file[sizeof(at_priv->file) - 1] = 0;
+	at_priv->queue = at_q->queue;
 
-    /* creating thread with a query AT+COPS=? */
-    if((res = pthread_create(&modem->scan.thread, NULL, at_thread_operator_scan, at_priv)))
-        free(at_priv);
+	/* creating thread with a query AT+COPS=? */
+	if((res = pthread_create(&modem->scan.thread, NULL, at_thread_operator_scan, at_priv)))
+		free(at_priv);
 
 exit:
-    return(res);
+	return(res);
 }
 
 /*------------------------------------------------------------------------*/
 
 int modem_operator_scan_is_running(modem_t* modem)
 {
-    void *thread_res;
-    int res = -1;
+	void *thread_res;
+	int res = -1;
 
-    if(modem->scan.thread)
-        res = pthread_kill(modem->scan.thread, 0);
+	if(modem->scan.thread)
+		res = pthread_kill(modem->scan.thread, 0);
 
-    if(res == ESRCH)
-    {
-        pthread_join(modem->scan.thread, &thread_res);
-        modem->scan.thread = 0;
-        res = 0;
-    }
-    else if(res == 0)
-        res = 1;
+	if(res == ESRCH)
+	{
+		pthread_join(modem->scan.thread, &thread_res);
+		modem->scan.thread = 0;
+		res = 0;
+	}
+	else if(res == 0)
+		res = 1;
 
-    return(res);
+	return(res);
 }
 
 /*------------------------------------------------------------------------*/
@@ -410,21 +410,21 @@ char* modem_at_command(modem_t* modem, const char* query)
 	char *cmd;
 
 	if(!at_q)
-        return(NULL);
+		return(NULL);
 
-    /* formating query */
-    if(!(cmd = malloc(strlen(query) + 1 + 2))) /* +2 for "\r\n" */
-        return(NULL);
+	/* formating query */
+	if(!(cmd = malloc(strlen(query) + 1 + 2))) /* +2 for "\r\n" */
+		return(NULL);
 
-    strcpy(cmd, query);
-    strcat(cmd, "\r\n");
+	strcpy(cmd, query);
+	strcat(cmd, "\r\n");
 
-    q = at_query_create(cmd, "OK\r\n");
-    q->timeout = 10;
+	q = at_query_create(cmd, "OK\r\n");
+	q->timeout = 10;
 
-    at_query_exec(at_q->queue, q);
+	at_query_exec(at_q->queue, q);
 
-    free(cmd);
+	free(cmd);
 	cmd = NULL;
 
 	if(q->result)
@@ -447,7 +447,7 @@ int modem_get_last_error(modem_t* modem)
 void modem_conf_reload(modem_t* modem)
 {
 	const modem_db_device_t* mdd;
-    usb_device_info_t mi;
+	usb_device_info_t mi;
 	void* thread_res;
 
 	if(!modem->reg.thread)

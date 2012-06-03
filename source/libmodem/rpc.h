@@ -5,44 +5,44 @@
 
 /***************************************************************************
 
-            client             |  network  |             server
-                               |           |
-                               |           |
-           /- pack parameters; | --------> | unpack parameters; -\
-function -+                    |           |                     +- function
-           \- unpack results;  | <-------- |     pack results;  -/
-                               |           |
+			client			 |  network  |			 server
+							   |		   |
+							   |		   |
+		   /- pack parameters; | --------> | unpack parameters; -\
+function -+					|		   |					 +- function
+		   \- unpack results;  | <-------- |	 pack results;  -/
+							   |		   |
 
 ***************************************************************************/
 
 /*------------------------------------------------------------------------*/
 
 typedef enum {
-    TYPE_QUERY = 0,
-    TYPE_RESPONSE
+	TYPE_QUERY = 0,
+	TYPE_RESPONSE
 } __attribute__((__packed__)) rpc_packet_type_t;
 
 /*------------------------------------------------------------------------*/
 
 typedef struct
 {
-    struct
-    {
-        /** type of packet */
-        rpc_packet_type_t type;
+	struct
+	{
+		/** type of packet */
+		rpc_packet_type_t type;
 
-        /** length of function name */
-        uint8_t func_len;
+		/** length of function name */
+		uint8_t func_len;
 
-        /** length of data field */
-        uint16_t data_len;
-    } hdr;
+		/** length of data field */
+		uint16_t data_len;
+	} hdr;
 
-    /** function name */
-    char* func;
+	/** function name */
+	char* func;
 
-    /** data */
-    uint8_t* data;
+	/** data */
+	uint8_t* data;
 } __attribute__((__packed__)) rpc_packet_t;
 
 /*------------------------------------------------------------------------*/

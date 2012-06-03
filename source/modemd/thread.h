@@ -7,11 +7,11 @@
 
 typedef struct
 {
-    int sock;
+	int sock;
 
-    modem_t* modem;
+	modem_t* modem;
 
-    int terminate;
+	int terminate;
 } modemd_client_thread_t;
 
 /*------------------------------------------------------------------------*/

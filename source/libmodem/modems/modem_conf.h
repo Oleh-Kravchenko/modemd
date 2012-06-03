@@ -5,22 +5,22 @@
 
 typedef struct
 {
-    char pin[20];
+	char pin[20];
 
-    char puk[20];
+	char puk[20];
 
-    modem_data_profile_t data;
+	modem_data_profile_t data;
 
-    int roaming;
+	int roaming;
 
-    int operator_number;
+	int operator_number;
 
-    int access_technology;
+	int access_technology;
 
-    int frequency_band;
-    
-    /* time in hours */
-    int periodical_reset;
+	int frequency_band;
+	
+	/* time in hours */
+	int periodical_reset;
 } modem_conf_t;
 
 /*------------------------------------------------------------------------*/

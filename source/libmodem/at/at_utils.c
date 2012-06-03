@@ -10,40 +10,40 @@
 
 int at_parse_cops_list(const char* s, modem_oper_t** opers)
 {
-    regmatch_t *pmatch;
-    modem_oper_t* oper;
+	regmatch_t *pmatch;
+	modem_oper_t* oper;
 	size_t nmatch;
-    int nopers;
+	int nopers;
 
-    nopers = 0;
-    *opers = NULL;
+	nopers = 0;
+	*opers = NULL;
 
-    while(*s)
-    {
-        if(re_parse(s, "\\(([0123]),\"(.{0,16})\",\"(.{0,16})\",\"([0-9]{5,16})\",([012])),?", &nmatch, &pmatch))
+	while(*s)
+	{
+		if(re_parse(s, "\\(([0123]),\"(.{0,16})\",\"(.{0,16})\",\"([0-9]{5,16})\",([012])),?", &nmatch, &pmatch))
 			break;
 
-        /* increase memory for result */
-        *opers = realloc(*opers, sizeof(modem_oper_t) * (nopers + 1));
+		/* increase memory for result */
+		*opers = realloc(*opers, sizeof(modem_oper_t) * (nopers + 1));
 
-        oper = (*opers + nopers);
+		oper = (*opers + nopers);
 
-        /* add new info about operator */
-        oper->stat = re_atoi(s, pmatch + 1);
-        re_strncpy(oper->longname, sizeof(oper->longname), s, pmatch + 2);
-        re_strncpy(oper->shortname, sizeof(oper->shortname), s, pmatch + 3);
-        re_strncpy(oper->numeric, sizeof(oper->numeric), s, pmatch + 4);
-        oper->act = re_atoi(s, pmatch + 5);
+		/* add new info about operator */
+		oper->stat = re_atoi(s, pmatch + 1);
+		re_strncpy(oper->longname, sizeof(oper->longname), s, pmatch + 2);
+		re_strncpy(oper->shortname, sizeof(oper->shortname), s, pmatch + 3);
+		re_strncpy(oper->numeric, sizeof(oper->numeric), s, pmatch + 4);
+		oper->act = re_atoi(s, pmatch + 5);
 
-        ++ nopers;
+		++ nopers;
 
-        /* next operator to parse */
-        s += pmatch->rm_eo - pmatch->rm_so;
+		/* next operator to parse */
+		s += pmatch->rm_eo - pmatch->rm_so;
 
 		free(pmatch);
-    }
+	}
 
-    return(nopers);
+	return(nopers);
 }
 
 /*------------------------------------------------------------------------*/
@@ -52,22 +52,22 @@ int at_parse_error(const char* s)
 {
 	regmatch_t* pmatch;
 	size_t nmatch;
-    int res = -1;
+	int res = -1;
 
-    if(strstr(s, "\r\nERROR\r\n"))
-        /* modem failure (general error) or reporting is AT+CMEE=0 */
-        return(0);
+	if(strstr(s, "\r\nERROR\r\n"))
+		/* modem failure (general error) or reporting is AT+CMEE=0 */
+		return(0);
 
 	if(re_parse(s, "\\+CME ERROR: ([0-9]{1,5})\r\n", &nmatch, &pmatch))
 		/* can't parse, return -1 */
-        return(res);
+		return(res);
 
-    /* getting parsed integer value of CME error */
-    res = re_atoi(s, pmatch + 1);
+	/* getting parsed integer value of CME error */
+	res = re_atoi(s, pmatch + 1);
 
-    free(pmatch);
+	free(pmatch);
 
-    return(res);
+	return(res);
 }
 
 /*------------------------------------------------------------------------*/

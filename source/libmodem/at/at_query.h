@@ -11,23 +11,23 @@
 
 typedef struct at_query_s
 {
-    char* cmd;
+	char* cmd;
 
-    char* re_res;
+	char* re_res;
 
-    size_t nmatch;
+	size_t nmatch;
 
-    regmatch_t *pmatch;
+	regmatch_t *pmatch;
 
-    /** timeout for command in seconds */
-    int timeout;
+	/** timeout for command in seconds */
+	int timeout;
 
-    char* result;
+	char* result;
 
-    event_t* event;
+	event_t* event;
 
-    /** must be -1 if no errors after execute */
-    int error;
+	/** must be -1 if no errors after execute */
+	int error;
 } at_query_t;
 
 /*------------------------------------------------------------------------*/

@@ -80,57 +80,57 @@ static const char *RS_STR[] =
 
 int at_get_signal_quality_mc7750(queue_t *queue, modem_signal_quality_t* sq)
 {
-    at_query_t *q;
-    int res = -1, nrssi, nber;
+	at_query_t *q;
+	int res = -1, nrssi, nber;
 
-    sq->dbm = 0;
-    sq->level = 0;
+	sq->dbm = 0;
+	sq->level = 0;
 
-    q = at_query_create("AT+CSQ\r\n", "([0-9]+), ?([0-9]+)\r\n\r\nOK\r\n");
-    at_query_exec(queue, q);
+	q = at_query_create("AT+CSQ\r\n", "([0-9]+), ?([0-9]+)\r\n\r\nOK\r\n");
+	at_query_exec(queue, q);
 
-    /* cutting IMEI number from the reply */
-    if(!at_query_is_error(q))
-    {
-        nrssi = re_atoi(q->result, q->pmatch + 1);
-        nber = re_atoi(q->result, q->pmatch + 2);
+	/* cutting IMEI number from the reply */
+	if(!at_query_is_error(q))
+	{
+		nrssi = re_atoi(q->result, q->pmatch + 1);
+		nber = re_atoi(q->result, q->pmatch + 2);
 
-        if(nrssi > 31)
-            goto exit;
+		if(nrssi > 31)
+			goto exit;
 
-        /* calculation dBm */
-        sq->dbm = nrssi * 2 - 113;
+		/* calculation dBm */
+		sq->dbm = nrssi * 2 - 113;
 
-        /* calculation signal level */
-        sq->level += !!(sq->dbm >= -109);
-        sq->level += !!(sq->dbm >= -95);
-        sq->level += !!(sq->dbm >= -85);
-        sq->level += !!(sq->dbm >= -73);
-        sq->level += !!(sq->dbm >= -65);
+		/* calculation signal level */
+		sq->level += !!(sq->dbm >= -109);
+		sq->level += !!(sq->dbm >= -95);
+		sq->level += !!(sq->dbm >= -85);
+		sq->level += !!(sq->dbm >= -73);
+		sq->level += !!(sq->dbm >= -65);
 
-        res = 0;
-    }
+		res = 0;
+	}
 
 exit:
-    at_query_free(q);
+	at_query_free(q);
 
-    return(res);
+	return(res);
 }
 
 /*------------------------------------------------------------------------*/
 
 modem_network_reg_t at_network_registration_mc7750(queue_t* queue)
 {
-    modem_network_reg_t nr = MODEM_NETWORK_REG_UNKNOWN;
-    int status, roaming;
-    at_query_t *q;
+	modem_network_reg_t nr = MODEM_NETWORK_REG_UNKNOWN;
+	int status, roaming;
+	at_query_t *q;
 
-    q = at_query_create("AT^SYSINFO\r\n", "\\^SYSINFO: ?([0-9]+),([0-9]+),([0-9]+),([0-9]+),([0-9]+)\r\n\r\nOK\r\n");
+	q = at_query_create("AT^SYSINFO\r\n", "\\^SYSINFO: ?([0-9]+),([0-9]+),([0-9]+),([0-9]+),([0-9]+)\r\n\r\nOK\r\n");
 
-    at_query_exec(queue, q);
+	at_query_exec(queue, q);
 
-    if(!at_query_is_error(q))
-    {
+	if(!at_query_is_error(q))
+	{
 		status = re_atoi(q->result, q->pmatch + 1);
 		roaming = re_atoi(q->result, q->pmatch + 3);
 
@@ -142,9 +142,9 @@ modem_network_reg_t at_network_registration_mc7750(queue_t* queue)
 			nr = roaming ? MODEM_NETWORK_REG_ROAMING : MODEM_NETWORK_REG_HOME;
 	}
 
-    at_query_free(q);
+	at_query_free(q);
 
-    return(nr);
+	return(nr);
 }
 
 /*------------------------------------------------------------------------*/
@@ -336,32 +336,32 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_SET_PIN)
 		{
-            if(*conf.pin)
+			if(*conf.pin)
 			{
-                at_cpin_pin(at_q->queue, conf.pin);
+				at_cpin_pin(at_q->queue, conf.pin);
 
 				state = RS_GET_IMSI;
 			}
-            else
+			else
 			{
-                priv->reg.last_error = 11; /* SIM PIN required */
+				priv->reg.last_error = 11; /* SIM PIN required */
 
-                return(NULL);
+				return(NULL);
 			}
 		}
 		else if(state == RS_SET_PUK)
 		{
-            if(*conf.pin && *conf.puk)
+			if(*conf.pin && *conf.puk)
 			{
-                at_cpin_puk(at_q->queue, conf.puk, conf.pin);
+				at_cpin_puk(at_q->queue, conf.puk, conf.pin);
 
 				state = RS_GET_IMSI;
 			}
-            else
+			else
 			{
-                priv->reg.last_error = 12; /* SIM PUK required */
+				priv->reg.last_error = 12; /* SIM PUK required */
 
-                return(NULL);
+				return(NULL);
 			}
 		}
 		else if(state == RS_GET_IMSI)
@@ -392,7 +392,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		{
 			priv->reg.state.reg = at_network_registration_mc7750(at_q->queue);
 
-//            printf("%s\n", str_network_registration(priv->reg.state.reg));
+//			printf("%s\n", str_network_registration(priv->reg.state.reg));
 
 			/* if roaming disabled */
 			if(MODEM_NETWORK_REG_ROAMING == priv->reg.state.reg && !conf.roaming)
