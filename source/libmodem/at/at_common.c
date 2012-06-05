@@ -216,9 +216,11 @@ modem_network_reg_t at_network_registration(queue_t* queue)
 	if(!at_query_is_error(q))
 	{
 		/* cutting registration status from the reply and check value */
-		/* fast ASCII digit conversion (char - 0x30) */
-		nnr = *(q->result + q->pmatch[1].rm_so) - 0x30;
-		nr = (nnr >= 0 && nnr <= 5) ? nnr : MODEM_NETWORK_REG_UNKNOWN;
+		nnr = re_atoi(q->result, q->pmatch + 1);
+
+		/* check value */
+		if(nnr >= 0 && nnr <= 5)
+			nr = nnr;
 	}
 
 	at_query_free(q);
