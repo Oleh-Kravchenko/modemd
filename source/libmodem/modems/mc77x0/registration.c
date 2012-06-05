@@ -122,24 +122,21 @@ exit:
 modem_network_reg_t at_network_registration_mc7750(queue_t* queue)
 {
 	modem_network_reg_t nr = MODEM_NETWORK_REG_UNKNOWN;
-	int status, roaming;
 	at_query_t *q;
+	int nnr;
 
-	q = at_query_create("AT^SYSINFO\r\n", "\\^SYSINFO: ?([0-9]+),([0-9]+),([0-9]+),([0-9]+),([0-9]+)\r\n\r\nOK\r\n");
+	q = at_query_create("AT+CEREG?\r\n", "\r\n\\+CEREG: [0-9],([0-9])\r\n\r\nOK\r\n");
 
 	at_query_exec(queue, q);
 
 	if(!at_query_is_error(q))
 	{
-		status = re_atoi(q->result, q->pmatch + 1);
-		roaming = re_atoi(q->result, q->pmatch + 3);
+		/* cutting registration status from the reply and check value */
+		nnr = re_atoi(q->result, q->pmatch + 1);
 
-		if(status == 0)			/* No service */
-			nr = MODEM_NETWORK_REG_SEARCHING;
-		else if(status == 1)	/* Limited service */
-			nr = MODEM_NETWORK_REG_SEARCHING;
-		else if(status == 2)	/* Service */
-			nr = roaming ? MODEM_NETWORK_REG_ROAMING : MODEM_NETWORK_REG_HOME;
+		/* check value */
+		if(nnr >= 0 && nnr <= 5)
+			nr = nnr;
 	}
 
 	at_query_free(q);
