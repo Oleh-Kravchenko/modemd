@@ -92,6 +92,9 @@ rpc_packet_t* modem_open_by_port_packet(modemd_client_thread_t* priv, rpc_packet
 
 rpc_packet_t* modem_close_packet(modemd_client_thread_t* priv, rpc_packet_t* p)
 {
+	if(!priv->modem)
+		return(NULL);
+
 	modem_close(priv->modem);
 
 	return(rpc_create(TYPE_RESPONSE, p->func, NULL, 0));
@@ -101,6 +104,9 @@ rpc_packet_t* modem_close_packet(modemd_client_thread_t* priv, rpc_packet_t* p)
 
 rpc_packet_t* modem_conf_reload_packet(modemd_client_thread_t* priv, rpc_packet_t* p)
 {
+	if(!priv->modem)
+		return(NULL);
+
 	modem_conf_reload(priv->modem);
 
 	return(rpc_create(TYPE_RESPONSE, p->func, NULL, 0));
@@ -112,6 +118,9 @@ rpc_packet_t* modem_get_imei_packet(modemd_client_thread_t* priv, rpc_packet_t* 
 {
 	rpc_packet_t *res = NULL;
 	char imei[0x100];
+
+	if(!priv->modem)
+		return(NULL);
 
 	if(modem_get_imei(priv->modem, imei, sizeof(imei)))
 		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)imei, strlen(imei));
@@ -126,6 +135,9 @@ rpc_packet_t* modem_get_imsi_packet(modemd_client_thread_t* priv, rpc_packet_t* 
 	rpc_packet_t *res = NULL;
 	char imsi[0x100];
 
+	if(!priv->modem)
+		return(NULL);
+
 	if(modem_get_imsi(priv->modem, imsi, sizeof(imsi)))
 		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)imsi, strlen(imsi));
 
@@ -138,6 +150,9 @@ rpc_packet_t* modem_get_signal_quality_packet(modemd_client_thread_t* priv, rpc_
 {
 	rpc_packet_t *res = NULL;
 	modem_signal_quality_t sq;
+
+	if(!priv->modem)
+		return(NULL);
 
 	/* if signal present */
 	if(!modem_get_signal_quality(priv->modem, &sq))
@@ -153,6 +168,9 @@ rpc_packet_t* modem_get_network_time_packet(modemd_client_thread_t* priv, rpc_pa
 	rpc_packet_t *res = NULL;
 	time_t t;
 
+	if(!priv->modem)
+		return(NULL);
+
 	if((t = modem_get_network_time(priv->modem)))
 		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)&t, sizeof(t));
 
@@ -165,6 +183,9 @@ rpc_packet_t* modem_get_operator_name_packet(modemd_client_thread_t* priv, rpc_p
 {
 	rpc_packet_t *res = NULL;
 	char oper[0x100];
+
+	if(!priv->modem)
+		return(NULL);
 
 	if(modem_get_operator_name(priv->modem, oper, sizeof(oper)))
 		res = rpc_create(TYPE_RESPONSE, p->func,
@@ -195,6 +216,9 @@ rpc_packet_t* modem_get_network_type_packet(modemd_client_thread_t* priv, rpc_pa
 	rpc_packet_t *res = NULL;
 	char nt[0x100];
 
+	if(!priv->modem)
+		return(NULL);
+
 	if(modem_get_network_type(priv->modem, nt, sizeof(nt)))
 		res = rpc_create(TYPE_RESPONSE, p->func,
 			(uint8_t*)nt, strlen(nt)
@@ -209,6 +233,9 @@ rpc_packet_t* modem_change_pin_packet(modemd_client_thread_t* priv, rpc_packet_t
 {
 	modem_change_pin_t *pc = (modem_change_pin_t*)p->data;
 	rpc_packet_t *res = NULL;
+
+	if(!priv->modem)
+		return(NULL);
 
 	if(p->hdr.data_len != sizeof(*pc))
 		return(res);
@@ -226,6 +253,9 @@ rpc_packet_t* modem_get_fw_version_packet(modemd_client_thread_t* priv, rpc_pack
 	rpc_packet_t *res = NULL;
 	modem_fw_ver_t fw_ver;
 
+	if(!priv->modem)
+		return(NULL);
+
 	if(modem_get_fw_version(priv->modem, &fw_ver))
 		res = rpc_create(TYPE_RESPONSE, p->func,
 			(uint8_t*)&fw_ver, sizeof(fw_ver));
@@ -240,6 +270,9 @@ rpc_packet_t* modem_get_info_packet(modemd_client_thread_t* priv, rpc_packet_t* 
 	rpc_packet_t *res = NULL;
 	usb_device_info_t mi;
 
+	if(!priv->modem)
+		return(NULL);
+
 	if(usb_device_get_info(priv->modem->port, &mi))
 		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)&mi, sizeof(mi));
 
@@ -253,6 +286,9 @@ rpc_packet_t* modem_operator_scan_packet(modemd_client_thread_t* priv, rpc_packe
 	rpc_packet_t *res = NULL;
 	modem_oper_t *opers;
 	int nopers = 0;
+
+	if(!priv->modem)
+		return(NULL);
 
 	if((nopers = modem_operator_scan(priv->modem, &opers)) > 0)
 		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)opers, sizeof(modem_oper_t) * nopers);
@@ -269,6 +305,9 @@ rpc_packet_t* modem_at_command_packet(modemd_client_thread_t* priv, rpc_packet_t
 	rpc_packet_t *res = NULL;
 	char *reply;
 
+	if(!priv->modem)
+		return(NULL);
+
 	if((reply = modem_at_command(priv->modem, (char*)p->data)))
 		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)reply, strlen(reply));
 
@@ -284,6 +323,9 @@ rpc_packet_t* modem_get_cell_id_packet(modemd_client_thread_t* priv, rpc_packet_
 	rpc_packet_t *res = NULL;
 	int32_t cell_id;
 
+	if(!priv->modem)
+		return(NULL);
+
 	/* cutting Cell ID number from the reply */
 	if((cell_id = modem_get_cell_id(priv->modem)))
 		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)&cell_id, sizeof(cell_id));
@@ -298,6 +340,9 @@ rpc_packet_t* modem_operator_scan_start_packet(modemd_client_thread_t* priv, rpc
 	rpc_packet_t* res = NULL;
 	int scan_res;
 
+	if(!priv->modem)
+		return(NULL);
+
 	scan_res = modem_operator_scan_start(priv->modem, (char*)p->data);
 	res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)&scan_res, sizeof(scan_res));
 
@@ -310,6 +355,9 @@ rpc_packet_t* modem_operator_scan_is_running_packet(modemd_client_thread_t* priv
 {
 	rpc_packet_t *res = NULL;
 	int8_t scan_res;
+
+	if(!priv->modem)
+		return(NULL);
 
 	scan_res = modem_operator_scan_is_running(priv->modem);
 
