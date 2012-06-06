@@ -51,7 +51,11 @@ int at_query_exec(queue_t* queue, at_query_t* query)
 	int res;
 
 	if((res = queue_add(queue, &query, sizeof(at_query_t**))))
+	{
+		query->error = 0;
+
 		goto err;
+	}
 
 	/* wait for processing */
 	event_wait(query->event);
