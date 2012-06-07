@@ -278,8 +278,9 @@ void* mc77x0_thread_reg(modem_t *priv)
 			snprintf(s, sizeof(s), "AT!BAND=%02X\r\n", conf.frequency_band);
 			at_raw_ok(at_q->queue, s);
 
-			state = RS_SET_APN;
+			state = RS_CHECK_PIN; //RS_SET_APN; //@Anatoly - do not set PDP profile on MC7750, during registration
 		}
+#ifndef CONFIG_MODEM_MC7750     //@Anatoly - do not set PDP profile on MC7750, during registration
 		else if(state == RS_SET_APN)
 		{
 			/* apn setup */
@@ -310,6 +311,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 
 			state = RS_CHECK_PIN;
 		}
+#endif
 		else if(state == RS_CHECK_PIN)
 		{
 			switch(at_cpin_state(at_q->queue))
@@ -329,6 +331,8 @@ void* mc77x0_thread_reg(modem_t *priv)
 				default:
 					if(at_q->last_error == 14) /* sim busy */
 						state_delay = 4;
+					else if(at_q->last_error == 15) /* sim wrong */
+                        return(NULL);
 			}
 		}
 		else if(state == RS_SET_PIN)
