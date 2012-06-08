@@ -21,18 +21,25 @@ char* trim_l(char* s)
 
 /*------------------------------------------------------------------------*/
 
-char* trim_r(char* s)
+char* trim_r_esc(char* s, const char* esc)
 {
 	size_t len = strlen(s);
 	char *res = NULL;
 
-	while(len -- && strchr(escape_symbols, s[len]))
+	while(len -- && strchr(esc, s[len]))
 		res = &s[len];
 
 	if(res)
 		*res = 0;
 
 	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+char* trim_r(char* s)
+{
+	return(trim_r_esc(s, escape_symbols));
 }
 
 /*------------------------------------------------------------------------*/
