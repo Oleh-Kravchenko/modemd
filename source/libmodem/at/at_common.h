@@ -87,6 +87,10 @@ time_t at_get_network_time(queue_t *queue);
 
 /*------------------------------------------------------------------------*/
 
+char* at_get_ccid(queue_t *queue, char* ccid, size_t len);
+
+/*------------------------------------------------------------------------*/
+
 int at_change_pin(queue_t *queue, const char* old_pin, const char* new_pin);
 
 #endif /* __AT_COMMON_H */

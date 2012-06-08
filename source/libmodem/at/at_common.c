@@ -5,6 +5,7 @@
 #include <modem/types.h>
 
 #include "utils/re.h"
+#include "utils/str.h"
 #include "queue.h"
 #include "at_query.h"
 #include "at_common.h"
@@ -427,6 +428,45 @@ int at_get_cell_id(queue_t *queue)
 	at_query_free(q);
 
 	return(cell_id);
+}
+
+/*-------------------------------------------------------------------------*/
+
+char* at_get_ccid(queue_t *queue, char* s, size_t len)
+{
+	char ccid[21] = {0};
+	at_query_t *q;
+	int i;
+
+	q = at_query_create("AT+CRSM=176,12258,0,0,10\r\n", "\r\n\\+CRSM: 144,0,\"([0-9AFaf]+)\"\r\n\r\nOK\r\n");
+	at_query_exec(queue, q);
+
+	/* cutting Cell ID number from the reply */
+	if(!at_query_is_error(q))
+	{
+		re_strncpy(ccid, sizeof(ccid), q->result, q->pmatch + 1);
+
+		for(i = 0; i < 20; i += 2)
+		{
+			if(ccid[i] == ccid[i + 1])
+				continue;
+
+			/* swapping symbols */
+			ccid[i] = ccid[i] + ccid[i + 1];
+			ccid[i + 1] = ccid[i] - ccid[i + 1];
+			ccid[i] = ccid[i] - ccid[i + 1];
+		}
+
+		trim_r_esc(ccid, "F");
+		trim_r_esc(ccid, "f");
+
+		strncpy(s, ccid, len - 1);
+		s[len - 1] = 0;
+	}
+
+	at_query_free(q);
+
+	return(*ccid ? s : NULL);
 }
 
 /*-------------------------------------------------------------------------*/
