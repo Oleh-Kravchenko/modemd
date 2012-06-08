@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include <modem/types.h>
+#include <modem/modem_errno.h>
 
 /***************************************************************************
  * Initialization                                                          *

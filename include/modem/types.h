@@ -174,6 +174,14 @@ struct cached_s
 	char imsi[0x32];
 
 	char imei[0x32];
+
+	char ccid[0x32];
+
+	char msin[0x32];
+
+	char mcc[4];
+
+	char mnc[4];
 };
 
 /*------------------------------------------------------------------------*/

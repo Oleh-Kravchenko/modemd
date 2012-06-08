@@ -3,20 +3,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <strings.h>
 
 #include "modem/types.h"
+#include "modem/modem_str.h"
+#include "modem/modem_errno.h"
 
 #include "at/at_queue.h"
+#include "at/at_utils.h"
 #include "at/at_common.h"
-
 
 #include "modems/modem_conf.h"
 #include "modems/mc77x0/registration.h"
 
 #include "utils/str.h"
 #include "utils/re.h"
-
-#include "modem/modem_str.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -44,6 +45,10 @@ enum registration_state_e
 	RS_SET_PIN,
 	RS_SET_PUK,
 	RS_GET_IMSI,
+	RS_MCC_LOCK,
+	RS_MNC_LOCK,
+	RS_CCID_LOCK,
+	RS_MSIN_LOCK,
 	RS_OPERATOR_SELECT,
 	RS_CHECK_REGISTRATION,
 	RS_GET_SIGNAL_QUALITY,
@@ -68,6 +73,10 @@ static const char *RS_STR[] =
 	__STR(RS_SET_PIN),
 	__STR(RS_SET_PUK),
 	__STR(RS_GET_IMSI),
+	__STR(RS_MCC_LOCK),
+	__STR(RS_MNC_LOCK),
+	__STR(RS_CCID_LOCK),
+	__STR(RS_MSIN_LOCK),
 	__STR(RS_OPERATOR_SELECT),
 	__STR(RS_CHECK_REGISTRATION),
 	__STR(RS_GET_SIGNAL_QUALITY),
@@ -164,49 +173,30 @@ void* mc77x0_thread_reg(modem_t *priv)
 
 	while(!priv->reg.terminate)
 	{
-		if(at_q->last_error != -1 && at_q->last_error == prev_last_error)
-		{
-			++ cnt_last_error;
-#ifdef _DEV_EDITION
-			printf("cnt_last_error: %d\n", cnt_last_error);
-#endif
-		}
-		else
-		{
-			cnt_last_error = 0;
-			prev_last_error = at_q->last_error;
-		}
-
-		if(cnt_last_error > 10)
-		{
-			cnt_last_error = 0;
-			prev_last_error = at_q->last_error;
-
-			printf("Too many errors, reseting modem..\n");
-
-			state = RS_RESET;
-		}
-
-		if(conf.periodical_reset && state_delay)
-		{
-			if(periodical_reset == 0)
-			{
-				printf("Periodical reset modem..\n");
-
-				state = RS_RESET;
-			}
-			else
-			{
-				-- periodical_reset;
-
-#ifdef _DEV_EDITION
-				printf("Periodical reset modem: %d\n", periodical_reset);
-#endif
-			}
-		}
-		
+		/* delay for commands */
 		if(state_delay)
 		{
+			/* periodical reset handling */
+			if(state != RS_RESET && conf.periodical_reset)
+			{
+				if(periodical_reset == 0)
+				{
+					printf("Periodical reset modem..\n");
+
+					periodical_reset = conf.periodical_reset * 3600;
+
+					state = RS_RESET;
+				}
+				else
+				{
+					-- periodical_reset;
+
+#ifdef _DEV_EDITION
+					printf("Periodical reset modem: %d\n", periodical_reset);
+#endif
+				}
+			}
+
 			sleep(1);
 
 #ifdef _DEV_EDITION
@@ -215,6 +205,34 @@ void* mc77x0_thread_reg(modem_t *priv)
 			-- state_delay;
 
 			continue;
+		}
+		else
+		{
+			if(at_q->last_error != -1 && at_q->last_error == prev_last_error)
+			{
+				++ cnt_last_error;
+
+#ifdef _DEV_EDITION
+				printf("cnt_last_error: %d\n", cnt_last_error);
+#endif
+
+				if(cnt_last_error > 10)
+				{
+					cnt_last_error = 0;
+					prev_last_error = at_q->last_error;
+
+					printf("Too many errors (%d), reseting modem..\n", prev_last_error);
+
+					state = RS_RESET;
+				}
+
+				state_delay = 1;
+			}
+			else
+			{
+				cnt_last_error = 0;
+				prev_last_error = at_q->last_error;
+			}
 		}
 
 #ifdef _DEV_EDITION
@@ -254,7 +272,12 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_SET_CFUN)
 		{
-			at_raw_ok(at_q->queue, "AT+CFUN=1\r\n");
+			if(at_raw_ok(at_q->queue, "AT+CFUN=1\r\n"))
+			{
+				state_delay = 5;
+
+				continue;
+			}
 
 			state = RS_READ_CONFIG;
 		}
@@ -280,7 +303,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 
 			state = RS_CHECK_PIN; //RS_SET_APN; //@Anatoly - do not set PDP profile on MC7750, during registration
 		}
-#ifndef CONFIG_MODEM_MC7750     //@Anatoly - do not set PDP profile on MC7750, during registration
+#if 0 //@Anatoly - do not set PDP profile on MC7750, during registration
 		else if(state == RS_SET_APN)
 		{
 			/* apn setup */
@@ -375,6 +398,121 @@ void* mc77x0_thread_reg(modem_t *priv)
 				continue;
 			}
 
+			/* mcc */
+			strncpy(priv->reg.state.mcc, priv->reg.state.imsi, sizeof(priv->reg.state.mcc) - 1);
+			priv->reg.state.mcc[sizeof(priv->reg.state.mcc) - 1] = 0;
+
+			/* mnc */
+			strncpy(priv->reg.state.mnc, priv->reg.state.imsi + strlen(priv->reg.state.mcc), sizeof(priv->reg.state.mnc) - 1);
+			priv->reg.state.mnc[mnc_get_length(priv->reg.state.imsi)] = 0;
+
+			state = RS_MCC_LOCK;
+		}
+		else if(state == RS_MCC_LOCK)
+		{
+			printf("MCC = [%s]\n", priv->reg.state.mcc);
+
+			if(*conf.mcc_lock)
+			{
+				if(strcmp(priv->reg.state.mcc, conf.mcc_lock) != 0)
+				{
+					/* Network not allowed, emergency calls only  */
+					priv->reg.last_error = __ME_MCC_LOCKED;
+
+					/* set registration status as a denied */
+					priv->reg.state.reg = MODEM_NETWORK_REG_DENIED;
+
+					printf("(EE) MCC Lock error\n");
+
+					return(NULL);
+				}
+			}
+
+			state = RS_MNC_LOCK;
+		}
+		else if(state == RS_MNC_LOCK)
+		{
+			printf("MNC = [%s]\n", priv->reg.state.mnc);
+
+			if(*conf.mnc_lock)
+			{
+				if(strcmp(priv->reg.state.mnc, conf.mnc_lock) != 0)
+				{
+					/* Network not allowed, emergency calls only  */
+					priv->reg.last_error = __ME_MNC_LOCKED;
+
+					/* set registration status as a denied */
+					priv->reg.state.reg = MODEM_NETWORK_REG_DENIED;
+
+					printf("(EE) MNC Lock error\n");
+
+					return(NULL);
+				}
+			}
+
+			state = RS_CCID_LOCK;
+		}
+		else if(state == RS_CCID_LOCK)
+		{
+			if(!at_get_ccid(at_q->queue, priv->reg.state.ccid, sizeof(priv->reg.state.ccid)))
+			{
+				state_delay = 5;
+
+				continue;
+			}
+
+			printf("CCID = [%s]\n", priv->reg.state.ccid);
+
+			if
+			(
+				*conf.ccid.low && *conf.ccid.high && (
+					strcasecmp(priv->reg.state.ccid, conf.ccid.low) < 0 ||
+					strcasecmp(conf.ccid.high, priv->reg.state.ccid) < 0
+				)
+			)
+			{
+				/* Network not allowed, emergency calls only  */
+				priv->reg.last_error = __ME_CCID_LOCKED;
+
+				/* set registration status as a denied */
+				priv->reg.state.reg = MODEM_NETWORK_REG_DENIED;
+
+				printf("(EE) CCID Lock error\n");
+
+				return(NULL);
+			}
+
+			state = RS_MSIN_LOCK;
+		}
+		else if(state == RS_MSIN_LOCK)
+		{
+			strncpy(priv->reg.state.msin,
+				priv->reg.state.imsi +
+					strlen(priv->reg.state.mcc) +
+					strlen(priv->reg.state.mnc),
+				sizeof(priv->reg.state.msin));
+
+			printf("MSIN = [%s]\n", priv->reg.state.msin);
+
+			if
+			(
+				*conf.msin.low && *conf.msin.high && (
+					strcasecmp(priv->reg.state.msin, conf.msin.low) < 0 ||
+					strcasecmp(conf.msin.high, priv->reg.state.msin) < 0
+				)
+			)
+			{
+				/* Network not allowed, emergency calls only  */
+				priv->reg.last_error = __ME_MSIN_LOCKED;
+
+				/* set registration status as a denied */
+				priv->reg.state.reg = MODEM_NETWORK_REG_DENIED;
+
+				printf("(EE) MSIN Lock error\n");
+
+				return(NULL);
+			}
+
 			state = RS_OPERATOR_SELECT;
 		}
 		else if(state == RS_OPERATOR_SELECT)
@@ -440,8 +578,6 @@ void* mc77x0_thread_reg(modem_t *priv)
 		else if(state == RS_RESET)
 		{
 			modem_reset(priv);
-
-			periodical_reset = conf.periodical_reset * 3600;
 
 			state = RS_INIT;
 		}

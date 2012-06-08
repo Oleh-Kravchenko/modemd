@@ -21,6 +21,24 @@ typedef struct
 	
 	/* time in hours */
 	int periodical_reset;
+
+	char mcc_lock[4];
+
+	char mnc_lock[4];
+
+	struct
+	{
+		char low[21];
+
+		char high[21];
+	} ccid;
+
+	struct
+	{
+		char low[21];
+
+		char high[21];
+	} msin;
 } modem_conf_t;
 
 /*------------------------------------------------------------------------*/

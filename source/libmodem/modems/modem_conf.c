@@ -5,12 +5,15 @@
 #include "modem_conf.h"
 
 #include "utils/str.h"
+#include "utils/re.h"
 
 /*------------------------------------------------------------------------*/
 
 int modem_conf_read(const char* port, modem_conf_t* conf)
 {
-	char s[0x100];
+	char s[0x100], w[0x100];
+	regmatch_t* pmatch;
+	size_t nmatch;
 	FILE *f;
 
 	/* default values */
@@ -26,6 +29,10 @@ int modem_conf_read(const char* port, modem_conf_t* conf)
 	conf->access_technology = 0;
 	conf->frequency_band = 0;
 	conf->periodical_reset = 0;
+	*conf->mcc_lock = 0;
+	*conf->mnc_lock = 0;
+	*conf->ccid.low = 0;
+	*conf->ccid.high = 0;
 
 	/* path to config */
 	snprintf(s, sizeof(s), "/etc/modemd/%s/conf", port);
@@ -42,17 +49,21 @@ int modem_conf_read(const char* port, modem_conf_t* conf)
 		if(!fgets(s, sizeof(s), f))
 			continue;
 
-#define CONF_PIN			 "pin="
-#define CONF_PUK			 "puk="
-#define CONF_APN			 "apn="
+#define CONF_PIN			"pin="
+#define CONF_PUK			"puk="
+#define CONF_APN			"apn="
 #define CONF_AUTH			"auth="
 #define CONF_USER			"username="
 #define CONF_PASS			"password="
-#define CONF_ROAMING		 "roaming_enable=yes"
+#define CONF_ROAMING		"roaming_enable=yes"
 #define CONF_OPER			"operator_number="
-#define CONF_ACT			 "access_technology="
+#define CONF_ACT			"access_technology="
 #define CONF_BAND			"frequency_band="
-#define CONF_PERIODICAL_RST  "periodical_reset="
+#define CONF_PERIODICAL_RST	"periodical_reset="
+#define CONF_MCC			"mcc="
+#define CONF_MNC			"mnc="
+#define CONF_CCID			"ccid="
+#define CONF_MSIN			"msin="
 
 		if(strstr(s, CONF_PIN) == s)
 		{
@@ -108,22 +119,66 @@ int modem_conf_read(const char* port, modem_conf_t* conf)
 		{
 			conf->periodical_reset = atoi(s + strlen(CONF_PERIODICAL_RST));
 		}
+		else if(strstr(s, CONF_MCC) == s)
+		{
+			strncpy(conf->mcc_lock, s + strlen(CONF_MCC), sizeof(conf->mcc_lock) - 1);
+			conf->mcc_lock[sizeof(conf->mcc_lock) - 1] = 0;
+			trim_r(conf->mcc_lock);
+		}
+		else if(strstr(s, CONF_MNC) == s)
+		{
+			strncpy(conf->mnc_lock, s + strlen(CONF_MCC), sizeof(conf->mnc_lock) - 1);
+			conf->mnc_lock[sizeof(conf->mnc_lock) - 1] = 0;
+			trim_r(conf->mnc_lock);
+		}
+		else if(strstr(s, CONF_CCID) == s)
+		{
+			strncpy(w, s + strlen(CONF_CCID), sizeof(w) - 1);
+			w[sizeof(w) - 1] = 0;
+			trim_r(w);
+
+			if(!re_parse(w, "(.+),(.+)", &nmatch, &pmatch))
+			{
+				re_strncpy(conf->ccid.low, sizeof(conf->ccid.low), w, pmatch + 1);
+				re_strncpy(conf->ccid.high, sizeof(conf->ccid.low), w, pmatch + 2);
+
+				free(pmatch);
+			}
+		}
+		else if(strstr(s, CONF_MSIN) == s)
+		{
+			strncpy(w, s + strlen(CONF_MSIN), sizeof(w) - 1);
+			w[sizeof(w) - 1] = 0;
+			trim_r(w);
+
+			if(!re_parse(w, "(.+),(.+)", &nmatch, &pmatch))
+			{
+				re_strncpy(conf->msin.low, sizeof(conf->msin.low), w, pmatch + 1);
+				re_strncpy(conf->msin.high, sizeof(conf->msin.low), w, pmatch + 2);
+
+				free(pmatch);
+			}
+		}
 	}
 
 	fclose(f);
 
 	printf(
-		"			  PIN: %s\n"
-		"			  PUK: %s\n"
-		"			  APN: %s\n"
-		"			 Auth: %d\n"
-		"		 Username: %s\n"
-		"		 Password: %s\n"
-		"		  roaming: %d\n"
+		"              PIN: [%s]\n"
+		"              PUK: [%s]\n"
+		"              APN: [%s]\n"
+		"             Auth: %d\n"
+		"         Username: [%s]\n"
+		"         Password: [%s]\n"
+		"          roaming: %d\n"
 		"  operator_number: %d\n"
 		"access_technology: %d\n"
 		" periodical_reset: %d\n"
-		"   frequency_band: %d\n",
+		"   frequency_band: %d\n"
+		"         mcc lock: [%s]\n"
+		"         mnc lock: [%s]\n"
+		"        ccid lock: [%s] - [%s]\n"
+		"        msin lock: [%s] - [%s]\n",
 
 		conf->pin,
 		conf->puk,
@@ -135,7 +190,11 @@ int modem_conf_read(const char* port, modem_conf_t* conf)
 		conf->operator_number,
 		conf->access_technology,
 		conf->periodical_reset,
-		conf->frequency_band
+		conf->frequency_band,
+		conf->mcc_lock,
+		conf->mnc_lock,
+		conf->ccid.low, conf->ccid.high,
+		conf->msin.low, conf->msin.high
 	);
 
 	return(0);
