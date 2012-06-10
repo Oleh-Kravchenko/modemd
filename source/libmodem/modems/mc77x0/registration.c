@@ -352,9 +352,9 @@ void* mc77x0_thread_reg(modem_t *priv)
 					break;
 
 				default:
-					if(at_q->last_error == 14) /* sim busy */
+					if(at_q->last_error == __ME_SIM_BUSY)
 						state_delay = 4;
-					else if(at_q->last_error == 15) /* sim wrong */
+					else if(at_q->last_error == __ME_SIM_WRONG)
                         return(NULL);
 			}
 		}
@@ -368,7 +368,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 			}
 			else
 			{
-				priv->reg.last_error = 11; /* SIM PIN required */
+				priv->reg.last_error = __ME_SIM_PIN; /* SIM PIN required */
 
 				return(NULL);
 			}
@@ -383,7 +383,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 			}
 			else
 			{
-				priv->reg.last_error = 12; /* SIM PUK required */
+				priv->reg.last_error = __ME_SIM_PUK; /* SIM PUK required */
 
 				return(NULL);
 			}
