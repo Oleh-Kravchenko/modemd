@@ -168,7 +168,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 	int cnt_last_error = 0;
 
 	priv->reg.ready = 0;
-	priv->reg.last_error = 258; /* we are busy now */
+	priv->reg.last_error = __ME_REG_IN_PROGRESS; /* we are busy now :) */
 	priv->reg.state.reg = MODEM_NETWORK_REG_SEARCHING;
 
 	while(!priv->reg.terminate)
@@ -216,7 +216,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 				printf("cnt_last_error: %d\n", cnt_last_error);
 #endif
 
-				if(cnt_last_error > 10)
+				if(cnt_last_error > 20)
 				{
 					cnt_last_error = 0;
 					prev_last_error = at_q->last_error;
@@ -353,37 +353,43 @@ void* mc77x0_thread_reg(modem_t *priv)
 
 				default:
 					if(at_q->last_error == __ME_SIM_BUSY)
-						state_delay = 4;
+						state_delay = 5;
 					else if(at_q->last_error == __ME_SIM_WRONG)
                         return(NULL);
 			}
 		}
 		else if(state == RS_SET_PIN)
 		{
-			if(*conf.pin)
+			if(*conf.pin && !at_cpin_pin(at_q->queue, conf.pin))
 			{
-				at_cpin_pin(at_q->queue, conf.pin);
-
 				state = RS_GET_IMSI;
 			}
 			else
 			{
-				priv->reg.last_error = __ME_SIM_PIN; /* SIM PIN required */
+				printf("(EE) PIN Error\n");
+
+				/* SIM PIN required */
+				priv->reg.last_error = __ME_SIM_PIN;
+
+				/* set registration status as a denied */
+				priv->reg.state.reg = MODEM_NETWORK_REG_DENIED;
 
 				return(NULL);
 			}
 		}
 		else if(state == RS_SET_PUK)
 		{
-			if(*conf.pin && *conf.puk)
+			if(*conf.pin && *conf.puk && !at_cpin_puk(at_q->queue, conf.puk, conf.pin))
 			{
-				at_cpin_puk(at_q->queue, conf.puk, conf.pin);
-
 				state = RS_GET_IMSI;
 			}
 			else
 			{
-				priv->reg.last_error = __ME_SIM_PUK; /* SIM PUK required */
+				/* SIM PUK required */
+				priv->reg.last_error = __ME_SIM_PUK;
+
+				/* set registration status as a denied */
+				priv->reg.state.reg = MODEM_NETWORK_REG_DENIED;
 
 				return(NULL);
 			}
@@ -549,7 +555,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 
 				default:
 					priv->reg.ready = 0;
-					priv->reg.last_error = 0;
+					priv->reg.last_error = __ME_REG_IN_PROGRESS;
 
 					state_delay = 5;
 					break;
