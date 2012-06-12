@@ -12,6 +12,8 @@
 #include <regex.h>
 #include <syslog.h>
 
+#include "modem/modem_errno.h"
+
 #include "queue.h"
 #include "at_queue.h"
 #include "utils/str.h"
@@ -53,8 +55,7 @@ void* at_queue_thread_write(void* prm)
 
 		if(write(priv->fd, priv->query->cmd, strlen(priv->query->cmd)) == -1)
 		{
-			priv->query->error = 100; /* unknown error */
-			priv->last_error = 100;
+			priv->last_error = priv->query->error = __ME_WRITE_FAILED; /* unknown error */
 
 			/* reporting about failed command */
 			event_signal(priv->query->event);
@@ -146,8 +147,7 @@ void* at_queue_thread_read(void* prm)
 			{
 //				printf("(EE) Command %s expired after %d second(s)\n", priv->query->cmd, giveup);
 //				printf("(EE) No match %s\n", buf);
-				priv->query->error = 0;
-				priv->last_error = 31;
+				priv->last_error = priv->query->error = __ME_READ_FAILED;
 			}
 			else //if(priv->query->error > 0) /* ignore general error */
 			{

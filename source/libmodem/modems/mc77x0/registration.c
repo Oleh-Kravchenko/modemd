@@ -128,7 +128,7 @@ exit:
 
 /*------------------------------------------------------------------------*/
 
-modem_network_reg_t at_network_registration_mc7750(queue_t* queue)
+modem_network_reg_t at_network_registration_cereg(queue_t* queue)
 {
 	modem_network_reg_t nr = MODEM_NETWORK_REG_UNKNOWN;
 	at_query_t *q;
@@ -146,6 +146,79 @@ modem_network_reg_t at_network_registration_mc7750(queue_t* queue)
 		/* check value */
 		if(nnr >= 0 && nnr <= 5)
 			nr = nnr;
+	}
+
+	at_query_free(q);
+
+	return(nr);
+}
+
+/*------------------------------------------------------------------------*/
+
+modem_network_reg_t at_network_registration_mc7750(at_queue_t* queue)
+{
+	modem_network_reg_t nr;
+	char s[0x100], w[0x100], z[0x100];
+	at_query_t *q;
+
+	/* workaround for buggy firmware */
+	/* check +CREG, +CEREG and !GSTATUS */
+
+	/* check standard AT+CREG */
+	switch((nr = at_network_registration(queue->queue)))
+	{
+		case MODEM_NETWORK_REG_HOME:
+		case MODEM_NETWORK_REG_SEARCHING:
+		case MODEM_NETWORK_REG_ROAMING:
+		case MODEM_NETWORK_REG_DENIED:
+			return(nr);
+
+		case MODEM_NETWORK_REG_FAILED:
+		case MODEM_NETWORK_REG_UNKNOWN:
+		default:
+			break;
+	}
+
+	/* check Sierra AT+CEREG */
+	switch((nr = at_network_registration_cereg(queue->queue)))
+	{
+		case MODEM_NETWORK_REG_HOME:
+		case MODEM_NETWORK_REG_SEARCHING:
+		case MODEM_NETWORK_REG_ROAMING:
+		case MODEM_NETWORK_REG_DENIED:
+			return(nr);
+
+		case MODEM_NETWORK_REG_FAILED:
+		case MODEM_NETWORK_REG_UNKNOWN:
+		default:
+			break;
+	}
+
+	/* check registration through AT!GSTATUS */
+	q = at_query_create("AT!GSTATUS?\r\n", "\r\n\\!GSTATUS: \r\n.*\tPS state: *([A-Za-z]+) *\r\n.*\r\n(GMM \\(PS\\) state:|EMM state:) *([A-Za-z]+) *\t([A-Za-z]+ ?[A-Za-z]*) *\r\n.*\r\n\r\nOK\r\n");
+
+	at_query_exec(queue->queue, q);
+
+	/* suppress errors if regular expression do is not match */
+	queue->last_error = -1;
+
+	if(!at_query_is_error(q))
+	{
+		re_strncpy(s, sizeof(s), q->result, q->pmatch + 1);
+		re_strncpy(w, sizeof(w), q->result, q->pmatch + 3);
+		re_strncpy(z, sizeof(z), q->result, q->pmatch + 4);
+
+		printf("AT!GSTATUS: [%s] [%s] [%s]\n", s, w, z);
+
+		if
+		(
+			strcasestr(s, "Attached") &&
+			strcasestr(w, "REGISTERED") &&
+			strcasestr(z, "NORMAL")
+		)
+			nr = MODEM_NETWORK_REG_HOME;
+		else
+			nr = MODEM_NETWORK_REG_SEARCHING;
 	}
 
 	at_query_free(q);
@@ -535,7 +608,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_CHECK_REGISTRATION)
 		{
-			priv->reg.state.reg = at_network_registration_mc7750(at_q->queue);
+			priv->reg.state.reg = at_network_registration_mc7750(at_q);
 
 //			printf("%s\n", str_network_registration(priv->reg.state.reg));
 
