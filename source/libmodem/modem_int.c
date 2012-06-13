@@ -83,6 +83,10 @@ modem_t* modem_open_by_port(const char* port)
 		}
 	}
 
+	/* TODO: workaround for openrg reset */
+	port_power(port, 0);
+	sleep(5);
+
 	/* ==== */
 	/* check device present */
 	if(!usb_device_get_info(port, &mi))
@@ -205,6 +209,9 @@ void modem_close(modem_t* modem)
 
 	/* destroing queues */
 	at_queue_destroy((at_queue_t*)(modem->priv));
+
+	/* power off modem */
+	port_power(modem->port, 0);
 
 	free(modem);
 

@@ -7,6 +7,7 @@
 #define __ME_SIM_PUK			12
 #define __ME_SIM_BUSY			14
 #define __ME_SIM_WRONG			15
+#define __ME_INVALID_PASSWORD	16
 
 #define __ME_REG_IN_PROGRESS	10000
 #define __ME_MCC_LOCKED			10001

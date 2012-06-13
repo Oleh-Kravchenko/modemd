@@ -441,8 +441,11 @@ void* mc77x0_thread_reg(modem_t *priv)
 			{
 				printf("(EE) PIN Error\n");
 
-				/* SIM PIN required */
-				priv->reg.last_error = __ME_SIM_PIN;
+				if(*conf.pin)
+					/* SIM PIN invalid */
+					priv->reg.last_error = at_q->last_error;
+				else
+					priv->reg.last_error = __ME_SIM_PIN;
 
 				/* set registration status as a denied */
 				priv->reg.state.reg = MODEM_NETWORK_REG_DENIED;
@@ -458,8 +461,11 @@ void* mc77x0_thread_reg(modem_t *priv)
 			}
 			else
 			{
-				/* SIM PUK required */
-				priv->reg.last_error = __ME_SIM_PUK;
+				if(*conf.pin && *conf.puk)
+					/* SIM PUK invalid */
+					priv->reg.last_error = at_q->last_error;
+				else
+					priv->reg.last_error = __ME_SIM_PUK;
 
 				/* set registration status as a denied */
 				priv->reg.state.reg = MODEM_NETWORK_REG_DENIED;
