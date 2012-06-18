@@ -51,7 +51,7 @@ void* at_queue_thread_write(void* prm)
 
 //		printf("(EE) write(%zd): [%s]\n", strlen(priv->query->cmd), priv->query->cmd);
 
-		syslog(LOG_INFO | LOG_LOCAL7, "%s", priv->query->cmd);
+		syslog(LOG_INFO | LOG_LOCAL7, "write() [%s]", priv->query->cmd);
 
 		if(write(priv->fd, priv->query->cmd, strlen(priv->query->cmd)) == -1)
 		{
@@ -104,7 +104,7 @@ void* at_queue_thread_read(void* prm)
 				buf[buf_len] = 0;
 
 //				printf("(EE) read(%d): %s", buf_len, buf);
-				syslog(LOG_INFO | LOG_LOCAL7, "%s", buf);
+				syslog(LOG_INFO | LOG_LOCAL7, "read() [%s]", buf);
 
 				regcomp(&re, priv->query->re_res, REG_EXTENDED);
 				priv->query->nmatch = re.re_nsub + 1;

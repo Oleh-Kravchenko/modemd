@@ -228,6 +228,42 @@ modem_network_reg_t at_network_registration_mc7750(at_queue_t* queue)
 
 /*------------------------------------------------------------------------*/
 
+char* at_get_network_type_gstatus(queue_t *queue, char *network, int len)
+{
+	at_query_t *q;
+	char *res = NULL;
+
+	q = at_query_create("AT!GSTATUS?\r\n", "\r\n.*\r\nSystem mode: *([A-Za-z\\+]+) .*\r\n\r\nOK\r\n");
+
+	at_query_exec(queue, q);
+
+	if(!at_query_is_error(q))
+	{
+		re_strncpy(network, len, q->result, q->pmatch + 1);
+
+		res = network;
+	}
+
+	at_query_free(q);
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+char* at_get_network_type_mc7750(queue_t *queue, char *network, int len)
+{
+	if(at_get_network_type(queue, network, len))
+		return(network);
+
+	if(at_get_network_type_gstatus(queue, network, len))
+		return(network);
+
+	return(NULL);
+}
+
+/*------------------------------------------------------------------------*/
+
 void* mc77x0_thread_reg(modem_t *priv)
 {
 	enum registration_state_e state = RS_INIT;
@@ -239,6 +275,8 @@ void* mc77x0_thread_reg(modem_t *priv)
 
 	int prev_last_error = 0;
 	int cnt_last_error = 0;
+
+	memset(&priv->reg.state, 0, sizeof(priv->reg.state));
 
 	priv->reg.ready = 0;
 	priv->reg.last_error = __ME_REG_IN_PROGRESS; /* we are busy now :) */
@@ -648,13 +686,14 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_GET_NETWORK_TYPE)
 		{
-			at_get_network_type(at_q->queue, priv->reg.state.network_type, sizeof(priv->reg.state.network_type));
+			at_get_network_type_mc7750(at_q->queue, priv->reg.state.network_type, sizeof(priv->reg.state.network_type));
 
 			state = RS_GET_OPERATOR_NAME;
 		}
 		else if(state == RS_GET_OPERATOR_NAME)
 		{
-			at_get_operator_name(at_q->queue, priv->reg.state.oper, sizeof(priv->reg.state.oper));
+			if(!at_get_operator_name(at_q->queue, priv->reg.state.oper, sizeof(priv->reg.state.oper)))
+				*priv->reg.state.oper = 0;
 
 			state = RS_CHECK_REGISTRATION;
 
