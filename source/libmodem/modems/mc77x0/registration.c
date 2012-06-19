@@ -228,6 +228,29 @@ modem_network_reg_t at_network_registration_mc7750(at_queue_t* queue)
 
 /*------------------------------------------------------------------------*/
 
+unsigned int at_get_network_type_band(queue_t *queue)
+{
+	at_query_t *q;
+	char band[0x100];
+	unsigned int res = -1;
+
+	q = at_query_create("AT!BAND?\r\n", "\r\nIndex, Name\r\n([0-9A-Z]+), .+\r\n\r\nOK\r\n");
+
+	at_query_exec(queue, q);
+
+	if(!at_query_is_error(q))
+	{
+		re_strncpy(band, sizeof(band), q->result, q->pmatch + 1);
+		sscanf(band, "%02X", &res);
+	}
+
+	at_query_free(q);
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
 char* at_get_network_type_gstatus(queue_t *queue, char *network, int len)
 {
 	at_query_t *q;
@@ -275,12 +298,6 @@ void* mc77x0_thread_reg(modem_t *priv)
 
 	int prev_last_error = 0;
 	int cnt_last_error = 0;
-
-	memset(&priv->reg.state, 0, sizeof(priv->reg.state));
-
-	priv->reg.ready = 0;
-	priv->reg.last_error = __ME_REG_IN_PROGRESS; /* we are busy now :) */
-	priv->reg.state.reg = MODEM_NETWORK_REG_SEARCHING;
 
 	while(!priv->reg.terminate)
 	{
@@ -355,6 +372,10 @@ void* mc77x0_thread_reg(modem_t *priv)
 		{
 			printf("Started registration for modem on port %s\n", priv->port);
 
+			/* initialize data */
+			priv->reg.last_error = __ME_REG_IN_PROGRESS;
+			priv->reg.state.reg = MODEM_NETWORK_REG_SEARCHING;
+
 			state = RS_DISABLE_ECHO;
 		}
 		else if(state == RS_DISABLE_ECHO)
@@ -403,16 +424,31 @@ void* mc77x0_thread_reg(modem_t *priv)
 			}
 
 			periodical_reset = conf.periodical_reset * 3600;
-				
+	
 			state = RS_SET_BAND;
 		}
 		else if(state == RS_SET_BAND)
 		{
+			/* current modem band */
+			int modem_band = at_get_network_type_band(at_q->queue);
+			
+			printf("Modem Band is %d\n", modem_band);
+
 			/* band selection */
 			snprintf(s, sizeof(s), "AT!BAND=%02X\r\n", conf.frequency_band);
-			at_raw_ok(at_q->queue, s);
 
-			state = RS_CHECK_PIN; //RS_SET_APN; //@Anatoly - do not set PDP profile on MC7750, during registration
+			if(at_raw_ok(at_q->queue, s))
+			{
+				priv->reg.last_error = at_q->last_error;
+
+				printf("(EE) Band selection error: %d\n", at_q->last_error);
+
+				return(NULL);
+			}
+
+			/* if band is new for modem, reset is required */
+			state = (modem_band >= 0 && conf.frequency_band == modem_band ?
+				RS_CHECK_PIN : RS_RESET);
 		}
 #if 0 //@Anatoly - do not set PDP profile on MC7750, during registration
 		else if(state == RS_SET_APN)
@@ -466,7 +502,8 @@ void* mc77x0_thread_reg(modem_t *priv)
 					if(at_q->last_error == __ME_SIM_BUSY)
 						state_delay = 5;
 					else if(at_q->last_error == __ME_SIM_WRONG)
-                        return(NULL);
+						/* buggy MC7750 ... */
+						state_delay = 10;
 			}
 		}
 		else if(state == RS_SET_PIN)
@@ -513,6 +550,15 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_GET_IMSI)
 		{
+			if(conf.frequency_band == 10)
+			{
+				state = RS_OPERATOR_SELECT;
+
+				printf("(WW) Band is CDMA skip SIM Check's\n");
+
+				continue;
+			}
+
 			if(!at_get_imsi(at_q->queue, priv->reg.state.imsi, sizeof(priv->reg.state.imsi)))
 			{
 				/* SIM busy? */
