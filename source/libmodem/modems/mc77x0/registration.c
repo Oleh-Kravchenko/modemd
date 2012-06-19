@@ -199,8 +199,10 @@ modem_network_reg_t at_network_registration_mc7750(at_queue_t* queue)
 
 	at_query_exec(queue->queue, q);
 
+#if 0
 	/* suppress errors if regular expression do is not match */
 	queue->last_error = -1;
+#endif
 
 	if(!at_query_is_error(q))
 	{
@@ -334,33 +336,39 @@ void* mc77x0_thread_reg(modem_t *priv)
 
 			continue;
 		}
-		else
-		{
-			if(at_q->last_error != -1 && at_q->last_error == prev_last_error)
-			{
-				++ cnt_last_error;
 
-#ifdef _DEV_EDITION
-				printf("cnt_last_error: %d\n", cnt_last_error);
+		/* I/O modem error handling */
+		if
+		(
+			(at_q->last_error == __ME_WRITE_FAILED ||
+				at_q->last_error == __ME_READ_FAILED)
+			&&
+			(prev_last_error == __ME_WRITE_FAILED ||
+				prev_last_error == __ME_READ_FAILED)
+		)
+		{
+			++ cnt_last_error;
+
+#if _DEV_EDITION
+			printf("cnt_last_error: %d\n", cnt_last_error);
 #endif
 
-				if(cnt_last_error > 20)
-				{
-					cnt_last_error = 0;
-					prev_last_error = at_q->last_error;
-
-					printf("Too many errors (%d), reseting modem..\n", prev_last_error);
-
-					state = RS_RESET;
-				}
-
-				state_delay = 1;
-			}
-			else
+			if(cnt_last_error > 3)
 			{
 				cnt_last_error = 0;
 				prev_last_error = at_q->last_error;
+
+				printf("(EE) Too many errors (%d), reseting modem..\n", prev_last_error);
+
+				state = RS_RESET;
 			}
+
+			state_delay = 1;
+		}
+		else
+		{
+			cnt_last_error = 0;
+			prev_last_error = at_q->last_error;
 		}
 
 #ifdef _DEV_EDITION
@@ -445,6 +453,9 @@ void* mc77x0_thread_reg(modem_t *priv)
 
 				return(NULL);
 			}
+
+			/* delay for band setup */
+			state_delay = 5;
 
 			/* if band is new for modem, reset is required */
 			state = (modem_band >= 0 && conf.frequency_band == modem_band ?
