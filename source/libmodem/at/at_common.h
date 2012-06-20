@@ -79,6 +79,10 @@ char* at_get_operator_name(queue_t *queue, char *oper, int len);
 
 /*------------------------------------------------------------------------*/
 
+char* at_get_operator_number(queue_t *queue, char *oper_number, int len);
+
+/*------------------------------------------------------------------------*/
+
 int at_get_cell_id(queue_t *queue);
 
 /*------------------------------------------------------------------------*/

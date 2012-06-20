@@ -165,6 +165,8 @@ struct cached_s
 
 	char oper[0x100];
 
+	char oper_number[0x100];
+
 	char network_type[0x32];
 
 	/* values valid per session */
