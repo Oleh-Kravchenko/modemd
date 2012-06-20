@@ -33,6 +33,10 @@ typedef struct
 
 at_queue_t* at_queue_open(const char *tty);
 
-void at_queue_destroy(at_queue_t* priv);
+void at_queue_destroy(at_queue_t* at_queue);
+
+void at_queue_suspend(at_queue_t* at_queue);
+
+void at_queue_resume(at_queue_t* at_queue, const char *tty);
 
 #endif /* __AT_QUEUE_H */
