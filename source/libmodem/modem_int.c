@@ -497,8 +497,9 @@ void modem_reset(modem_t* modem)
 
 	/* terminating queues */
 //	at_queue_destroy(modem->priv);
-	queue_busy(at_q->queue, 1);
-	close(at_q->fd);
+//	queue_busy(at_q->queue, 1);
+//	close(at_q->fd);
+	at_queue_suspend(at_q);
 
 
 	/* reseting modem */
@@ -522,11 +523,13 @@ void modem_reset(modem_t* modem)
 
 			default:
 				printf("(EE) Device driver not loaded..\n");
+				exit(1);
 				break;
 		}
 	}
 
 //	modem->priv = at_queue_open(tty);
-	at_q->fd = serial_open(tty, O_RDWR);
-	queue_busy(at_q->queue, 0);
+//	at_q->fd = serial_open(tty, O_RDWR);
+//	queue_busy(at_q->queue, 0);
+	at_queue_resume(at_q, tty);
 }

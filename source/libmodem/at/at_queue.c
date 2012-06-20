@@ -208,23 +208,61 @@ at_queue_t* at_queue_open(const char *tty)
 
 /*------------------------------------------------------------------------*/
 
-void at_queue_destroy(at_queue_t* priv)
+void at_queue_destroy(at_queue_t* at_queue)
 {
 	void* thread_res;
 
-	if(!priv)
+	if(!at_queue)
 		return;
 
-	priv->terminate = 1;
+	at_queue->terminate = 1;
 
-	pthread_join(priv->thread_write, &thread_res);
-	pthread_join(priv->thread_read, &thread_res);
+	pthread_join(at_queue->thread_write, &thread_res);
+	pthread_join(at_queue->thread_read, &thread_res);
 
 	/* cleanup used resources */
-	close(priv->fd);
+	close(at_queue->fd);
 
-	queue_destroy(priv->queue);
-	event_destroy(priv->event);
+	queue_destroy(at_queue->queue);
+	event_destroy(at_queue->event);
 
-	free(priv);
+	free(at_queue);
+}
+
+/*------------------------------------------------------------------------*/
+
+void at_queue_suspend(at_queue_t* at_queue)
+{
+	void* thread_res;
+
+	if(!at_queue)
+		return;
+
+	at_queue->terminate = 1;
+
+	pthread_join(at_queue->thread_write, &thread_res);
+	pthread_join(at_queue->thread_read, &thread_res);
+
+	/* cleanup used resources */
+	close(at_queue->fd);
+
+	at_queue->fd = -1;
+}
+
+/*------------------------------------------------------------------------*/
+
+void at_queue_resume(at_queue_t* at_queue, const char *tty)
+{
+	if(!at_queue || at_queue->fd > -1)
+		return;
+
+	at_queue->fd = serial_open(tty, O_RDWR);
+	at_queue->terminate = 0;
+	at_queue->last_error = -1;
+
+	/* creating reading thread */
+	pthread_create(&at_queue->thread_read, NULL, at_queue_thread_read, at_queue);
+
+	/* creating write thread */
+	pthread_create(&at_queue->thread_write, NULL, at_queue_thread_write, at_queue);
 }
