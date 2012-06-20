@@ -53,6 +53,7 @@ enum registration_state_e
 	RS_CHECK_REGISTRATION,
 	RS_GET_SIGNAL_QUALITY,
 	RS_GET_NETWORK_TYPE,
+	RS_GET_OPERATOR_NUMBER,
 	RS_GET_OPERATOR_NAME,
 	RS_RESET
 };
@@ -81,6 +82,7 @@ static const char *RS_STR[] =
 	__STR(RS_CHECK_REGISTRATION),
 	__STR(RS_GET_SIGNAL_QUALITY),
 	__STR(RS_GET_NETWORK_TYPE),
+	__STR(RS_GET_OPERATOR_NUMBER),
 	__STR(RS_GET_OPERATOR_NAME),
 	__STR(RS_RESET)
 };
@@ -342,9 +344,6 @@ void* mc77x0_thread_reg(modem_t *priv)
 		(
 			(at_q->last_error == __ME_WRITE_FAILED ||
 				at_q->last_error == __ME_READ_FAILED)
-			&&
-			(prev_last_error == __ME_WRITE_FAILED ||
-				prev_last_error == __ME_READ_FAILED)
 		)
 		{
 			++ cnt_last_error;
@@ -744,6 +743,13 @@ void* mc77x0_thread_reg(modem_t *priv)
 		else if(state == RS_GET_NETWORK_TYPE)
 		{
 			at_get_network_type_mc7750(at_q->queue, priv->reg.state.network_type, sizeof(priv->reg.state.network_type));
+
+			state = RS_GET_OPERATOR_NUMBER;
+		}
+		else if(state == RS_GET_OPERATOR_NUMBER)
+		{
+			if(!at_get_operator_number(at_q->queue, priv->reg.state.oper_number, sizeof(priv->reg.state.oper_number)))
+				*priv->reg.state.oper_number = 0;
 
 			state = RS_GET_OPERATOR_NAME;
 		}

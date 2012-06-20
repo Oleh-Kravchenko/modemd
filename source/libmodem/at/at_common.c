@@ -385,6 +385,39 @@ char* at_get_operator_name(queue_t *queue, char *oper, int len)
 
 /*-------------------------------------------------------------------------*/
 
+char* at_get_operator_number(queue_t *queue, char* oper_number, int len)
+{
+	at_query_t *q;
+	int res_ok;
+	char *res = NULL;
+
+	/* setup format of +COPS as a string */
+	q = at_query_create("AT+COPS=3,2\r\n", "\r\nOK\r\n");
+	at_query_exec(queue, q);
+	res_ok = !at_query_is_error(q);
+	at_query_free(q);
+
+	if(!res_ok)
+		return(res);
+
+	q = at_query_create("AT+COPS?\r\n", "\r\n\\+COPS: [0-9],[0-9],\"(.+)\",[0-9]\r\n\r\nOK\r\n");
+	at_query_exec(queue, q);
+
+	/* cutting Operator name from the answer */
+	if(!at_query_is_error(q))
+	{
+		re_strncpy(oper_number, len, q->result, q->pmatch + 1);
+
+		res = oper_number;
+	}
+
+	at_query_free(q);
+
+	return(res);
+}
+
+/*-------------------------------------------------------------------------*/
+
 time_t at_get_network_time(queue_t *queue)
 {
 	at_query_t *q;

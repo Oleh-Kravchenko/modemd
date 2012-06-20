@@ -286,7 +286,13 @@ char* modem_get_operator_name(modem_t* modem, char *oper, int len)
 	if(!modem->reg.ready)
 		return(NULL);
 
-	strncpy(oper, modem->reg.state.oper, len - 1);
+	if(*modem->reg.state.oper)
+		strncpy(oper, modem->reg.state.oper, len - 1);
+	else if(*modem->reg.state.oper_number)
+		strncpy(oper, modem->reg.state.oper_number, len - 1);
+	else
+		return(NULL);
+	
 	oper[len - 1] = 0;
 
 	return(oper);
