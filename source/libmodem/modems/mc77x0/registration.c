@@ -518,7 +518,12 @@ void* mc77x0_thread_reg(modem_t *priv)
 						/* buggy MC7750 ... */
 						state_delay = 10;
 					else if(at_q->last_error == __ME_NO_SIM)
+					{
+						/* set registration status as a denied */
+						priv->reg.state.reg = MODEM_NETWORK_REG_DENIED;
+
 						return(NULL);
+					}
 			}
 		}
 		else if(state == RS_SET_PIN)
