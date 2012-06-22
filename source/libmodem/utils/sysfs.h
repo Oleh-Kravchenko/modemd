@@ -26,12 +26,13 @@ const modem_db_device_t* modem_db_get_info(uint16_t vendor, uint16_t product);
 /**
  * @brief receive tty name interface protocol of modem
  * @param port port
+ * @param dev_type ttyUSB, qcqmi, etc
  * @param type type of protocol
  * @param tty buffer for tty name of at port
  * @param tty_len buffer size
  * @return if successful pointer to tty buffer, otherwise NULL
  */
-char* modem_get_iface_tty(const char* port, int iface, char* tty, int tty_len);
+char* modem_get_iface_dev(const char* port, const char* dev_type, int iface, char* tty, int tty_len);
 
 /*------------------------------------------------------------------------*/
 

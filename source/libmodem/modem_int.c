@@ -4,8 +4,10 @@
 #include <stdio.h>
 #include <signal.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include "hw/hw_common.h"
+#include "utils/file.h"
 #include "utils/sysfs.h"
 #include "at/at_common.h"
 #include "at/at_queue.h"
@@ -59,8 +61,8 @@ void modem_cleanup(void)
 
 modem_t* modem_open_by_port(const char* port)
 {
-    usb_device_info_t mi;
-    modem_t* res = NULL;
+	usb_device_info_t mi;
+	modem_t* res = NULL;
 	char tty[0x100];
 	const modem_db_device_t* mdd;
 	int i;
@@ -81,6 +83,10 @@ modem_t* modem_open_by_port(const char* port)
 		}
 	}
 
+	/* TODO: workaround for openrg reset */
+	port_power(port, 0);
+	sleep(5);
+
 	/* ==== */
 	/* check device present */
 	if(!usb_device_get_info(port, &mi))
@@ -91,7 +97,7 @@ modem_t* modem_open_by_port(const char* port)
 		port_power(port, 1);
 
 		/* timeout for modem */
-		i = 20;
+		i = 10;
 
 		/* waiting for device ready */
 		do
@@ -131,7 +137,7 @@ modem_t* modem_open_by_port(const char* port)
 
 			case MODEM_PROTO_AT:
 			case MODEM_PROTO_CNS:
-				if(modem_get_iface_tty(port, mdd->iface[i].num, tty, sizeof(tty)))
+				if(modem_get_iface_dev(port, "tty", mdd->iface[i].num, tty, sizeof(tty)))
 					break;
 
 			default:
@@ -146,6 +152,8 @@ modem_t* modem_open_by_port(const char* port)
 	/* allocating memory for modem_t */
 	res = malloc(sizeof(*res));
 	memset(res, 0, sizeof(*res));
+
+	usb_device_get_info(port, &res->usb);
 
 	strncpy(res->port, port, sizeof(res->port) - 1);
 	res->port[sizeof(res->port) - 1] = 0;
@@ -169,7 +177,7 @@ modem_t* modem_open_by_port(const char* port)
 	item->next = modems;
 	modems = item;
 
-    return(res);
+	return(res);
 }
 
 /*------------------------------------------------------------------------*/
@@ -202,6 +210,9 @@ void modem_close(modem_t* modem)
 	/* destroing queues */
 	at_queue_destroy((at_queue_t*)(modem->priv));
 
+	/* power off modem */
+	port_power(modem->port, 0);
+
 	free(modem);
 
 	/* removing modem from list */
@@ -225,12 +236,12 @@ void modem_close(modem_t* modem)
 
 char* modem_get_imei(modem_t* modem, char* imei, int len)
 {
-	if(*modem->reg.state.imei)
+	if(!*modem->reg.state.imei)
 		return(NULL);
 
 	strncpy(imei, modem->reg.state.imei, len - 1);
 	imei[len - 1] = 0;
-	
+
 	return(imei);
 }
 
@@ -252,14 +263,14 @@ time_t modem_get_network_time(modem_t* modem)
 {
 	at_queue_t* q = modem->priv;
 
-	return(at_get_network_time(q->q));
+	return(at_get_network_time(q->queue));
 }
 
 /*------------------------------------------------------------------------*/
 
 char* modem_get_imsi(modem_t* modem, char* imsi, int len)
 {
-	if(*modem->reg.state.imsi)
+	if(!*modem->reg.state.imsi)
 		return(NULL);
 
 	strncpy(imsi, modem->reg.state.imsi, len - 1);
@@ -275,7 +286,13 @@ char* modem_get_operator_name(modem_t* modem, char *oper, int len)
 	if(!modem->reg.ready)
 		return(NULL);
 
-	strncpy(oper, modem->reg.state.oper, len - 1);
+	if(*modem->reg.state.oper)
+		strncpy(oper, modem->reg.state.oper, len - 1);
+	else if(*modem->reg.state.oper_number)
+		strncpy(oper, modem->reg.state.oper_number, len - 1);
+	else
+		return(NULL);
+	
 	oper[len - 1] = 0;
 
 	return(oper);
@@ -310,7 +327,7 @@ int modem_change_pin(modem_t* modem, const char* old_pin, const char* new_pin)
 {
 	at_queue_t* at_q = modem->priv;
 
-	return(at_change_pin(at_q->q, old_pin, new_pin));
+	return(at_change_pin(at_q->queue, old_pin, new_pin));
 }
 
 /*------------------------------------------------------------------------*/
@@ -336,56 +353,56 @@ int modem_operator_scan(modem_t* modem, modem_oper_t** opers)
 {
 	at_queue_t* q = modem->priv;
 
-	return(at_operator_scan(q->q, opers));
+	return(at_operator_scan(q->queue, opers));
 }
 
 /*------------------------------------------------------------------------*/
 
 int modem_operator_scan_start(modem_t* modem, const char* file)
 {
-    at_operator_scan_t *at_priv;
-    at_queue_t* at_q = modem->priv;
+	at_operator_scan_t *at_priv;
+	at_queue_t* at_q = modem->priv;
 	int res = 0;
 
-    if(modem->scan.thread)
-        goto exit;
+	if(modem->scan.thread)
+		goto exit;
 
-    if(!(at_priv = malloc(sizeof(*at_priv))))
-        goto exit;
+	if(!(at_priv = malloc(sizeof(*at_priv))))
+		goto exit;
 
-    /* filename */
-    strncpy(at_priv->file, file, sizeof(at_priv->file) - 1);
-    at_priv->file[sizeof(at_priv->file) - 1] = 0;
-    at_priv->queue = at_q->q;
+	/* filename */
+	strncpy(at_priv->file, file, sizeof(at_priv->file) - 1);
+	at_priv->file[sizeof(at_priv->file) - 1] = 0;
+	at_priv->queue = at_q->queue;
 
-    /* creating thread with a query AT+COPS=? */
-    if((res = pthread_create(&modem->scan.thread, NULL, at_thread_operator_scan, at_priv)))
-        free(at_priv);
+	/* creating thread with a query AT+COPS=? */
+	if((res = pthread_create(&modem->scan.thread, NULL, at_thread_operator_scan, at_priv)))
+		free(at_priv);
 
 exit:
-    return(res);
+	return(res);
 }
 
 /*------------------------------------------------------------------------*/
 
 int modem_operator_scan_is_running(modem_t* modem)
 {
-    void *thread_res;
-    int res = -1;
+	void *thread_res;
+	int res = -1;
 
-    if(modem->scan.thread)
-        res = pthread_kill(modem->scan.thread, 0);
+	if(modem->scan.thread)
+		res = pthread_kill(modem->scan.thread, 0);
 
-    if(res == ESRCH)
-    {
-        pthread_join(modem->scan.thread, &thread_res);
-        modem->scan.thread = 0;
-        res = 0;
-    }
-    else if(res == 0)
-        res = 1;
+	if(res == ESRCH)
+	{
+		pthread_join(modem->scan.thread, &thread_res);
+		modem->scan.thread = 0;
+		res = 0;
+	}
+	else if(res == 0)
+		res = 1;
 
-    return(res);
+	return(res);
 }
 
 /*------------------------------------------------------------------------*/
@@ -394,7 +411,7 @@ int modem_get_cell_id(modem_t* modem)
 {
 	at_queue_t* q = modem->priv;
 
-	return(at_get_cell_id(q->q));
+	return(at_get_cell_id(q->queue));
 }
 
 /*------------------------------------------------------------------------*/
@@ -405,19 +422,22 @@ char* modem_at_command(modem_t* modem, const char* query)
 	at_query_t *q;
 	char *cmd;
 
-    /* formating query */
-    if(!(cmd = malloc(strlen(query) + 1 + 2))) /* +2 for "\r\n" */
-        return(NULL);
+	if(!at_q)
+		return(NULL);
 
-    strcpy(cmd, query);
-    strcat(cmd, "\r\n");
+	/* formating query */
+	if(!(cmd = malloc(strlen(query) + 1 + 2))) /* +2 for "\r\n" */
+		return(NULL);
 
-    q = at_query_create(cmd, "OK\r\n");
-    q->timeout = 10;
+	strcpy(cmd, query);
+	strcat(cmd, "\r\n");
 
-    at_query_exec(at_q->q, q);
+	q = at_query_create(cmd, "OK\r\n");
+	q->timeout = 10;
 
-    free(cmd);
+	at_query_exec(at_q->queue, q);
+
+	free(cmd);
 	cmd = NULL;
 
 	if(q->result)
@@ -440,7 +460,7 @@ int modem_get_last_error(modem_t* modem)
 void modem_conf_reload(modem_t* modem)
 {
 	const modem_db_device_t* mdd;
-    usb_device_info_t mi;
+	usb_device_info_t mi;
 	void* thread_res;
 
 	if(!modem->reg.thread)
@@ -448,7 +468,7 @@ void modem_conf_reload(modem_t* modem)
 
 	modem->reg.terminate = 1;
 	pthread_join(modem->reg.thread, &thread_res);
-	
+
 	usb_device_get_info(modem->port, &mi);
 	mdd = modem_db_get_info(mi.id_vendor, mi.id_product);
 
@@ -459,4 +479,51 @@ void modem_conf_reload(modem_t* modem)
 		pthread_create(&modem->reg.thread, NULL, (pthread_func_t)mdd->thread_reg, modem);
 	else
 		modem->reg.thread = 0;
+}
+
+/*------------------------------------------------------------------------*/
+
+void modem_reset(modem_t* modem)
+{
+	const modem_db_device_t* mdd;
+	void *thread_res;
+	char tty[0x100];
+	at_queue_t* at_q = modem->priv;
+	int i;
+
+	/* termination scan routine */
+	if(modem->scan.thread)
+		pthread_join(modem->scan.thread, &thread_res);
+
+	/* suspend queues */
+	at_queue_suspend(at_q);
+
+
+	/* reseting modem */
+	port_reset(modem->port);
+
+	sleep(10);
+
+	mdd = modem_db_get_info(modem->usb.id_vendor, modem->usb.id_product);
+
+	for(i = 0; mdd->iface[i].type != MODEM_PROTO_NONE && i < __MODEM_IFACE_MAX; ++ i)
+	{
+		switch(mdd->iface[i].type)
+		{
+			case MODEM_PROTO_WAN:
+				break;
+
+			case MODEM_PROTO_AT:
+			case MODEM_PROTO_CNS:
+				if(modem_get_iface_dev(modem->port, "tty", mdd->iface[i].num, tty, sizeof(tty)))
+					break;
+
+			default:
+				printf("(EE) Device driver not loaded..\n");
+				exit(1);
+				break;
+		}
+	}
+
+	at_queue_resume(at_q, tty);
 }

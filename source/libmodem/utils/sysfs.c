@@ -16,15 +16,15 @@ int modem_is_supported(uint16_t vendor, uint16_t product)
 {
 	int i;
 
-    for(i = 0; i < modem_db_devices_cnt; ++ i)
-        if
-        (
+	for(i = 0; i < modem_db_devices_cnt; ++ i)
+		if
+		(
 			modem_db_devices[i].vendor == vendor &&
 			modem_db_devices[i].product == product
 		)
 			return(1);
 
-    return(0);
+	return(0);
 }
 
 /*------------------------------------------------------------------------*/
@@ -48,139 +48,127 @@ const modem_db_device_t* modem_db_get_info(uint16_t vendor, uint16_t product)
 
 /*------------------------------------------------------------------------*/
 
-char* modem_get_iface_tty(const char* port, int iface, char* tty, int tty_len)
+char* modem_get_iface_dev(const char* port, const char* dev_type, int iface, char* tty, int tty_len)
 {
-    char *s, *res = NULL;
-    struct dirent *item;
-    char path[0x100];
-    DIR *dir;
-    int i, j;
+	char *s, *res = NULL;
+	struct dirent *item;
+	char path[0x100];
+	DIR *dir;
+	int i, j;
 
 	snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s:1.%d/", port, iface);
 
-    if((dir = opendir(path)) == NULL)
+	if((dir = opendir(path)) == NULL)
 		return(res);
 
-    /* getting tty name */
-    while((item = readdir(dir)))
-    {
-        if((s = strstr(item->d_name, "ttyUSB")) == item->d_name)
-        {
-            /* name of tty in /dev */
-            snprintf(tty, tty_len - 1, "/dev/%s", s);
+	/* getting tty name */
+	while((item = readdir(dir)))
+	{
+		if((s = strstr(item->d_name, dev_type)) == item->d_name)
+		{
+			/* name of tty in /dev */
+			snprintf(tty, tty_len - 1, "/dev/%s", s);
 
-            res = tty;
-            break;
-        }
-    }
+			res = tty;
+			break;
+		}
+	}
 
-    closedir(dir);
+	closedir(dir);
 
-    return(res);
+	return(res);
 }
 
 /*------------------------------------------------------------------------*/
 
 usb_device_info_t* usb_device_get_info(const char* port, usb_device_info_t* di)
 {
-    char path[0x100];
+	char path[0x100];
 
-    /* read device name and id */
-    snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idVendor", port);
-    if(!(di->id_vendor = file_get_contents_hex(path)))
-        return(NULL);
+	/* read device name and id */
+	snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idVendor", port);
+	if(!(di->id_vendor = file_get_contents_hex(path)))
+		return(NULL);
 
-    snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idProduct", port);
-    if(!(di->id_product = file_get_contents_hex(path)))
-        return(NULL);
+	snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/idProduct", port);
+	if(!(di->id_product = file_get_contents_hex(path)))
+		return(NULL);
 
-    snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/manufacturer", port);
-    if(!file_get_contents(path, di->manufacturer, sizeof(di->manufacturer)))
-        return(NULL);
+	snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/manufacturer", port);
+	if(!file_get_contents(path, di->manufacturer, sizeof(di->manufacturer)))
+		return(NULL);
 
-    snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/product", port);
-    if(!file_get_contents(path, di->product, sizeof(di->product)))
-        return(NULL);
+	snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/product", port);
+	if(!file_get_contents(path, di->product, sizeof(di->product)))
+		return(NULL);
 
-    strncpy(di->port, port, sizeof(di->port) - 1);
-    di->port[sizeof(di->port) - 1] = 0;
+	strncpy(di->port, port, sizeof(di->port) - 1);
+	di->port[sizeof(di->port) - 1] = 0;
 
-    return(di);
+	return(di);
 }
 
 /*------------------------------------------------------------------------*/
 
 modem_find_t* modem_find_first(usb_device_info_t* mi)
 {
-    struct dirent *sysfs_item;
-    DIR *res;
-    regex_t reg;
-    int reg_res;
+	struct dirent *sysfs_item;
+	DIR *res;
 
-    if(!(res = opendir("/sys/bus/usb/devices/")))
-        goto failed_open;
+	if(!(res = opendir("/sys/bus/usb/devices/")))
+		goto failed_open;
 
-    while((sysfs_item = readdir(res)))
-    {
-        /* directory name must be in format BUS-DEV */
-        regcomp(&reg, "^[0-9]-[0-9]$", 0);
-        reg_res = regexec(&reg, sysfs_item->d_name, 0, NULL, 0);
-        regfree(&reg);
+	while((sysfs_item = readdir(res)))
+	{
+		/* directory name must be in format BUS-DEV */
+		if(re_strcmp(sysfs_item->d_name, "^[0-9]-[0-9]$") != 0)
+			continue;
 
-        if(reg_res != 0)
-            continue;
+		if(!(usb_device_get_info(sysfs_item->d_name, mi)))
+			goto err;
 
-        if(!(usb_device_get_info(sysfs_item->d_name, mi)))
-            goto err;
+		/* check device on modem db */
+		if(!modem_is_supported(mi->id_vendor, mi->id_product))
+			continue;
 
-        /* check device on modem db */
-        if(!modem_is_supported(mi->id_vendor, mi->id_product))
-            continue;
-
-        return(res);
-    }
+		return(res);
+	}
 
 err:
-    closedir(res);
+	closedir(res);
 
 	res = NULL;
 
 failed_open:
-    return(res);
+	return(res);
 }
 
 /*------------------------------------------------------------------------*/
 
 modem_find_t* modem_find_next(modem_find_t* find, usb_device_info_t* mi)
 {
-    struct dirent *sysfs_item;
-    regex_t reg;
-    int reg_res;
+	struct dirent *sysfs_item;
 
-    while((sysfs_item = readdir(find)))
-    {
-        /* name if directory must be in BUS-DEV format */
-        regcomp(&reg, "^[0-9]-[0-9]$", 0);
-        reg_res = regexec(&reg, sysfs_item->d_name, 0, NULL, 0);
-        regfree(&reg);
+	while((sysfs_item = readdir(find)))
+	{
+		/* directory name must be in format BUS-DEV */
+		if(re_strcmp(sysfs_item->d_name, "^[0-9]-[0-9]$") != 0)
+			continue;
 
-        if(reg_res != 0)
-            continue;
+		if(!usb_device_get_info(sysfs_item->d_name, mi))
+			goto err;
 
-        if(!usb_device_get_info(sysfs_item->d_name, mi))
-            goto err;
+		/* check device on modem db */
+		if(!modem_is_supported(mi->id_vendor, mi->id_product))
+			continue;
 
-        /* check device on modem db */
-        if(!modem_is_supported(mi->id_vendor, mi->id_product))
-            continue;
+		return(find);
+	}
 
-        return(find);
-    }
-
-    closedir(find);
+	closedir(find);
 
 err:
-    return(NULL);
+	return(NULL);
 }
 
 /*------------------------------------------------------------------------*/
