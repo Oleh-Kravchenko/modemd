@@ -509,11 +509,16 @@ void* mc77x0_thread_reg(modem_t *priv)
 					break;
 
 				default:
+					/* registration error? */;
+					priv->reg.last_error = at_q->last_error;
+
 					if(at_q->last_error == __ME_SIM_BUSY)
 						state_delay = 5;
 					else if(at_q->last_error == __ME_SIM_WRONG)
 						/* buggy MC7750 ... */
 						state_delay = 10;
+					else if(at_q->last_error == __ME_NO_SIM)
+						return(NULL);
 			}
 		}
 		else if(state == RS_SET_PIN)

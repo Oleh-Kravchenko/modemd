@@ -3,6 +3,7 @@
 
 /* general CMEE errors */
 
+#define __ME_NO_SIM				10
 #define __ME_SIM_PIN			11
 #define __ME_SIM_PUK			12
 #define __ME_SIM_BUSY			14
