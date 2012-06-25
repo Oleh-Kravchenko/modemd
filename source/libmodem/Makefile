@@ -6,7 +6,7 @@ endif
 JMK_SO_TARGET=libmodem.so
 JMK_A_TARGET=libmodem_int.a
 
-JMK_SUBDIRS=at hw modems utils
+JMK_SUBDIRS=at qcqmi hw modems utils
 
 JMK_RAMDISK_LIB_FILES=$(JMK_SO_TARGET)
 
@@ -22,6 +22,7 @@ JMK_O_OBJS_$(JMK_A_TARGET)=$(OBJS) \
     utils/utils.o \
     at/at.o \
     hw/hw.o \
+    qcqmi/qcqmi.o \
     modems/modem_conf.o \
     modems/mc77x0/registration.o
 

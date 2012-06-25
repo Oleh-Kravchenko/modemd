@@ -22,6 +22,8 @@ utils/re.c
 utils/str.c
 utils/file.c
 utils/sysfs.c
+utils/event.h
+utils/event.c
 at/at_query.c
 at/at_query.h
 at/at_utils.c
@@ -30,6 +32,8 @@ at/at_common.c
 at/at_common.h
 at/at_queue.c
 at/at_queue.h
+qcqmi/qcqmi_queue.c
+qcqmi/qcqmi_queue.h
 hw/hw_common.c
 hw/hw_common.h
 modems/modem_conf.c

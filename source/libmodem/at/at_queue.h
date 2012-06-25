@@ -6,34 +6,37 @@
 #include "at/at_query.h"
 #include "modem/types.h"
 #include "../libmodem/queue.h"
+#include "utils/event.h"
  
 /*------------------------------------------------------------------------*/
 
 typedef struct
 {
-    int fd;
+	int fd;
 
-    pthread_cond_t processed;
+	event_t* event;
 
-    pthread_mutex_t mutex;
+	queue_t *queue;
 
-    queue_t *q;
+	at_query_t* query;
 
-    at_query_t* query;
+	int terminate;
 
-    int terminate;
+	pthread_t thread_write;
 
-    pthread_t thread_write;
+	pthread_t thread_read;
 
-    pthread_t thread_read;
-
-    int32_t last_error;
+	int32_t last_error;
 } at_queue_t;
 
 /*------------------------------------------------------------------------*/
 
-at_queue_t* at_queue_open(const char *tty);
+at_queue_t* at_queue_open(const char *dev);
 
-void at_queue_destroy(at_queue_t* priv);
+void at_queue_destroy(at_queue_t* at_queue);
+
+void at_queue_suspend(at_queue_t* at_queue);
+
+void at_queue_resume(at_queue_t* at_queue, const char *dev);
 
 #endif /* __AT_QUEUE_H */

@@ -1,10 +1,6 @@
-#include "modem_db.h"
-
 #include "modems/mc77x0/registration.h"
 
-/*------------------------------------------------------------------------*/
-
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#include "modem_db.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -30,6 +26,10 @@ modem_db_device_t modem_db_devices[] = {
 			{
 				.num	= 3,
 				.type	= MODEM_PROTO_AT,
+			},
+			{
+				.num	= 8,
+				.type	= MODEM_PROTO_QCQMI,
 			},
 		}
 	},

@@ -7,24 +7,9 @@
 
 /*------------------------------------------------------------------------*/
 
-#define __MODEM_IFACE_MAX 4
-
-/*------------------------------------------------------------------------*/
-
 typedef void *(*registration_func_t)(modem_t*);
 
 typedef void *(*pthread_func_t)(void*);
-
-/*------------------------------------------------------------------------*/
-
-typedef enum
-{
-	MODEM_PROTO_NONE	= 0,
-	MODEM_PROTO_AT,
-	MODEM_PROTO_CNS,
-	MODEM_PROTO_WAN,
-	MODEM_PROTO_QCQMI
-} modem_proto_t;
 
 /*------------------------------------------------------------------------*/
 

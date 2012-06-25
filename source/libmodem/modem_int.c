@@ -11,6 +11,7 @@
 #include "utils/sysfs.h"
 #include "at/at_common.h"
 #include "at/at_queue.h"
+#include "qcqmi/qcqmi_queue.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -25,7 +26,116 @@ typedef struct modem_list_s
 
 modem_list_t* modems = NULL;
 
-//pthread_mutex_t lock_modems = PTHREAD_MUTEX_INITIALIZER;
+/*------------------------------------------------------------------------*/
+
+void modem_close(modem_t* modem);
+
+/*------------------------------------------------------------------------*/
+
+void* modem_queues_get(modem_t* modem, modem_proto_t proto)
+{
+	int i;
+
+	for(i = 0; modem->queues[i].proto && i < ARRAY_SIZE(modem->queues); ++ i)
+		if(proto == modem->queues[i].proto)
+			return(modem->queues[i].queue);
+
+	return(NULL);
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_queues_add(modem_t* modem, modem_proto_t proto, void* queue)
+{
+	int i;
+
+	for(i = 0; i < ARRAY_SIZE(modem->queues); ++ i)
+	{
+		if(MODEM_PROTO_NONE == modem->queues[i].proto)
+		{
+			modem->queues[i].queue = queue;
+
+			return(0);
+		}
+	}
+
+	return(i);
+}
+
+/*------------------------------------------------------------------------*/
+
+void modem_queues_destroy(modem_t* modem)
+{
+	int i;
+
+	for(i = 0; i < ARRAY_SIZE(modem->queues); ++ i)
+	{
+		switch(modem->queues[i].proto)
+		{
+			case MODEM_PROTO_AT:
+				at_queue_destroy(modem->queues[i].queue);
+				break;
+
+			case MODEM_PROTO_QCQMI:
+				qcqmi_queue_destroy(modem->queues[i].queue);
+				break;
+
+			default:
+				break;
+		}
+	}
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_queues_init(modem_t* modem, modem_db_device_t* mdd)
+{
+	char dev[0x100];
+	void* queue;
+	int i;
+
+	for(i = 0; mdd->iface[i].type && i < ARRAY_SIZE(mdd->iface); ++ i)
+	{
+		switch(mdd->iface[i].type)
+		{
+			case MODEM_PROTO_AT:
+				if(!modem_get_iface_dev(modem->port, "tty", mdd->iface[i].num, dev, sizeof(dev)))
+					goto err;
+
+				if(!(queue = at_queue_open(dev)))
+					goto err;
+				
+				if(modem_queues_add(modem, mdd->iface[i].type, queue))
+					goto err;
+
+				break;
+
+			case MODEM_PROTO_QCQMI:
+				if(!modem_get_iface_dev(modem->port, "qcqmi", mdd->iface[i].num, dev, sizeof(dev)))
+					goto err;
+
+				if(!(queue = qcqmi_queue_open(dev)))
+					goto err;
+
+				if(modem_queues_add(modem, mdd->iface[i].type, queue))
+					goto err;
+
+				break;
+
+			default:
+				printf("(EE) Invalid device or old firmware..\n");
+
+				goto err;
+		}
+	}
+
+	return(0);
+
+err:
+	modem_queues_destroy(modem);
+
+	return(1);
+}
 
 /*------------------------------------------------------------------------*/
 
@@ -45,14 +155,10 @@ void modem_cleanup(void)
 	/* forced modem close */
 	while(modems)
 	{
-		/* destroing queues */
-		at_queue_destroy((at_queue_t*)(modems->modem->priv));
-		
-		free(modems->modem);
+		modem_close(modems->modem);
 
 		item = modems->next;
 		free(modems);
-
 		modems = item;
 	}
 }
@@ -82,10 +188,6 @@ modem_t* modem_open_by_port(const char* port)
 			return(res);
 		}
 	}
-
-	/* TODO: workaround for openrg reset */
-	port_power(port, 0);
-	sleep(5);
 
 	/* ==== */
 	/* check device present */
@@ -208,7 +310,7 @@ void modem_close(modem_t* modem)
 		pthread_join(modem->scan.thread, &thread_res);
 
 	/* destroing queues */
-	at_queue_destroy((at_queue_t*)(modem->priv));
+	modem_queues_destroy(modem);
 
 	/* power off modem */
 	port_power(modem->port, 0);
@@ -302,10 +404,7 @@ char* modem_get_operator_name(modem_t* modem, char *oper, int len)
 
 modem_network_reg_t modem_network_registration(modem_t* modem)
 {
-//	if(modem->reg.ready)
-		return(modem->reg.state.reg);
-//	else
-//		return(MODEM_NETWORK_REG_SEARCHING);
+	return(modem->reg.state.reg);
 }
 
 /*------------------------------------------------------------------------*/
