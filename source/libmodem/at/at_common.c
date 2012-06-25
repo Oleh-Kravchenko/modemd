@@ -515,7 +515,7 @@ int at_change_pin(queue_t *queue, const char* old_pin, const char* new_pin)
 	q = at_query_create(cmd, "\r\nOK\r\n");
 	at_query_exec(queue, q);
 
-	res = !at_query_is_error(q);
+	res = at_query_is_error(q); //igorp #586  at_change_pin returns 0 if successful
 
 	at_query_free(q);
 
