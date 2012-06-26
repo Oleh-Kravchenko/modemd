@@ -7,6 +7,10 @@
 
 /*------------------------------------------------------------------------*/
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+/*------------------------------------------------------------------------*/
+
 typedef void *(*registration_func_t)(modem_t*);
 
 typedef void *(*pthread_func_t)(void*);
@@ -24,9 +28,11 @@ typedef struct
 
 typedef struct
 {
-	uint16_t vendor;
+	char product[0x100];
 
-	uint16_t product;
+	uint16_t vendor_id;
+
+	uint16_t product_id;
 
 	registration_func_t thread_reg;
 

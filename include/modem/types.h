@@ -10,8 +10,6 @@
 
 #define __MODEM_IFACE_MAX 4
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
 /*------------------------------------------------------------------------*/
 
 typedef struct

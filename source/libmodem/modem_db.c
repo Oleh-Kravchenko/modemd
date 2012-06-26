@@ -7,8 +7,8 @@
 modem_db_device_t modem_db_devices[] = {
 	{
 		/* Huawei */
-		.vendor		= 0x12d1,
-		.product	= 0x1001,
+		.vendor_id	= 0x12d1,
+		.product_id	= 0x1001,
 		.thread_reg	= mc77x0_thread_reg,
 		.iface		= {
 			{
@@ -18,9 +18,23 @@ modem_db_device_t modem_db_devices[] = {
 		}
 	},
 	{
+		/* Sierra Wireless, Inc. MC7700 */
+		.product	= "MC7700",
+		.vendor_id	= 0x1199,
+		.product_id	= 0x68a3,
+		.thread_reg	= mc77x0_thread_reg,
+		.iface		= {
+			{
+				.num	= 3,
+				.type	= MODEM_PROTO_AT,
+			},
+		}
+	},
+	{
 		/* Sierra Wireless, Inc. MC7750 */
-		.vendor		= 0x1199,
-		.product	= 0x68a2,
+		.product	= "MC7750",
+		.vendor_id	= 0x1199,
+		.product_id	= 0x68a2,
 		.thread_reg	= mc77x0_thread_reg,
 		.iface		= {
 			{
@@ -34,9 +48,10 @@ modem_db_device_t modem_db_devices[] = {
 		}
 	},
 	{
-		/* Sierra Wireless, Inc. MC7700 */
-		.vendor 	= 0x1199,
-		.product	= 0x68a3,
+		/* Sierra Wireless, Inc. MC8790V */
+		.product	= "MC8790V",
+		.vendor_id	= 0x1199,
+		.product_id	= 0x68a3,
 		.thread_reg	= mc77x0_thread_reg,
 		.iface		= {
 			{

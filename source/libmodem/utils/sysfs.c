@@ -6,30 +6,21 @@
 
 #include "modem/types.h"
 
-#include "file.h"
 #include "re.h"
+#include "file.h"
+#include "sysfs.h"
 #include "modem_db.h"
 
 /*------------------------------------------------------------------------*/
 
-int modem_is_supported(uint16_t vendor, uint16_t product)
+int modem_is_supported(const char* product, uint16_t vendor_id, uint16_t product_id)
 {
-	int i;
-
-	for(i = 0; i < modem_db_devices_cnt; ++ i)
-		if
-		(
-			modem_db_devices[i].vendor == vendor &&
-			modem_db_devices[i].product == product
-		)
-			return(1);
-
-	return(0);
+	return(!!modem_db_get_info(product, vendor_id, product_id));
 }
 
 /*------------------------------------------------------------------------*/
 
-const modem_db_device_t* modem_db_get_info(uint16_t vendor, uint16_t product)
+const modem_db_device_t* modem_db_get_info(const char* product, uint16_t vendor_id, uint16_t product_id)
 {
 	int i;
 
@@ -37,10 +28,15 @@ const modem_db_device_t* modem_db_get_info(uint16_t vendor, uint16_t product)
 	{
 		if
 		(
-			modem_db_devices[i].vendor == vendor &&
-			modem_db_devices[i].product == product
+			modem_db_devices[i].vendor_id == vendor_id &&
+			modem_db_devices[i].product_id == product_id
 		)
+		{
+			if(product && strcmp(modem_db_devices[i].product, product))
+				continue;
+
 			return(&modem_db_devices[i]);
+		}
 	}
 
 	return(NULL);
@@ -48,7 +44,7 @@ const modem_db_device_t* modem_db_get_info(uint16_t vendor, uint16_t product)
 
 /*------------------------------------------------------------------------*/
 
-char* modem_get_iface_dev(const char* port, const char* dev_type, int iface, char* tty, int tty_len)
+char* modem_get_iface_dev(const char* port, const char* dev_type, int iface, char* dev, int dev_len)
 {
 	char *s, *res = NULL;
 	struct dirent *item;
@@ -67,9 +63,9 @@ char* modem_get_iface_dev(const char* port, const char* dev_type, int iface, cha
 		if((s = strstr(item->d_name, dev_type)) == item->d_name)
 		{
 			/* name of tty in /dev */
-			snprintf(tty, tty_len - 1, "/dev/%s", s);
+			snprintf(dev, dev_len - 1, "/dev/%s", s);
 
-			res = tty;
+			res = dev;
 			break;
 		}
 	}
@@ -128,7 +124,7 @@ modem_find_t* modem_find_first(usb_device_info_t* mi)
 			goto err;
 
 		/* check device on modem db */
-		if(!modem_is_supported(mi->id_vendor, mi->id_product))
+		if(!modem_is_supported(NULL, mi->id_vendor, mi->id_product))
 			continue;
 
 		return(res);
@@ -159,7 +155,7 @@ modem_find_t* modem_find_next(modem_find_t* find, usb_device_info_t* mi)
 			goto err;
 
 		/* check device on modem db */
-		if(!modem_is_supported(mi->id_vendor, mi->id_product))
+		if(!modem_is_supported(NULL, mi->id_vendor, mi->id_product))
 			continue;
 
 		return(find);
