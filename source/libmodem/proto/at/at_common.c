@@ -174,36 +174,6 @@ exit:
 
 /*------------------------------------------------------------------------*/
 
-void* at_thread_operator_scan(void* prm)
-{
-	at_operator_scan_t *priv = prm;
-	modem_oper_t* opers;
-	int nopers, i;
-	FILE *f;
-
-	if((nopers = at_operator_scan(priv->queue, &opers)) == 0)
-		goto exit;
-
-	if(!(f = fopen(priv->file, "w")))
-		goto err_fopen;
-
-	for(i = 0; i < nopers; ++ i)
-		fprintf(f, "%s,%s,%d\n", opers[i].numeric,
-			strlen(opers[i].shortname) ?
-			opers[i].shortname : opers[i].numeric, opers[i].act);
-
-	fclose(f);
-
-err_fopen:
-	free(opers);
-
-exit:
-	free(priv);
-	return(NULL);
-}
-
-/*------------------------------------------------------------------------*/
-
 modem_network_reg_t at_network_registration(queue_t* queue)
 {
 	modem_network_reg_t nr = MODEM_NETWORK_REG_UNKNOWN;

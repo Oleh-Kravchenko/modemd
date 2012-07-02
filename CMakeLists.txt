@@ -2,11 +2,11 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 PROJECT(modemd)
 
-ADD_DEFINITIONS(-D_XOPEN_SOURCE=600 -std=gnu99 -pedantic -Werror -D_DEV_EDITION)
+ADD_DEFINITIONS(-D_GNU_SOURCE -D_XOPEN_SOURCE=600 -std=gnu99 -pedantic -Werror -D_DEV_EDITION)
 
 INCLUDE_DIRECTORIES(include
 source/libmodem
-source/libmodem/at
+source/libmodem/proto
 source/libmodem/utils)
 
 ADD_SUBDIRECTORY(source/libmodem)

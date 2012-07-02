@@ -12,6 +12,7 @@
 #include "at/at_common.h"
 #include "at/at_queue.h"
 #include "qcqmi/qcqmi_queue.h"
+#include "proto.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -30,195 +31,18 @@ modem_list_t* modems = NULL;
 
 void modem_close(modem_t* modem);
 
-/*------------------------------------------------------------------------*/
-
-void* modem_queues_get(modem_t* modem, modem_proto_t proto)
+typedef struct
 {
-	int i;
+	char file[0x100];
 
-	for(i = 0; modem->queues[i].proto && i < ARRAY_SIZE(modem->queues); ++ i)
-		if(proto == modem->queues[i].proto)
-			return(modem->queues[i].queue);
+	modem_t* modem;
+} modem_thread_operator_scan_t;
 
-	return(NULL);
-}
-
-/*------------------------------------------------------------------------*/
-
-int modem_queues_add(modem_t* modem, modem_proto_t proto, void* queue)
-{
-	int i;
-
-	for(i = 0; i < ARRAY_SIZE(modem->queues); ++ i)
-	{
-		if(MODEM_PROTO_NONE == modem->queues[i].proto)
-		{
-			modem->queues[i].queue = queue;
-
-			return(0);
-		}
-	}
-
-	return(i);
-}
-
-/*------------------------------------------------------------------------*/
-
-void modem_queues_destroy(modem_t* modem)
-{
-	int i;
-
-	for(i = 0; i < ARRAY_SIZE(modem->queues); ++ i)
-	{
-		switch(modem->queues[i].proto)
-		{
-			case MODEM_PROTO_AT:
-				at_queue_destroy(modem->queues[i].queue);
-				break;
-
-			case MODEM_PROTO_QCQMI:
-				qcqmi_queue_destroy(modem->queues[i].queue);
-				break;
-
-			default:
-				printf("(WW) %s() Not implemented\n", __func__);
-				break;
-		}
-	}
-}
-
-/*------------------------------------------------------------------------*/
-
-void modem_queues_suspend(modem_t* modem)
-{
-	int i;
-
-	for(i = 0; i < ARRAY_SIZE(modem->queues); ++ i)
-	{
-		switch(modem->queues[i].proto)
-		{
-			case MODEM_PROTO_AT:
-				at_queue_suspend(modem->queues[i].queue);
-				break;
-
-			case MODEM_PROTO_QCQMI:
-				qcqmi_queue_suspend(modem->queues[i].queue);
-				break;
-
-			default:
-				printf("(WW) %s() Not implemented\n", __func__);
-				break;
-		}
-	}
-}
-
-/*------------------------------------------------------------------------*/
-
-void modem_queues_resume(modem_t* modem)
-{
-	const modem_db_device_t* mdd;
-	char dev[0x100];
-	int i;
-
-	mdd = modem_db_get_info(NULL, modem->usb.id_vendor, modem->usb.id_product);
-
-	for(i = 0; i < ARRAY_SIZE(modem->queues); ++ i)
-	{
-		switch(modem->queues[i].proto)
-		{
-			case MODEM_PROTO_AT:
-				modem_get_iface_dev(modem->port, "ttyUSB", mdd->iface[i].num, dev, sizeof(dev));
-				at_queue_resume(modem->queues[i].queue, dev);
-				break;
-
-			case MODEM_PROTO_QCQMI:
-				modem_get_iface_dev(modem->port, "qcqmi", mdd->iface[i].num, dev, sizeof(dev));
-				qcqmi_queue_resume(modem->queues[i].queue, dev);
-				break;
-
-			default:
-				break;
-		}
-	}
-}
-
-/*------------------------------------------------------------------------*/
-
-int modem_queues_init(modem_t* modem, const modem_db_device_t* mdd)
-{
-	char dev[0x100];
-	void* queue;
-	int i;
-
-	for(i = 0; mdd->iface[i].type && i < ARRAY_SIZE(mdd->iface); ++ i)
-	{
-		switch(mdd->iface[i].type)
-		{
-			case MODEM_PROTO_AT:
-				if(!modem_get_iface_dev(modem->port, "tty", mdd->iface[i].num, dev, sizeof(dev)))
-				{
-					printf("(EE) Failed modem_get_iface_dev(%d)..\n", mdd->iface[i].num);
-
-					goto err;
-				}
-
-				if(!(queue = at_queue_open(dev)))
-				{
-					printf("(EE) Failed at_queue_open()..\n");
-
-					goto err;
-				}
-				
-				if(modem_queues_add(modem, mdd->iface[i].type, queue))
-				{
-					at_queue_destroy(queue);
-
-					printf("(EE) Failed MODEM_PROTO_AT..\n");
-
-					goto err;
-				}
-
-				break;
-
-			case MODEM_PROTO_QCQMI:
-				if(!modem_get_iface_dev(modem->port, "qcqmi", mdd->iface[i].num, dev, sizeof(dev)))
-				{
-					printf("(EE) Failed modem_get_iface_dev(%d)..\n", mdd->iface[i].num);
-
-					goto err;
-				}
-
-				if(!(queue = qcqmi_queue_open(dev)))
-				{
-					printf("(EE) Failed qcqmi_queue_open()..\n");
-					goto err;
-				}
-
-				if(modem_queues_add(modem, mdd->iface[i].type, queue))
-				{
-					qcqmi_queue_destroy(queue);
-
-					printf("(EE) Failed MODEM_PROTO_QCQMI..\n");
-
-					goto err;
-				}
-
-				break;
-
-			default:
-				printf("(EE) Driver not loaded or old firmware..\n");
-
-				goto err;
-		}
-	}
-
-	return(0);
-
-err:
-	modem_queues_destroy(modem);
-
-	return(1);
-}
+/**
+ * @brief background operator scanner
+ * @remark this function only for openrg
+ */
+static void* modem_thread_operator_scan(void* prm);
 
 /*------------------------------------------------------------------------*/
 
@@ -311,6 +135,9 @@ modem_t* modem_open_by_port(const char* port)
 	/* adding modem in pull */
 	if(!(item = malloc(sizeof(*item))))
 		goto err_insert;
+
+	/* pointer to modem info */
+	res->priv = (void*)mdd;
 
 	item->modem = res;
 	item->next = modems;
@@ -520,24 +347,23 @@ int modem_operator_scan(modem_t* modem, modem_oper_t** opers)
 
 int modem_operator_scan_start(modem_t* modem, const char* file)
 {
-	at_operator_scan_t *at_priv;
-	at_queue_t* at_q = modem->priv;
+	modem_thread_operator_scan_t* priv;
 	int res = 0;
 
 	if(modem->scan.thread)
 		goto exit;
 
-	if(!(at_priv = malloc(sizeof(*at_priv))))
+	if(!(priv = malloc(sizeof(*priv))))
 		goto exit;
 
 	/* filename */
-	strncpy(at_priv->file, file, sizeof(at_priv->file) - 1);
-	at_priv->file[sizeof(at_priv->file) - 1] = 0;
-	at_priv->queue = at_q->queue;
+	strncpy(priv->file, file, sizeof(priv->file) - 1);
+	priv->file[sizeof(priv->file) - 1] = 0;
+	priv->modem = modem;
 
 	/* creating thread with a query AT+COPS=? */
-	if((res = pthread_create(&modem->scan.thread, NULL, at_thread_operator_scan, at_priv)))
-		free(at_priv);
+	if((res = pthread_create(&modem->scan.thread, NULL, modem_thread_operator_scan, priv)))
+		free(priv);
 
 exit:
 	return(res);
@@ -661,4 +487,37 @@ void modem_reset(modem_t* modem)
 
 	/* resume queues */
 	modem_queues_resume(modem);
+}
+
+/*------------------------------------------------------------------------*/
+
+static void* modem_thread_operator_scan(void* prm)
+{
+	modem_thread_operator_scan_t* priv = prm;
+	modem_oper_t* opers;
+	int nopers, i;
+	FILE *f;
+
+	if((nopers = modem_operator_scan(priv->modem, &opers)) == 0)
+		goto exit;
+
+	if(!(f = fopen(priv->file, "w")))
+		goto err_fopen;
+
+	for(i = 0; i < nopers; ++ i)
+	{
+		fprintf(f, "%s,%s,%d\n",
+			opers[i].numeric,
+			*opers[i].shortname ? opers[i].shortname : opers[i].numeric,
+			opers[i].act);
+	}
+
+	fclose(f);
+
+err_fopen:
+	free(opers);
+
+exit:
+	free(priv);
+	return(NULL);
 }

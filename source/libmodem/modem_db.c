@@ -53,12 +53,6 @@ modem_db_device_t modem_db_devices[] = {
 		.vendor_id	= 0x1199,
 		.product_id	= 0x68a3,
 		.thread_reg	= mc77x0_thread_reg,
-		.iface		= {
-			{
-				.num	= 3,
-				.type	= MODEM_PROTO_AT,
-			},
-		},
 		.func		= {
 			.modem_get_imei				= NULL,
 			.modem_get_signal_quality	= NULL,
@@ -71,7 +65,13 @@ modem_db_device_t modem_db_devices[] = {
 			.modem_get_fw_version		= NULL,
 			.modem_operator_scan		= NULL,
 			.modem_get_cell_id			= NULL,
-		}
+		},
+		.iface		= {
+			{
+				.num	= 3,
+				.type	= MODEM_PROTO_AT,
+			},
+		},
 	},
 };
 

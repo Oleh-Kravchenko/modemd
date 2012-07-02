@@ -41,7 +41,7 @@ typedef struct
 	/** signal quality in dBm */
 	int16_t dbm;
 
-	/** signal level 1-5 */
+	/** signal level 0-5 */
 	uint8_t level;
 } __attribute__((__packed__)) modem_signal_quality_t;
 
@@ -148,8 +148,6 @@ typedef enum
 {
 	MODEM_PROTO_NONE = 0,
 	MODEM_PROTO_AT,
-	MODEM_PROTO_CNS,
-	MODEM_PROTO_WAN,
 	MODEM_PROTO_QCQMI
 } modem_proto_t;
 

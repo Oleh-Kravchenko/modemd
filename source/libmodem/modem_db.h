@@ -43,6 +43,25 @@ typedef int (*modem_get_cell_id_func_t)(modem_t* modem);
 
 typedef struct
 {
+#define __MODEM_DB_FUNC(s) s##_func_t s
+	__MODEM_DB_FUNC(modem_get_imei);
+	__MODEM_DB_FUNC(modem_get_signal_quality);
+	__MODEM_DB_FUNC(modem_get_network_time);
+	__MODEM_DB_FUNC(modem_get_imsi);
+	__MODEM_DB_FUNC(modem_get_operator_name);
+	__MODEM_DB_FUNC(modem_network_registration);
+	__MODEM_DB_FUNC(modem_get_network_type);
+	__MODEM_DB_FUNC(modem_change_pin);
+	__MODEM_DB_FUNC(modem_get_fw_version);
+	__MODEM_DB_FUNC(modem_operator_scan);
+	__MODEM_DB_FUNC(modem_get_cell_id);
+#undef __MODEM_DB_FUNC
+} modem_function_list_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef struct
+{
 	int num;
 
 	modem_proto_t type;
@@ -58,22 +77,7 @@ typedef struct
 
 	uint16_t product_id;
 
-	struct
-	{
-#define __MODEM_DB_FUNC(s) s##_func_t s
-
-		__MODEM_DB_FUNC(modem_get_imei);
-		__MODEM_DB_FUNC(modem_get_signal_quality);
-		__MODEM_DB_FUNC(modem_get_network_time);
-		__MODEM_DB_FUNC(modem_get_imsi);
-		__MODEM_DB_FUNC(modem_get_operator_name);
-		__MODEM_DB_FUNC(modem_network_registration);
-		__MODEM_DB_FUNC(modem_get_network_type);
-		__MODEM_DB_FUNC(modem_change_pin);
-		__MODEM_DB_FUNC(modem_get_fw_version);
-		__MODEM_DB_FUNC(modem_operator_scan);
-		__MODEM_DB_FUNC(modem_get_cell_id);
-	} func;
+	modem_function_list_t func;
 
 	registration_func_t thread_reg;
 
