@@ -81,6 +81,7 @@ void modem_queues_destroy(modem_t* modem)
 				break;
 
 			default:
+				printf("(WW) %s() Not implemented\n", __func__);
 				break;
 		}
 	}
@@ -88,7 +89,62 @@ void modem_queues_destroy(modem_t* modem)
 
 /*------------------------------------------------------------------------*/
 
-int modem_queues_init(modem_t* modem, modem_db_device_t* mdd)
+void modem_queues_suspend(modem_t* modem)
+{
+	int i;
+
+	for(i = 0; i < ARRAY_SIZE(modem->queues); ++ i)
+	{
+		switch(modem->queues[i].proto)
+		{
+			case MODEM_PROTO_AT:
+				at_queue_suspend(modem->queues[i].queue);
+				break;
+
+			case MODEM_PROTO_QCQMI:
+				qcqmi_queue_suspend(modem->queues[i].queue);
+				break;
+
+			default:
+				printf("(WW) %s() Not implemented\n", __func__);
+				break;
+		}
+	}
+}
+
+/*------------------------------------------------------------------------*/
+
+void modem_queues_resume(modem_t* modem)
+{
+	const modem_db_device_t* mdd;
+	char dev[0x100];
+	int i;
+
+	mdd = modem_db_get_info(NULL, modem->usb.id_vendor, modem->usb.id_product);
+
+	for(i = 0; i < ARRAY_SIZE(modem->queues); ++ i)
+	{
+		switch(modem->queues[i].proto)
+		{
+			case MODEM_PROTO_AT:
+				modem_get_iface_dev(modem->port, "ttyUSB", mdd->iface[i].num, dev, sizeof(dev));
+				at_queue_resume(modem->queues[i].queue, dev);
+				break;
+
+			case MODEM_PROTO_QCQMI:
+				modem_get_iface_dev(modem->port, "qcqmi", mdd->iface[i].num, dev, sizeof(dev));
+				qcqmi_queue_resume(modem->queues[i].queue, dev);
+				break;
+
+			default:
+				break;
+		}
+	}
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_queues_init(modem_t* modem, const modem_db_device_t* mdd)
 {
 	char dev[0x100];
 	void* queue;
@@ -100,30 +156,57 @@ int modem_queues_init(modem_t* modem, modem_db_device_t* mdd)
 		{
 			case MODEM_PROTO_AT:
 				if(!modem_get_iface_dev(modem->port, "tty", mdd->iface[i].num, dev, sizeof(dev)))
+				{
+					printf("(EE) Failed modem_get_iface_dev(%d)..\n", mdd->iface[i].num);
+
 					goto err;
+				}
 
 				if(!(queue = at_queue_open(dev)))
+				{
+					printf("(EE) Failed at_queue_open()..\n");
+
 					goto err;
+				}
 				
 				if(modem_queues_add(modem, mdd->iface[i].type, queue))
+				{
+					at_queue_destroy(queue);
+
+					printf("(EE) Failed MODEM_PROTO_AT..\n");
+
 					goto err;
+				}
 
 				break;
 
 			case MODEM_PROTO_QCQMI:
 				if(!modem_get_iface_dev(modem->port, "qcqmi", mdd->iface[i].num, dev, sizeof(dev)))
+				{
+					printf("(EE) Failed modem_get_iface_dev(%d)..\n", mdd->iface[i].num);
+
 					goto err;
+				}
 
 				if(!(queue = qcqmi_queue_open(dev)))
+				{
+					printf("(EE) Failed qcqmi_queue_open()..\n");
 					goto err;
+				}
 
 				if(modem_queues_add(modem, mdd->iface[i].type, queue))
+				{
+					qcqmi_queue_destroy(queue);
+
+					printf("(EE) Failed MODEM_PROTO_QCQMI..\n");
+
 					goto err;
+				}
 
 				break;
 
 			default:
-				printf("(EE) Invalid device or old firmware..\n");
+				printf("(EE) Driver not loaded or old firmware..\n");
 
 				goto err;
 		}
@@ -154,27 +237,19 @@ void modem_cleanup(void)
 
 	/* forced modem close */
 	while(modems)
-	{
 		modem_close(modems->modem);
-
-		item = modems->next;
-		free(modems);
-		modems = item;
-	}
 }
 
 /*------------------------------------------------------------------------*/
 
 modem_t* modem_open_by_port(const char* port)
 {
-	usb_device_info_t mi;
-	modem_t* res = NULL;
-	char tty[0x100];
 	const modem_db_device_t* mdd;
-	int i;
+	modem_t* res = NULL;
 	modem_list_t* item;
+	void* thread_res;
+	int i;
 
-	/* ==== */
 	/* check if modem is already opened */
 	for(item = modems; item; item = item->next)
 	{
@@ -189,82 +264,43 @@ modem_t* modem_open_by_port(const char* port)
 		}
 	}
 
-	/* ==== */
+	/* allocating memory for result */
+	res = malloc(sizeof(*res));
+	memset(res, 0, sizeof(*res));
+	strncpy(res->port, port, sizeof(res->port) - 1);
+	res->port[sizeof(res->port) - 1] = 0;
+
 	/* check device present */
-	if(!usb_device_get_info(port, &mi))
+	if(!usb_device_get_info(port, &res->usb))
 	{
 		printf("(DD) Port %s power on..\n", port);
 
 		/* device missing, maybe port power down? */
 		port_power(port, 1);
 
-		/* timeout for modem */
-		i = 10;
-
 		/* waiting for device ready */
-		do
+		for(i = 10; !usb_device_get_info(port, &res->usb) && i > 0; -- i)
 		{
 			printf("(DD) Wait for modem ready..\n");
 
 			sleep(1);
-
-			-- i;
 		}
-		while(!usb_device_get_info(port, &mi) && i > 0);
 
 		if(i == 0)
 		{
 			printf("(EE) Device missing..\n");
 
-			return(res);
+			goto err;
 		}
 	}
 
-
-	/* ==== */
 	/* check driver ready */
-	if((mdd = modem_db_get_info(mi.id_vendor, mi.id_product)) == NULL)
-	{
-		printf("(EE) Device is not supported..\n");
+	if(!(mdd = modem_db_get_info(res->usb.product, res->usb.id_vendor, res->usb.id_product)))
+		goto err;
 
-		return(res);
-	}
-
-	for(i = 0; mdd->iface[i].type != MODEM_PROTO_NONE && i < __MODEM_IFACE_MAX; ++ i)
-	{
-		switch(mdd->iface[i].type)
-		{
-			case MODEM_PROTO_WAN:
-				break;
-
-			case MODEM_PROTO_AT:
-			case MODEM_PROTO_CNS:
-				if(modem_get_iface_dev(port, "tty", mdd->iface[i].num, tty, sizeof(tty)))
-					break;
-
-			default:
-				printf("(EE) Device driver not loaded..\n");
-
-				return(res);
-		}
-	}
-
-
-	/* ==== */
-	/* allocating memory for modem_t */
-	res = malloc(sizeof(*res));
-	memset(res, 0, sizeof(*res));
-
-	usb_device_get_info(port, &res->usb);
-
-	strncpy(res->port, port, sizeof(res->port) - 1);
-	res->port[sizeof(res->port) - 1] = 0;
-	res->refs = 0;
-	res->reg.terminate = 0;
-	
 	/* creating queues */
-	res->priv = at_queue_open(tty);
-
+	if(modem_queues_init(res, mdd))
+		goto err;
 
 	/* starting registration routine */
 	if(mdd->thread_reg)
@@ -272,14 +308,39 @@ modem_t* modem_open_by_port(const char* port)
 	else
 		res->reg.thread = 0;
 
-	/* ==== */
 	/* adding modem in pull */
-	item = malloc(sizeof(*item));
+	if(!(item = malloc(sizeof(*item))))
+		goto err_insert;
+
 	item->modem = res;
 	item->next = modems;
 	modems = item;
 
 	return(res);
+
+err_insert:
+	/* termination registration routine */
+	if(res->reg.thread)
+	{
+		res->reg.terminate = 1;
+
+		pthread_join(res->reg.thread, &thread_res);
+	}
+
+	/* termination scan routine */
+	if(res->scan.thread)
+		pthread_join(res->scan.thread, &thread_res);
+
+	/* destroying queues */
+	modem_queues_destroy(res);
+
+err:
+	/* cleanup resources */
+	port_power(port, 0);
+
+	free(res);
+
+	return(NULL);
 }
 
 /*------------------------------------------------------------------------*/
@@ -290,7 +351,7 @@ void modem_close(modem_t* modem)
 	void* thread_res;
 
 	/* decrements modem clients */
-	if(modem->refs)
+	if(modem->refs > 0)
 	{
 		-- modem->refs;
 
@@ -569,7 +630,7 @@ void modem_conf_reload(modem_t* modem)
 	pthread_join(modem->reg.thread, &thread_res);
 
 	usb_device_get_info(modem->port, &mi);
-	mdd = modem_db_get_info(mi.id_vendor, mi.id_product);
+	mdd = modem_db_get_info(NULL, mi.id_vendor, mi.id_product);
 
 	modem->reg.terminate = 0;
 
@@ -584,45 +645,20 @@ void modem_conf_reload(modem_t* modem)
 
 void modem_reset(modem_t* modem)
 {
-	const modem_db_device_t* mdd;
 	void *thread_res;
-	char tty[0x100];
-	at_queue_t* at_q = modem->priv;
-	int i;
 
 	/* termination scan routine */
 	if(modem->scan.thread)
 		pthread_join(modem->scan.thread, &thread_res);
 
 	/* suspend queues */
-	at_queue_suspend(at_q);
-
+	modem_queues_suspend(modem);
 
 	/* reseting modem */
 	port_reset(modem->port);
 
 	sleep(10);
 
-	mdd = modem_db_get_info(modem->usb.id_vendor, modem->usb.id_product);
-
-	for(i = 0; mdd->iface[i].type != MODEM_PROTO_NONE && i < __MODEM_IFACE_MAX; ++ i)
-	{
-		switch(mdd->iface[i].type)
-		{
-			case MODEM_PROTO_WAN:
-				break;
-
-			case MODEM_PROTO_AT:
-			case MODEM_PROTO_CNS:
-				if(modem_get_iface_dev(modem->port, "tty", mdd->iface[i].num, tty, sizeof(tty)))
-					break;
-
-			default:
-				printf("(EE) Device driver not loaded..\n");
-				exit(1);
-				break;
-		}
-	}
-
-	at_queue_resume(at_q, tty);
+	/* resume queues */
+	modem_queues_resume(modem);
 }

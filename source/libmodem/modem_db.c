@@ -15,7 +15,7 @@ modem_db_device_t modem_db_devices[] = {
 				.num	= 0,
 				.type	= MODEM_PROTO_AT,
 			},
-		}
+		},
 	},
 	{
 		/* Sierra Wireless, Inc. MC7700 */
@@ -28,7 +28,7 @@ modem_db_device_t modem_db_devices[] = {
 				.num	= 3,
 				.type	= MODEM_PROTO_AT,
 			},
-		}
+		},
 	},
 	{
 		/* Sierra Wireless, Inc. MC7750 */
@@ -45,7 +45,7 @@ modem_db_device_t modem_db_devices[] = {
 				.num	= 8,
 				.type	= MODEM_PROTO_QCQMI,
 			},
-		}
+		},
 	},
 	{
 		/* Sierra Wireless, Inc. MC8790V */
@@ -58,6 +58,19 @@ modem_db_device_t modem_db_devices[] = {
 				.num	= 3,
 				.type	= MODEM_PROTO_AT,
 			},
+		},
+		.func		= {
+			.modem_get_imei				= NULL,
+			.modem_get_signal_quality	= NULL,
+			.modem_get_network_time		= NULL,
+			.modem_get_imsi				= NULL,
+			.modem_get_operator_name	= NULL,
+			.modem_network_registration	= NULL,
+			.modem_get_network_type		= NULL,
+			.modem_change_pin			= NULL,
+			.modem_get_fw_version		= NULL,
+			.modem_operator_scan		= NULL,
+			.modem_get_cell_id			= NULL,
 		}
 	},
 };
