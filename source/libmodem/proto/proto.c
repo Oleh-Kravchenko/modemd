@@ -170,6 +170,8 @@ void* modem_queues_get(modem_t* modem, modem_proto_t proto)
 {
 	int i;
 
+	return(modem->queues);
+
 	for(i = 0; modem->queues[i].proto && i < ARRAY_SIZE(modem->queues); ++ i)
 		if(proto == modem->queues[i].proto)
 			return(modem->queues[i].queue);

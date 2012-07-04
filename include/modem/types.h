@@ -214,7 +214,7 @@ typedef struct
 {
 	int refs;
 
-	void* priv;
+//	void* priv;
 
 	modem_queue_t queues[__MODEM_IFACE_MAX];
 
