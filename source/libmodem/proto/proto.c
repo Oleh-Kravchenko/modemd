@@ -1,5 +1,8 @@
 #include <stdio.h>
 
+#include <modem/modem_str.h>
+
+#include "modem_db.h"
 #include "proto.h"
 
 #include "utils/sysfs.h"
@@ -88,24 +91,28 @@ err:
 
 void modem_queues_destroy(modem_t* modem)
 {
-	int i;
+	modem_queues_t* mq;
 
-	for(i = 0; i < ARRAY_SIZE(modem->queues); ++ i)
+	while((mq = modem->queues))
 	{
-		switch(modem->queues[i].proto)
+		switch(mq->proto)
 		{
 			case MODEM_PROTO_AT:
-				at_queue_destroy(modem->queues[i].queue);
+				at_queue_destroy(mq->queue);
 				break;
 
 			case MODEM_PROTO_QCQMI:
-				qcqmi_queue_destroy(modem->queues[i].queue);
+				qcqmi_queue_destroy(mq->queue);
 				break;
 
 			default:
-				printf("(WW) %s() Not implemented\n", __func__);
+				printf("(EE) %s() queue %s not implemented\n", __func__, str_proto(mq->proto));
 				break;
 		}
+
+		modem->queues = mq->next;
+
+		free(mq);
 	}
 }
 
@@ -113,24 +120,26 @@ void modem_queues_destroy(modem_t* modem)
 
 void modem_queues_suspend(modem_t* modem)
 {
-	int i;
+	modem_queues_t* mq = modem->queues;
 
-	for(i = 0; i < ARRAY_SIZE(modem->queues); ++ i)
+	while(mq)
 	{
-		switch(modem->queues[i].proto)
+		switch(mq->proto)
 		{
 			case MODEM_PROTO_AT:
-				at_queue_suspend(modem->queues[i].queue);
+				at_queue_suspend(mq->queue);
 				break;
 
 			case MODEM_PROTO_QCQMI:
-				qcqmi_queue_suspend(modem->queues[i].queue);
+				qcqmi_queue_suspend(mq->queue);
 				break;
 
 			default:
-				printf("(WW) %s() Not implemented\n", __func__);
+				printf("(EE) %s() queue %s not implemented\n", __func__, str_proto(mq->proto));
 				break;
 		}
+
+		mq = mq->next;
 	}
 }
 
@@ -138,29 +147,26 @@ void modem_queues_suspend(modem_t* modem)
 
 void modem_queues_resume(modem_t* modem)
 {
-	const modem_db_device_t* mdd;
-	char dev[0x100];
-	int i;
+	modem_queues_t* mq = modem->queues;
 
-	mdd = modem_db_get_info(NULL, modem->usb.id_vendor, modem->usb.id_product);
-
-	for(i = 0; i < ARRAY_SIZE(modem->queues); ++ i)
+	while(mq)
 	{
-		switch(modem->queues[i].proto)
+		switch(mq->proto)
 		{
-			case MODEM_PROTO_AT:
-				modem_get_iface_dev(modem->port, "ttyUSB", mdd->iface[i].num, dev, sizeof(dev));
-				at_queue_resume(modem->queues[i].queue, dev);
+/*			case MODEM_PROTO_AT:
+				at_queue_resume(mq->queue);
 				break;
 
 			case MODEM_PROTO_QCQMI:
-				modem_get_iface_dev(modem->port, "qcqmi", mdd->iface[i].num, dev, sizeof(dev));
-				qcqmi_queue_resume(modem->queues[i].queue, dev);
+				qcqmi_queue_resume(mq->queue);
 				break;
-
+*/
 			default:
+				printf("(EE) %s() queue %s not implemented\n", __func__, str_proto(mq->proto));
 				break;
 		}
+
+		mq = mq->next;
 	}
 }
 
@@ -168,13 +174,15 @@ void modem_queues_resume(modem_t* modem)
 
 void* modem_queues_get(modem_t* modem, modem_proto_t proto)
 {
-	int i;
+	modem_queues_t* mq = modem->queues;
 
-	return(modem->queues);
+	while(mq)
+	{
+		if(mq->proto == proto)
+			return(mq->queue);
 
-	for(i = 0; modem->queues[i].proto && i < ARRAY_SIZE(modem->queues); ++ i)
-		if(proto == modem->queues[i].proto)
-			return(modem->queues[i].queue);
+		mq = mq->next;
+	}
 
 	return(NULL);
 }
@@ -183,17 +191,19 @@ void* modem_queues_get(modem_t* modem, modem_proto_t proto)
 
 int modem_queues_add(modem_t* modem, modem_proto_t proto, void* queue)
 {
-	int i;
+	modem_queues_t* item;
 
-	for(i = 0; i < ARRAY_SIZE(modem->queues); ++ i)
-	{
-		if(MODEM_PROTO_NONE == modem->queues[i].proto)
-		{
-			modem->queues[i].queue = queue;
+	if(!(item = malloc(sizeof(*item))))
+		return(-1);
 
-			return(0);
-		}
-	}
+	/* queue item */
+	item->proto = proto;
+	item->queue = queue;
+	if(modem->queues)
+		item->next = modem->queues->next;
 
-	return(i);
+	/* inserting new queue */
+	modem->queues = item;
+
+	return(0);
 }

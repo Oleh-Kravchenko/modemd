@@ -10,4 +10,11 @@
  */
 const char* str_network_registration(modem_network_reg_t nr);
 
+/**
+ * @brief text description for protocol
+ * @param proto protocol
+ * @return pointer to const string text
+ */
+const char* str_proto(modem_proto_t proto);
+
 #endif /* __MODEM_STR_H */

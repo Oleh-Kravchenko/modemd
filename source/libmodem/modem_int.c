@@ -491,6 +491,28 @@ void modem_reset(modem_t* modem)
 
 /*------------------------------------------------------------------------*/
 
+void modem_sw_reset(modem_t* modem)
+{
+	at_queue_t* at_q = modem_queues_get(modem, MODEM_PROTO_AT);
+	void *thread_res;
+
+	/* termination scan routine */
+	if(modem->scan.thread)
+		pthread_join(modem->scan.thread, &thread_res);
+
+	at_raw_ok(at_q->queue, "AT!RESET");
+
+	/* suspend queues */
+	modem_queues_suspend(modem);
+
+	sleep(10);
+
+	/* resume queues */
+	modem_queues_resume(modem);
+}
+
+/*------------------------------------------------------------------------*/
+
 static void* modem_thread_operator_scan(void* prm)
 {
 	modem_thread_operator_scan_t* priv = prm;

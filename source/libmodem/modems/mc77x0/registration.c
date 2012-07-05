@@ -23,6 +23,7 @@
 /*------------------------------------------------------------------------*/
 
 void modem_reset(modem_t* modem);
+void modem_sw_reset(modem_t* modem);
 
 /*------------------------------------------------------------------------*/
 
@@ -775,7 +776,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_RESET)
 		{
-			modem_reset(priv);
+			modem_sw_reset(priv);
 
 			state = RS_INIT;
 		}

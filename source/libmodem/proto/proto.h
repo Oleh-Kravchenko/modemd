@@ -5,20 +5,18 @@
 
 #include "modem_db.h"
 
-struct modem_queues_s
-{
-	modem_proto_t proto;
-
-	void* queue;
-
-	struct modem_queues_s* next;
-} modem_queues_t;
+/*------------------------------------------------------------------------*/
 
 int modem_queues_init(modem_t* modem, const modem_db_device_t* mdd);
+
 void modem_queues_destroy(modem_t* modem);
+
 void modem_queues_suspend(modem_t* modem);
+
 void modem_queues_resume(modem_t* modem);
+
 void* modem_queues_get(modem_t* modem, modem_proto_t proto);
+
 int modem_queues_add(modem_t* modem, modem_proto_t proto, void* queue);
 
 #endif /* __MODEM_PROTO_H */

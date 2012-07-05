@@ -134,7 +134,7 @@ void modem_test(const char* port)
 		printf("\nDevice: [port: %s] [%04hx:%04hx] [%s %s]\n",
 			mi.port, mi.id_vendor, mi.id_product, mi.manufacturer, mi.product);
 
-#if 0 /*_DEV_EDITION*/ /* for testing purpose */
+#if _DEV_EDITION /* for testing purpose */
 	int giveup;
 
 	for(giveup = 30; modem_get_last_error(modem) != -1 && giveup; -- giveup)

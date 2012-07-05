@@ -10,40 +10,6 @@
 
 #define __MODEM_IFACE_MAX 4
 
-/*------------------------------------------------------------------------*/
-
-typedef struct
-{
-	/** port number */
-	char port[8];
-
-	/** vendor name */
-	uint16_t id_vendor;
-
-	/** product name */
-	uint16_t id_product;
-
-	/** manufacturer name */
-	char manufacturer[256];
-
-	/** product name */
-	char product[256];
-} __attribute__((__packed__)) usb_device_info_t;
-
-/*------------------------------------------------------------------------*/
-
-typedef DIR modem_find_t;
-
-/*------------------------------------------------------------------------*/
-
-typedef struct
-{
-	/** signal quality in dBm */
-	int16_t dbm;
-
-	/** signal level 0-5 */
-	uint8_t level;
-} __attribute__((__packed__)) modem_signal_quality_t;
 
 /*------------------------------------------------------------------------*/
 
@@ -56,23 +22,6 @@ typedef enum
 
 /*------------------------------------------------------------------------*/
 
-typedef struct
-{
-	/** APN */
-	char apn[101];
-
-	/** username */
-	char username[33];
-
-	/** password */
-	char password[33];
-
-	/** type of authrization (None, PAP, CHAP) */
-	ppp_auth_protocol_t auth;
-} __attribute__((__packed__)) modem_data_profile_t;
-
-/*------------------------------------------------------------------------*/
-
 typedef enum
 {
 	MODEM_NETWORK_REG_FAILED	= 0,
@@ -82,24 +31,6 @@ typedef enum
 	MODEM_NETWORK_REG_UNKNOWN,
 	MODEM_NETWORK_REG_ROAMING
 } __attribute__((__packed__)) modem_network_reg_t;
-
-/*------------------------------------------------------------------------*/
-
-typedef struct
-{
-	char old_pin[16];
-
-	char new_pin[16];
-} __attribute__((__packed__)) modem_change_pin_t;
-
-/*------------------------------------------------------------------------*/
-
-typedef struct
-{
-	char firmware[0x100];
-
-	time_t release;
-} __attribute__((__packed__)) modem_fw_ver_t;
 
 /*------------------------------------------------------------------------*/
 
@@ -155,6 +86,76 @@ typedef enum
 
 typedef struct
 {
+	/** port number */
+	char port[8];
+
+	/** vendor name */
+	uint16_t id_vendor;
+
+	/** product name */
+	uint16_t id_product;
+
+	/** manufacturer name */
+	char manufacturer[256];
+
+	/** product name */
+	char product[256];
+} __attribute__((__packed__)) usb_device_info_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef DIR modem_find_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef struct
+{
+	/** signal quality in dBm */
+	int16_t dbm;
+
+	/** signal level 0-5 */
+	uint8_t level;
+} __attribute__((__packed__)) modem_signal_quality_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef struct
+{
+	/** APN */
+	char apn[101];
+
+	/** username */
+	char username[33];
+
+	/** password */
+	char password[33];
+
+	/** type of authrization (None, PAP, CHAP) */
+	ppp_auth_protocol_t auth;
+} __attribute__((__packed__)) modem_data_profile_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef struct
+{
+	char old_pin[16];
+
+	char new_pin[16];
+} __attribute__((__packed__)) modem_change_pin_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef struct
+{
+	char firmware[0x100];
+
+	time_t release;
+} __attribute__((__packed__)) modem_fw_ver_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef struct
+{
 	modem_oper_stat_t stat;
 
 	char longname[17];
@@ -201,12 +202,14 @@ struct cached_s
 
 /*------------------------------------------------------------------------*/
 
-typedef struct
+typedef struct modem_queues_s
 {
 	modem_proto_t proto;
 
 	void* queue;
-} modem_queue_t;
+
+	struct modem_queues_s* next;
+} modem_queues_t;
 
 /*------------------------------------------------------------------------*/
 
@@ -214,9 +217,7 @@ typedef struct
 {
 	int refs;
 
-//	void* priv;
-
-	modem_queue_t queues[__MODEM_IFACE_MAX];
+	modem_queues_t* queues;
 
 	char port[0x100];
 

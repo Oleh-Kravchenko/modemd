@@ -1,6 +1,6 @@
-#include "modems/mc77x0/registration.h"
-
 #include "modem_db.h"
+
+#include "modems/mc77x0/registration.h"
 
 /*------------------------------------------------------------------------*/
 
