@@ -18,7 +18,7 @@ modem_db_device_t modem_db_devices[] = {
 		},
 	},
 	{
-		/* Sierra Wireless, Inc. MC7700 */
+		.vendor		= "Sierra Wireless, Incorporated",
 		.product	= "MC7700",
 		.vendor_id	= 0x1199,
 		.product_id	= 0x68a3,
@@ -31,7 +31,7 @@ modem_db_device_t modem_db_devices[] = {
 		},
 	},
 	{
-		/* Sierra Wireless, Inc. MC7750 */
+		.vendor		= "Sierra Wireless, Incorporated",
 		.product	= "MC7750",
 		.vendor_id	= 0x1199,
 		.product_id	= 0x68a2,
@@ -48,12 +48,18 @@ modem_db_device_t modem_db_devices[] = {
 		},
 	},
 	{
-		/* Sierra Wireless, Inc. MC8790V */
+		.vendor		= "Sierra Wireless, Incorporated",
 		.product	= "MC8790V",
 		.vendor_id	= 0x1199,
 		.product_id	= 0x68a3,
 		.thread_reg	= mc77x0_thread_reg,
-		.func		= {
+		.iface		= {
+			{
+				.num	= 3,
+				.type	= MODEM_PROTO_AT,
+			},
+		},
+		.functions	= {
 			.modem_get_imei				= NULL,
 			.modem_get_signal_quality	= NULL,
 			.modem_get_network_time		= NULL,
@@ -65,12 +71,6 @@ modem_db_device_t modem_db_devices[] = {
 			.modem_get_fw_version		= NULL,
 			.modem_operator_scan		= NULL,
 			.modem_get_cell_id			= NULL,
-		},
-		.iface		= {
-			{
-				.num	= 3,
-				.type	= MODEM_PROTO_AT,
-			},
 		},
 	},
 };

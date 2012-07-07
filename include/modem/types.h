@@ -96,10 +96,10 @@ typedef struct
 	uint16_t id_product;
 
 	/** manufacturer name */
-	char manufacturer[256];
+	char manufacturer[0x100];
 
 	/** product name */
-	char product[256];
+	char product[0x100];
 } __attribute__((__packed__)) usb_device_info_t;
 
 /*------------------------------------------------------------------------*/
@@ -217,11 +217,13 @@ typedef struct
 {
 	int refs;
 
-	modem_queues_t* queues;
-
 	char port[0x100];
 
+	modem_queues_t* queues;
+
 	usb_device_info_t usb;
+
+	void* mdd;
 
 	struct
 	{
