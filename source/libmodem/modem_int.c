@@ -485,14 +485,13 @@ void modem_reset(modem_t* modem)
 
 void modem_sw_reset(modem_t* modem)
 {
-	at_queue_t* at_q = modem_proto_get(modem, MODEM_PROTO_AT);
 	void *thread_res;
 
 	/* termination scan routine */
 	if(modem->scan.thread)
 		pthread_join(modem->scan.thread, &thread_res);
 
-	at_raw_ok(at_q->queue, "AT!RESET");
+	at_raw_ok(modem, "AT!RESET");
 
 	/* suspend queues */
 	modem_queues_suspend(modem);

@@ -93,14 +93,18 @@ int at_cpin_puk(modem_t* modem, const char* puk, const char* pin)
 
 /*------------------------------------------------------------------------*/
 
-int at_raw_ok(queue_t* queue, const char* cmd)
+int at_raw_ok(modem_t* modem, const char* cmd)
 {
+	at_queue_t* at_q;
 	at_query_t* q;
-	int res;
+	int res = -1;
+
+	if(!(at_q = modem_proto_get(modem, MODEM_PROTO_AT)))
+		return(res);
 
 	q = at_query_create(cmd, "\r\nOK\r\n");
 	q->timeout = 10;
-	at_query_exec(queue, q);
+	at_query_exec(at_q->queue, q);
 
 	res = at_query_is_error(q);
 

@@ -19,12 +19,12 @@ int at_cpin_puk(modem_t* modem, const char* puk, const char* pin);
 /*------------------------------------------------------------------------*/
 
 /**
- * @brief execute AT command on AT queue
- * @param queue AT queue
+ * @brief execute AT command on modem
+ * @param modem modem that support AT queue
  * @param cmd AT command
  * @return zero if no errors
  */
-int at_raw_ok(queue_t* queue, const char* cmd);
+int at_raw_ok(modem_t* modem, const char* cmd);
 
 /*------------------------------------------------------------------------*/
 

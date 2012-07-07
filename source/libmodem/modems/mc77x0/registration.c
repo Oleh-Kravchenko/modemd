@@ -402,13 +402,13 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_DISABLE_ECHO)
 		{
-			at_raw_ok(at_q->queue, "ATE0\r\n");
+			at_raw_ok(priv, "ATE0\r\n");
 
 			state = RS_CMEE_NUMBER;
 		}
 		else if(state == RS_CMEE_NUMBER)
 		{
-			at_raw_ok(at_q->queue, "AT+CMEE=1\r\n");
+			at_raw_ok(priv, "AT+CMEE=1\r\n");
 
 			state = RS_GET_FIRMWARE_VER;
 		}
@@ -426,7 +426,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_SET_CFUN)
 		{
-			if(at_raw_ok(at_q->queue, "AT+CFUN=1\r\n"))
+			if(at_raw_ok(priv, "AT+CFUN=1\r\n"))
 			{
 				state_delay = 5;
 
@@ -459,7 +459,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 			/* band selection */
 			snprintf(s, sizeof(s), "AT!BAND=%02X\r\n", conf.frequency_band);
 
-			if(at_raw_ok(at_q->queue, s))
+			if(at_raw_ok(priv, s))
 			{
 				priv->reg.last_error = at_q->last_error;
 
@@ -724,10 +724,10 @@ void* mc77x0_thread_reg(modem_t *priv)
 			if(conf.operator_number)
 			{
 				snprintf(s, sizeof(s), "AT+COPS=1,2,%d,%d\r\n", conf.operator_number, conf.access_technology);
-				at_raw_ok(at_q->queue, s);
+				at_raw_ok(priv, s);
 			}
 			else
-				at_raw_ok(at_q->queue, "AT+COPS=0\r\n");
+				at_raw_ok(priv, "AT+COPS=0\r\n");
 
 			state = RS_CHECK_REGISTRATION;
 		}
