@@ -172,7 +172,7 @@ void modem_queues_resume(modem_t* modem)
 
 /*------------------------------------------------------------------------*/
 
-void* modem_queues_get(modem_t* modem, modem_proto_t proto)
+void* modem_proto_get(modem_t* modem, modem_proto_t proto)
 {
 	modem_queues_t* mq = modem->queues;
 

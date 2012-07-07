@@ -251,9 +251,7 @@ int modem_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 
 time_t modem_get_network_time(modem_t* modem)
 {
-	at_queue_t* q = modem_queues_get(modem, MODEM_PROTO_AT);
-
-	return(at_get_network_time(q->queue));
+	return(at_get_network_time(modem));
 }
 
 /*------------------------------------------------------------------------*/
@@ -312,9 +310,7 @@ char* modem_get_network_type(modem_t* modem, char *network, int len)
 
 int modem_change_pin(modem_t* modem, const char* old_pin, const char* new_pin)
 {
-	at_queue_t* at_q = modem_queues_get(modem, MODEM_PROTO_AT);
-
-	return(at_change_pin(at_q->queue, old_pin, new_pin));
+	return(at_change_pin(modem, old_pin, new_pin));
 }
 
 /*------------------------------------------------------------------------*/
@@ -338,9 +334,7 @@ usb_device_info_t* modem_get_info(modem_t* modem, usb_device_info_t *mi)
 
 int modem_operator_scan(modem_t* modem, modem_oper_t** opers)
 {
-	at_queue_t* q = modem_queues_get(modem, MODEM_PROTO_AT);
-
-	return(at_operator_scan(q->queue, opers));
+	return(at_operator_scan(modem, opers));
 }
 
 /*------------------------------------------------------------------------*/
@@ -395,16 +389,14 @@ int modem_operator_scan_is_running(modem_t* modem)
 
 int modem_get_cell_id(modem_t* modem)
 {
-	at_queue_t* q = modem_queues_get(modem, MODEM_PROTO_AT);
-
-	return(at_get_cell_id(q->queue));
+	return(at_get_cell_id(modem));
 }
 
 /*------------------------------------------------------------------------*/
 
 char* modem_at_command(modem_t* modem, const char* query)
 {
-	at_queue_t* at_q = modem_queues_get(modem, MODEM_PROTO_AT);
+	at_queue_t* at_q = modem_proto_get(modem, MODEM_PROTO_AT);
 	at_query_t *q;
 	char *cmd;
 
@@ -493,7 +485,7 @@ void modem_reset(modem_t* modem)
 
 void modem_sw_reset(modem_t* modem)
 {
-	at_queue_t* at_q = modem_queues_get(modem, MODEM_PROTO_AT);
+	at_queue_t* at_q = modem_proto_get(modem, MODEM_PROTO_AT);
 	void *thread_res;
 
 	/* termination scan routine */

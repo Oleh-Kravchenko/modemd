@@ -70,7 +70,8 @@ typedef enum
 	MODEM_COPS_MODE_MANUAL,
 	MODEM_COPS_MODE_DEREGISTER,
 	MODEM_COPS_MODE_SET_FORMAT,
-	MODEM_COPS_MODE_MANUAL_AUTO
+	MODEM_COPS_MODE_MANUAL_AUTO,
+	MODEM_COPS_MODE_MAX
 } __attribute__((__packed__)) modem_cops_mode_t;
 
 /*------------------------------------------------------------------------*/

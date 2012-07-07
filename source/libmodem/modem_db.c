@@ -6,7 +6,8 @@
 
 modem_db_device_t modem_db_devices[] = {
 	{
-		/* Huawei */
+		.vendor		= "HUAWEI Technology",
+		.product	= "HUAWEI Mobile",
 		.vendor_id	= 0x12d1,
 		.product_id	= 0x1001,
 		.thread_reg	= mc77x0_thread_reg,
