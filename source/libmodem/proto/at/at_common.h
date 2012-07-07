@@ -56,7 +56,7 @@ modem_fw_ver_t* at_get_fw_version(modem_t* modem, modem_fw_ver_t* fw_info);
 
 /*------------------------------------------------------------------------*/
 
-char* at_get_network_type(modem_t* modem, char* network, int len);
+char* mc77x0_at_get_network_type(modem_t* modem, char* network, int len);
 
 /*------------------------------------------------------------------------*/
 

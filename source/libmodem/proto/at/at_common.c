@@ -252,7 +252,7 @@ modem_cops_mode_t at_cops_mode(modem_t* modem)
 	if(!at_query_is_error(q))
 	{
 		nnr = re_atoi(q->result, q->pmatch + 1);
-		nr = (nnr > MODEM_COPS_MODE_UNKNOWN && nnr < MODEM_COPS_MODE_MAX)
+		nr = (nnr > MODEM_COPS_MODE_UNKNOWN && nnr < MODEM_COPS_MODE_COUNT)
 			? nnr : MODEM_COPS_MODE_UNKNOWN;
 	}
 
@@ -278,7 +278,6 @@ int at_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 	q = at_query_create("AT+CSQ\r\n", "\r\n\\+CSQ: ([0-9]+),([0-9]+)\r\n\r\nOK\r\n");
 	at_query_exec(at_q->queue, q);
 
-	/* cutting IMEI number from the reply */
 	if(!at_query_is_error(q))
 	{
 		nrssi = re_atoi(q->result, q->pmatch + 1);
@@ -335,33 +334,6 @@ modem_fw_ver_t* at_get_fw_version(modem_t* modem, modem_fw_ver_t* fw_info)
 		fw_info->release = mktime(&tm);
 
 		res = fw_info;
-	}
-
-	at_query_free(q);
-
-	return(res);
-}
-
-/*------------------------------------------------------------------------*/
-
-char* at_get_network_type(modem_t* modem, char* network, int len)
-{
-	at_queue_t* at_q;
-	at_query_t* q;
-	char* res = NULL;
-
-	if(!(at_q = modem_proto_get(modem, MODEM_PROTO_AT)))
-		return(res);
-
-	q = at_query_create("AT*CNTI=0\r\n", "\r\n\\*CNTI: 0,(.+)\r\n\r\nOK\r\n");
-
-	at_query_exec(at_q->queue, q);
-
-	if(!at_query_is_error(q))
-	{
-		re_strncpy(network, len, q->result, q->pmatch + 1);
-
-		res = network;
 	}
 
 	at_query_free(q);

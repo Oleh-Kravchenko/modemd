@@ -40,6 +40,8 @@ hw/hw_common.c
 hw/hw_common.h
 modems/modem_conf.c
 modems/modem_conf.h
+modems/mc77x0/func.c
+modems/mc77x0/func.h
 modems/mc77x0/registration.c
 modems/mc77x0/registration.h
 )

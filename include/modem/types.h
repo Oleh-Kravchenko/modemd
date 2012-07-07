@@ -29,7 +29,8 @@ typedef enum
 	MODEM_NETWORK_REG_SEARCHING,
 	MODEM_NETWORK_REG_DENIED,
 	MODEM_NETWORK_REG_UNKNOWN,
-	MODEM_NETWORK_REG_ROAMING
+	MODEM_NETWORK_REG_ROAMING,
+	MODEM_NETWORK_REG_COUNT
 } __attribute__((__packed__)) modem_network_reg_t;
 
 /*------------------------------------------------------------------------*/
@@ -71,7 +72,7 @@ typedef enum
 	MODEM_COPS_MODE_DEREGISTER,
 	MODEM_COPS_MODE_SET_FORMAT,
 	MODEM_COPS_MODE_MANUAL_AUTO,
-	MODEM_COPS_MODE_MAX
+	MODEM_COPS_MODE_COUNT
 } __attribute__((__packed__)) modem_cops_mode_t;
 
 /*------------------------------------------------------------------------*/

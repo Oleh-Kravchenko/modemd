@@ -3,12 +3,16 @@
 
 #include <modem/types.h>
 
-int mc77x0_get_cell_id(modem_t* modem);
+unsigned int mc77x0_at_get_freq_band(modem_t* modem);
 
-time_t mc77x0_get_network_time(modem_t* modem);
+char* mc77x0_at_get_network_type(modem_t* modem, char *network, int len);
 
-int mc77x0_operator_scan(modem_t* modem, modem_oper_t** opers);
+char* mc7750_at_get_network_type(modem_t* modem, char* network, int len);
 
-int mc77x0_change_pin(modem_t* modem, const char* old_pin, const char* new_pin);
+int mc77x0_at_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq);
+
+modem_network_reg_t mc77x0_at_network_registration(modem_t* modem);
+
+void mc77x0_modem_sw_reset(modem_t* modem);
 
 #endif /* __MC77x0_FUNC_H */
