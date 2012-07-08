@@ -6,8 +6,10 @@
 
 modem_db_device_t modem_db_devices[] = {
 	{
+#if 0 /* not necessary */
 		.vendor		= "HUAWEI Technology",
-		.product	= "HUAWEI Mobile",
+		.product	= "E620 USB Modem",
+#endif
 		.vendor_id	= 0x12d1,
 		.product_id	= 0x1001,
 		.thread_reg	= mc77x0_thread_reg,
