@@ -225,7 +225,7 @@ typedef struct
 
 	usb_device_info_t usb;
 
-	void* mdd;
+	const void* mdd;
 
 	struct
 	{

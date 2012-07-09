@@ -256,38 +256,6 @@ void* mc77x0_thread_reg(modem_t *priv)
 			state = (modem_band >= 0 && conf.frequency_band == modem_band ?
 				RS_CHECK_PIN : RS_RESET);
 		}
-#if 0 //@Anatoly - do not set PDP profile on MC7750, during registration
-		else if(state == RS_SET_APN)
-		{
-			/* apn setup */
-			if(*conf.data.apn)
-			{
-				snprintf(s, sizeof(s), "AT+CGDCONT=3,\"IPV4V6\",\"%s\"\r\n", conf.data.apn);
-				at_raw_ok(at_q->queue, s);
-				
-				state = RS_SET_AUTH;
-			}
-			else
-				state = RS_CHECK_PIN;
-		}
-		else if(state == RS_SET_AUTH)
-		{
-			/* autorization data */
-			if(conf.data.auth != PPP_NONE)
-			{
-				snprintf(s, sizeof(s), "AT$QCPDPP=3,%d,\"%s\",\"%s\"\r\n",
-					conf.data.auth, conf.data.password, conf.data.username);
-
-				at_raw_ok(at_q->queue, s);
-			}
-			else
-			{
-				at_raw_ok(at_q->queue, "AT$QCPDPP=3,0\r\n");
-			}
-
-			state = RS_CHECK_PIN;
-		}
-#endif
 		else if(state == RS_CHECK_PIN)
 		{
 			switch(at_cpin_state(priv))

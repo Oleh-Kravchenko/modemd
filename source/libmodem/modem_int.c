@@ -68,7 +68,6 @@ void modem_cleanup(void)
 
 modem_t* modem_open_by_port(const char* port)
 {
-	const modem_db_device_t* mdd;
 	modem_t* res = NULL;
 	modem_list_t* item;
 	void* thread_res;
@@ -119,16 +118,16 @@ modem_t* modem_open_by_port(const char* port)
 	}
 
 	/* check driver ready */
-	if(!(mdd = modem_db_get_info(res->usb.product, res->usb.id_vendor, res->usb.id_product)))
+	if(!(res->mdd = modem_db_get_info(res->usb.product, res->usb.id_vendor, res->usb.id_product)))
 		goto err;
 
 	/* creating queues */
-	if(modem_queues_init(res, mdd))
+	if(modem_queues_init(res))
 		goto err;
 
 	/* starting registration routine */
-	if(mdd->thread_reg)
-		pthread_create(&res->reg.thread, NULL, (pthread_func_t)mdd->thread_reg, res);
+	if(((const modem_db_device_t*)res->mdd)->thread_reg)
+		pthread_create(&res->reg.thread, NULL, (pthread_func_t)((const modem_db_device_t*)res->mdd)->thread_reg, res);
 	else
 		res->reg.thread = 0;
 

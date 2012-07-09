@@ -7,7 +7,7 @@
 
 /*------------------------------------------------------------------------*/
 
-int modem_queues_init(modem_t* modem, const modem_db_device_t* mdd);
+int modem_queues_init(modem_t* modem);
 
 void modem_queues_destroy(modem_t* modem);
 
