@@ -132,7 +132,7 @@ void modem_test(const char* port)
 	/* if modem detected, this printf will be waste */
 	if(!opt_detect_modems && modem_get_info(modem, &mi))
 		printf("\nDevice: [port: %s] [%04hx:%04hx] [%s %s]\n",
-			mi.port, mi.id_vendor, mi.id_product, mi.manufacturer, mi.product);
+			mi.port, mi.id_vendor, mi.id_product, mi.vendor, mi.product);
 
 #if _DEV_EDITION /* for testing purpose */
 	int giveup;
@@ -278,7 +278,7 @@ int main(int argc, char** argv)
 		while(find)
 		{
 			printf("\nDevice: [port: %s] [%04hx:%04hx] [%s %s]\n",
-				mi.port, mi.id_vendor, mi.id_product, mi.manufacturer, mi.product);
+				mi.port, mi.id_vendor, mi.id_product, mi.vendor, mi.product);
 
 			if(opt_modems_test)
 				modem_test(mi.port);

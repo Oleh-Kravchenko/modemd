@@ -13,14 +13,14 @@
 
 /*------------------------------------------------------------------------*/
 
-int modem_is_supported(const char* product, uint16_t vendor_id, uint16_t product_id)
+int modem_is_supported(const char* vendor, const char* product, uint16_t vendor_id, uint16_t product_id)
 {
-	return(!!modem_db_get_info(product, vendor_id, product_id));
+	return(!!modem_db_get_info(vendor, product, vendor_id, product_id));
 }
 
 /*------------------------------------------------------------------------*/
 
-const modem_db_device_t* modem_db_get_info(const char* product, uint16_t vendor_id, uint16_t product_id)
+const modem_db_device_t* modem_db_get_info(const char* vendor, const char* product, uint16_t vendor_id, uint16_t product_id)
 {
 	int i;
 
@@ -29,14 +29,11 @@ const modem_db_device_t* modem_db_get_info(const char* product, uint16_t vendor_
 		if
 		(
 			modem_db_devices[i].vendor_id == vendor_id &&
-			modem_db_devices[i].product_id == product_id
+			modem_db_devices[i].product_id == product_id &&
+			!re_strcmp(vendor, modem_db_devices[i].vendor) &&
+			!re_strcmp(product, modem_db_devices[i].product)
 		)
-		{
-			if(product && strcmp(modem_db_devices[i].product, product))
-				continue;
-
 			return(&modem_db_devices[i]);
-		}
 	}
 
 	return(NULL);
@@ -91,7 +88,7 @@ usb_device_info_t* usb_device_get_info(const char* port, usb_device_info_t* di)
 		return(NULL);
 
 	snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/manufacturer", port);
-	if(!file_get_contents(path, di->manufacturer, sizeof(di->manufacturer)))
+	if(!file_get_contents(path, di->vendor, sizeof(di->vendor)))
 		return(NULL);
 
 	snprintf(path, sizeof(path), "/sys/bus/usb/devices/%s/product", port);
@@ -124,7 +121,7 @@ modem_find_t* modem_find_first(usb_device_info_t* mi)
 			goto err;
 
 		/* check device on modem db */
-		if(!modem_is_supported(NULL, mi->id_vendor, mi->id_product))
+		if(!modem_is_supported(mi->vendor, mi->product, mi->id_vendor, mi->id_product))
 			continue;
 
 		return(res);
@@ -155,7 +152,7 @@ modem_find_t* modem_find_next(modem_find_t* find, usb_device_info_t* mi)
 			goto err;
 
 		/* check device on modem db */
-		if(!modem_is_supported(NULL, mi->id_vendor, mi->id_product))
+		if(!modem_is_supported(mi->vendor, mi->product, mi->id_vendor, mi->id_product))
 			continue;
 
 		return(find);

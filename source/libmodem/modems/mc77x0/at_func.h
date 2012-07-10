@@ -15,4 +15,6 @@ modem_network_reg_t mc77x0_at_network_registration(modem_t* modem);
 
 void mc77x0_modem_sw_reset(modem_t* modem);
 
+modem_fw_ver_t* mc77x0_at_get_fw_version(modem_t* modem, modem_fw_ver_t* fw_info);
+
 #endif /* __MC77x0_AT_FUNC_H */

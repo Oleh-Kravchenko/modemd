@@ -118,7 +118,7 @@ modem_t* modem_open_by_port(const char* port)
 	}
 
 	/* check driver ready */
-	if(!(res->mdd = modem_db_get_info(res->usb.product, res->usb.id_vendor, res->usb.id_product)))
+	if(!(res->mdd = modem_db_get_info(res->usb.vendor, res->usb.product, res->usb.id_vendor, res->usb.id_product)))
 		goto err;
 
 	/* creating queues */
@@ -436,8 +436,7 @@ int modem_get_last_error(modem_t* modem)
 
 void modem_conf_reload(modem_t* modem)
 {
-	const modem_db_device_t* mdd;
-	usb_device_info_t mi;
+	const modem_db_device_t* mdd = modem->mdd;
 	void* thread_res;
 
 	if(!modem->reg.thread)
@@ -445,9 +444,6 @@ void modem_conf_reload(modem_t* modem)
 
 	modem->reg.terminate = 1;
 	pthread_join(modem->reg.thread, &thread_res);
-
-	usb_device_get_info(modem->port, &mi);
-	mdd = modem_db_get_info(NULL, mi.id_vendor, mi.id_product);
 
 	modem->reg.terminate = 0;
 

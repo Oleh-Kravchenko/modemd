@@ -280,3 +280,39 @@ char* mc7750_at_get_network_type(modem_t* modem, char *network, int len)
 
 	return(NULL);
 }
+
+/*------------------------------------------------------------------------*/
+
+modem_fw_ver_t* mc77x0_at_get_fw_version(modem_t* modem, modem_fw_ver_t* fw_info)
+{
+	modem_fw_ver_t* res = NULL;
+	char release[0x100];
+	at_queue_t* at_q;
+	at_query_t* q;
+	struct tm tm;
+
+	if(!(at_q = modem_proto_get(modem, MODEM_PROTO_AT)))
+		return(res);
+
+	q = at_query_create("AT+CGMR\r\n", "\r\n.*(SWI.*) .* .* ([0-9,/]+ [0-9,:]+)\r\n\r\nOK\r\n");
+
+	at_query_exec(at_q->queue, q);
+
+	/* cutting Operator name from the answer */
+	if(!at_query_is_error(q))
+	{
+		/* create result */
+		re_strncpy(fw_info->firmware, sizeof(fw_info->firmware), q->result, q->pmatch + 1);
+		re_strncpy(release, sizeof(release), q->result, q->pmatch + 2);
+
+		/* parsing date and time */
+		strptime(release, "%Y/%m/%d\r\n%H:%M:%S", &tm);
+		fw_info->release = mktime(&tm);
+
+		res = fw_info;
+	}
+
+	at_query_free(q);
+
+	return(res);
+}

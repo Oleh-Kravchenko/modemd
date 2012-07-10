@@ -11,16 +11,17 @@
 
 /**
  * @brief check vendor and product id on modem db
+ * @param vendor name of manufacturer
  * @param product name of device
  * @param vendor_id vendor id
  * @param product_id product id
  * @return 0 if this device is not a modem
  */
-int modem_is_supported(const char* product, uint16_t vendor_id, uint16_t product_id);
+int modem_is_supported(const char* vendor, const char* product, uint16_t vendor_id, uint16_t product_id);
 
 /*------------------------------------------------------------------------*/
 
-const modem_db_device_t* modem_db_get_info(const char* product, uint16_t vendor_id, uint16_t product_id);
+const modem_db_device_t* modem_db_get_info(const char* vendor, const char* product, uint16_t vendor_id, uint16_t product_id);
 
 /*------------------------------------------------------------------------*/
 

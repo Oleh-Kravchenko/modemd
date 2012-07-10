@@ -91,6 +91,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 {
 	enum registration_state_e state = RS_INIT;
 	at_queue_t* at_q = modem_proto_get(priv, MODEM_PROTO_AT);
+	const modem_db_device_t* mdd = priv->mdd;
 	int periodical_reset;
 	int state_delay = 0;
 	modem_conf_t conf;
@@ -194,7 +195,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_GET_FIRMWARE_VER)
 		{
-			at_get_fw_version(priv, &priv->reg.state.fw_info);
+			mdd->functions.get_fw_version(priv, &priv->reg.state.fw_info);
 
 			state = RS_GET_IMEI;
 		}

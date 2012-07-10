@@ -219,8 +219,7 @@ int modem_queues_add(modem_t* modem, modem_proto_t proto, void* queue)
 	/* queue item */
 	item->proto = proto;
 	item->queue = queue;
-	if(modem->queues)
-		item->next = modem->queues->next;
+	item->next = modem->queues ? modem->queues->next : NULL;
 
 	/* inserting new queue */
 	modem->queues = item;
@@ -254,6 +253,8 @@ int modem_queues_last_error(modem_t* modem, modem_proto_t proto)
 				printf("(EE) %s() queue %s not implemented\n", __func__, str_proto(mq->proto));
 				break;
 		}
+
+		break;
 	}
 
 	return(res);

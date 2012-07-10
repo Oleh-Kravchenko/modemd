@@ -97,8 +97,8 @@ typedef struct
 	/** product name */
 	uint16_t id_product;
 
-	/** manufacturer name */
-	char manufacturer[0x100];
+	/** vendor name */
+	char vendor[0x100];
 
 	/** product name */
 	char product[0x100];
