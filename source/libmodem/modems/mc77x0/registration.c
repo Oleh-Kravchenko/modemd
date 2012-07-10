@@ -235,26 +235,32 @@ void* mc77x0_thread_reg(modem_t *priv)
 			/* current modem band */
 			int modem_band = mc77x0_at_get_freq_band(priv);
 			
-			printf("Modem Band is %d\n", modem_band);
+			printf("(II) Modem Band is %d\n", modem_band);
 
-			/* band selection */
-			snprintf(s, sizeof(s), "AT!BAND=%02X\r\n", conf.frequency_band);
-
-			if(at_raw_ok(priv, s))
+			if(conf.frequency_band != modem_band)
 			{
-				priv->reg.last_error = at_q->last_error;
+				/* band selection */
+				snprintf(s, sizeof(s), "AT!BAND=%02X\r\n", conf.frequency_band);
 
-				printf("(EE) Band selection error: %d\n", at_q->last_error);
+				if(at_raw_ok(priv, s))
+				{
+					priv->reg.last_error = at_q->last_error;
 
-				return(NULL);
+					printf("(EE) Band selection error: %d\n", at_q->last_error);
+
+					return(NULL);
+				}
+
+				/* delay for band setup */
+				state_delay = 5;
+
+				/* reset is required */
+				state = RS_RESET;
+
+				continue;
 			}
 
-			/* delay for band setup */
-			state_delay = 5;
-
-			/* if band is new for modem, reset is required */
-			state = (modem_band >= 0 && conf.frequency_band == modem_band ?
-				RS_CHECK_PIN : RS_RESET);
+			state = RS_CHECK_PIN;
 		}
 		else if(state == RS_CHECK_PIN)
 		{
