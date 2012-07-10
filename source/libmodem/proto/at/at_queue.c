@@ -157,7 +157,7 @@ void* at_queue_thread_read(void* prm)
 			/* reporting about reply */
 			event_signal(at_q->query->event);
 
-			printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
+			/*printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);*/
 			at_q->query = NULL;
 
 			buf_len = 0;
