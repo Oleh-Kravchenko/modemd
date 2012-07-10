@@ -1,5 +1,5 @@
-#ifndef __MC77x0_FUNC_H
-#define __MC77x0_FUNC_H
+#ifndef __MC77x0_AT_FUNC_H
+#define __MC77x0_AT_FUNC_H
 
 #include <modem/types.h>
 
@@ -15,4 +15,4 @@ modem_network_reg_t mc77x0_at_network_registration(modem_t* modem);
 
 void mc77x0_modem_sw_reset(modem_t* modem);
 
-#endif /* __MC77x0_FUNC_H */
+#endif /* __MC77x0_AT_FUNC_H */

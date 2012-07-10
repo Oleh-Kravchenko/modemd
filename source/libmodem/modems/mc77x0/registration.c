@@ -16,7 +16,7 @@
 
 #include "modems/modem_conf.h"
 #include "modems/mc77x0/registration.h"
-#include "modems/mc77x0/func.h"
+#include "modems/mc77x0/at_func.h"
 
 #include "utils/str.h"
 #include "utils/re.h"
@@ -96,6 +96,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 	modem_conf_t conf;
 	char s[0x100];
 
+	int last_error;
 	int prev_last_error = 0;
 	int cnt_last_error = 0;
 
@@ -135,12 +136,10 @@ void* mc77x0_thread_reg(modem_t *priv)
 			continue;
 		}
 
+		last_error = modem_queues_last_error(priv, MODEM_PROTO_AT);
+
 		/* I/O modem error handling */
-		if
-		(
-			(at_q->last_error == __ME_WRITE_FAILED ||
-				at_q->last_error == __ME_READ_FAILED)
-		)
+		if(last_error == __ME_WRITE_FAILED || last_error == __ME_READ_FAILED)
 		{
 			++ cnt_last_error;
 

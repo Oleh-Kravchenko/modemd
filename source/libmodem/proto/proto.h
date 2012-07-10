@@ -19,4 +19,6 @@ void* modem_proto_get(modem_t* modem, modem_proto_t proto);
 
 int modem_queues_add(modem_t* modem, modem_proto_t proto, void* queue);
 
+int modem_queues_last_error(modem_t* modem, modem_proto_t proto);
+
 #endif /* __MODEM_PROTO_H */

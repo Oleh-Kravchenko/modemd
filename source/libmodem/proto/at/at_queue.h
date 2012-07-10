@@ -12,21 +12,21 @@
 
 typedef struct
 {
+	int terminate;
+
+	int last_error;
+
 	int fd;
 
 	event_t* event;
 
-	queue_t *queue;
+	queue_t* queue;
 
 	at_query_t* query;
-
-	int terminate;
 
 	pthread_t thread_write;
 
 	pthread_t thread_read;
-
-	int32_t last_error;
 } at_queue_t;
 
 /*------------------------------------------------------------------------*/

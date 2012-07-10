@@ -8,6 +8,8 @@
 typedef struct
 {
 	int terminate;
+
+	int last_error;
 } qcqmi_queue_t;
 
 /*------------------------------------------------------------------------*/

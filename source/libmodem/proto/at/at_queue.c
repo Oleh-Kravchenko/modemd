@@ -9,17 +9,19 @@
 #include <poll.h>
 #include <pthread.h>
 #include <stdio.h>
-#include <regex.h>
 #include <syslog.h>
 
 #include "modem/modem_errno.h"
 
 #include "queue.h"
+
 #include "at_queue.h"
-#include "utils/str.h"
-#include "utils/file.h"
 #include "at/at_utils.h"
 #include "at/at_common.h"
+
+#include "utils/re.h"
+#include "utils/str.h"
+#include "utils/file.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -29,14 +31,14 @@
 
 void* at_queue_thread_write(void* prm)
 {
-	at_queue_t *priv = prm;
+	at_queue_t* at_q = prm;
+	void* buf = NULL;
 	size_t buf_len;
-	void* buf;
 
-	while(!priv->terminate)
+	while(!at_q->terminate)
 	{
 		/* receive pointer to query */
-		if(queue_wait_pop(priv->queue, THREAD_WAIT, &buf, &buf_len))
+		if(queue_wait_pop(at_q->queue, THREAD_WAIT, &buf, &buf_len))
 			continue;
 
 		if(buf_len != sizeof(void**))
@@ -46,27 +48,27 @@ void* at_queue_thread_write(void* prm)
 		}
 
 		/* resolve pointer to query */
-		priv->query = (at_query_t*)*((at_query_t**)buf);
+		at_q->query = (at_query_t*)*((at_query_t**)buf);
+
 		free(buf);
 
-//		printf("(EE) write(%zd): [%s]\n", strlen(priv->query->cmd), priv->query->cmd);
+		syslog(LOG_INFO | LOG_LOCAL7, "write() [%s]", at_q->query->cmd);
 
-		syslog(LOG_INFO | LOG_LOCAL7, "write() [%s]", priv->query->cmd);
-
-		if(write(priv->fd, priv->query->cmd, strlen(priv->query->cmd)) == -1)
+		if(write(at_q->fd, at_q->query->cmd, strlen(at_q->query->cmd)) == -1)
 		{
-			priv->last_error = priv->query->error = __ME_WRITE_FAILED; /* unknown error */
+			/* failed to write command */
+			at_q->query->error = at_q->last_error = __ME_WRITE_FAILED;
 
 			/* reporting about failed command */
-			event_signal(priv->query->event);
+			event_signal(at_q->event);
 
-			priv->query = NULL;
+			at_q->query = NULL;
 
 			continue;
 		}
 
 		/* wait for answer */
-		event_wait(priv->event);
+		event_wait(at_q->event);
 	}
 
 	return(NULL);
@@ -76,105 +78,95 @@ void* at_queue_thread_write(void* prm)
 
 void* at_queue_thread_read(void* prm)
 {
-	at_queue_t *priv = prm;
-	struct pollfd p = {priv->fd, POLLIN, 0};
-	int buf_len = 0, res = 0, giveup = 0, re_res = -1;
-	char buf[0xffff];
-	regex_t re;
+	at_queue_t* at_q = prm;
+	struct pollfd p;
+	char buf[0x10000];
+	int buf_len = 0;
+	int timeout = 0;
+	int res = 1;
 
-	while(!priv->terminate)
+	while(!at_q->terminate)
 	{
-		res = poll(&p, 1, (THREAD_WAIT) * 1000);
-
-		if(res > 0 && p.revents & POLLIN)
+		if(at_q->query)
 		{
-			res = read(priv->fd, buf + buf_len, sizeof(buf) - buf_len - 1);
+			++ timeout;
 
-			if(res == -1)
+			/* check timeout */
+			if(timeout > at_q->query->timeout)
 			{
-				printf("(EE) failed read() %d\n", res);
+				at_q->last_error = __ME_READ_FAILED;
 
-				continue;
+				goto query_done;
 			}
 
-			buf_len += res;
-
-			if(buf_len > 0 && priv->query)
+			/* for read error */
+			if(res <= 0)
 			{
-				buf[buf_len] = 0;
+				at_q->last_error = __ME_READ_FAILED;
 
-//				printf("(EE) read(%d): %s", buf_len, buf);
-				syslog(LOG_INFO | LOG_LOCAL7, "read() [%s]", buf);
-
-				regcomp(&re, priv->query->re_res, REG_EXTENDED);
-				priv->query->nmatch = re.re_nsub + 1;
-				priv->query->pmatch = malloc(sizeof(regmatch_t) * priv->query->nmatch);
-				re_res = regexec(&re, buf, priv->query->nmatch, priv->query->pmatch, 0);
-
-				if(re_res)
-				{
-					char re_err[0x100];
-
-					regerror(re_res, &re, re_err, sizeof(re_err));
-
-//					printf("(EE) regexec() %s [\n%s\n]\n", re_err, buf);
-
-					free(priv->query->pmatch);
-					priv->query->pmatch = NULL;
-					regfree(&re);
-
-					priv->query->error = at_parse_error(buf);
-
-					if(priv->query->error == -1)
-						/* no error detected, proceed collecting data */
-						continue;
-				}
-
-				regfree(&re);
+				goto query_done;
 			}
 		}
 
-		if
-		(priv->query &&
-			(
-				giveup >= priv->query->timeout ||
-				re_res == 0 ||
-				priv->query->error != -1
-			)
-		)
+		/* filling pollfd */
+		p.fd = at_q->fd;
+		p.events = POLLIN;
+		p.revents = 0;
+
+		/* wait for input data */
+		if(!(poll(&p, 1, THREAD_WAIT * 1000) > 0 && p.revents & POLLIN))
+			continue;
+
+		/* reading data */
+		if((res = read(at_q->fd, buf + buf_len, sizeof(buf) - buf_len - 1)) <= 0)
+			continue;
+
+		/* if query not set, this is unsolicited response */
+		if(!at_q->query)
 		{
-			if(giveup >= priv->query->timeout)
-			{
-//				printf("(EE) Command %s expired after %d second(s)\n", priv->query->cmd, giveup);
-//				printf("(EE) No match %s\n", buf);
-				priv->last_error = priv->query->error = __ME_READ_FAILED;
-			}
-			else //if(priv->query->error > 0) /* ignore general error */
-			{
-//				printf("(EE) CME ERROR: %d %p\n", priv->query->error, (void*)priv);
-				priv->last_error = priv->query->error;
-			}
+			buf_len = 0;
 
-//			printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
+			continue;
+		}
 
-			priv->query->result = malloc(buf_len + 1);
-			strncpy(priv->query->result, buf, buf_len );
-			priv->query->result[buf_len] = 0;
+		/* accumulating data */
+		buf_len += res;
+		buf[buf_len] = 0;
 
-			re_res = -1;
-			
+		syslog(LOG_INFO | LOG_LOCAL7, "read() [%s]", buf);
+
+		/* compare text with regular expression */
+		if(re_parse(buf, at_q->query->re_res, &at_q->query->nmatch, &at_q->query->pmatch))
+		{
+			at_q->query->pmatch = NULL;
+
+			/* no error detected, proceed collecting data */
+			if((at_q->last_error = at_parse_error(buf)) == -1)
+				continue;
+		}
+
+		/* saving buf as answer */
+		at_q->query->result = malloc(buf_len + 1);
+		strncpy(at_q->query->result, buf, buf_len);
+		at_q->query->result[buf_len] = 0;
+
+		query_done:
+		{
+			at_q->query->error = at_q->last_error;
+
 			/* reporting about reply */
-			event_signal(priv->query->event);
+			event_signal(at_q->query->event);
+
+			printf("%s:%d %s()\n", __FILE__, __LINE__, __func__);
+			at_q->query = NULL;
 
 			buf_len = 0;
-			giveup = 0;
-			priv->query = NULL;
+			timeout = 0;
+			at_q->last_error = -1;
 
-			/* notify writing thread */
-			event_signal(priv->event);
+			/* notify writing thread for next command */
+			event_signal(at_q->event);
 		}
-		else if(priv->query)
-			++ giveup;
 	}
 
 	return(NULL);

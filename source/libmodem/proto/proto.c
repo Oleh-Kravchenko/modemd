@@ -227,3 +227,34 @@ int modem_queues_add(modem_t* modem, modem_proto_t proto, void* queue)
 
 	return(0);
 }
+
+/*------------------------------------------------------------------------*/
+
+int modem_queues_last_error(modem_t* modem, modem_proto_t proto)
+{
+	modem_queues_t* mq;
+	int res = -1;
+
+	for(mq = modem->queues; mq; mq = mq->next)
+	{
+		if(mq->proto != proto)
+			continue;
+
+		switch(mq->proto)
+		{
+			case MODEM_PROTO_AT:
+				res = ((at_queue_t*)mq->queue)->last_error;
+				break;
+
+			case MODEM_PROTO_QCQMI:
+				res = ((qcqmi_queue_t*)mq->queue)->last_error;
+				break;
+
+			default:
+				printf("(EE) %s() queue %s not implemented\n", __func__, str_proto(mq->proto));
+				break;
+		}
+	}
+
+	return(res);
+}
