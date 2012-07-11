@@ -23,7 +23,7 @@
 
 /*------------------------------------------------------------------------*/
 
-#define __STR(x) #x
+void modem_reset(modem_t* modem);
 
 /*------------------------------------------------------------------------*/
 
@@ -58,6 +58,7 @@ enum registration_state_e
 
 static const char *RS_STR[] =
 {
+#define __STR(x) #x
 	__STR(RS_INIT),
 	__STR(RS_DISABLE_ECHO),
 	__STR(RS_CMEE_NUMBER),
@@ -83,6 +84,7 @@ static const char *RS_STR[] =
 	__STR(RS_GET_OPERATOR_NUMBER),
 	__STR(RS_GET_OPERATOR_NAME),
 	__STR(RS_RESET)
+#undef __STR
 };
 
 /*------------------------------------------------------------------------*/
@@ -544,7 +546,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_RESET)
 		{
-			mc77x0_modem_sw_reset(priv);
+			modem_reset(priv);
 
 			state = RS_INIT;
 		}

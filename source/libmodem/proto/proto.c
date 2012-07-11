@@ -165,19 +165,15 @@ void modem_queues_resume(modem_t* modem)
 			continue;
 		}
 
-		if(!modem_get_iface_dev(modem->port, "qcqmi", mdd->iface[i].num, dev, sizeof(dev)))
-		{
-			printf("(EE) %s:%d %s()\n", __FILE__, __LINE__, __func__);
-			continue;
-		}
-
 		switch(mq->proto)
 		{
 			case MODEM_PROTO_AT:
+				modem_get_iface_dev(modem->port, "tty", mdd->iface[i].num, dev, sizeof(dev));
 				at_queue_resume(mq->queue, dev);
 				break;
 
 			case MODEM_PROTO_QCQMI:
+				modem_get_iface_dev(modem->port, "qcqmi", mdd->iface[i].num, dev, sizeof(dev));
 				qcqmi_queue_resume(mq->queue, dev);
 				break;
 

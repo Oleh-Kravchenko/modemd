@@ -58,10 +58,10 @@ void* at_queue_thread_write(void* prm)
 		if(write(at_q->fd, q->cmd, strlen(q->cmd)) == -1)
 		{
 			/* failed to write command */
-			q->error = at_q->last_error = __ME_WRITE_FAILED;
+			at_q->last_error = q->error = __ME_WRITE_FAILED;
 
 			/* reporting about failed command */
-			event_signal(at_q->event);
+			event_signal(q->event);
 
 			continue;
 		}
