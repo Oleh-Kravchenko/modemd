@@ -5,7 +5,7 @@
 
 #include "at/at_query.h"
 #include "modem/types.h"
-#include "../libmodem/queue.h"
+#include "queue.h"
 #include "utils/event.h"
  
 /*------------------------------------------------------------------------*/

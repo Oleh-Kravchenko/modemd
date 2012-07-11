@@ -4,31 +4,30 @@
 #include <regex.h>
 
 #include "modem/types.h"
-#include "../queue.h"
+#include "utils/event.h"
+#include "queue.h"
 
 /*------------------------------------------------------------------------*/
 
 typedef struct at_query_s
 {
-    char* cmd;
+	char* cmd;
 
-    char* re_res;
+	char* re_res;
 
-    int n_subs;
+	size_t nmatch;
 
-    regmatch_t *re_subs;
+	regmatch_t *pmatch;
 
-    /** timeout for command in seconds */
-    int timeout;
+	/** timeout for command in seconds */
+	int timeout;
 
-    char* result;
+	char* result;
 
-    pthread_cond_t cond;
+	event_t* event;
 
-    pthread_mutex_t cond_m;
-
-    /** must be -1 if no errors after execute */
-    int error;
+	/** must be -1 if no errors after execute */
+	int error;
 } at_query_t;
 
 /*------------------------------------------------------------------------*/
