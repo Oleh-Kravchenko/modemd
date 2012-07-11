@@ -40,7 +40,6 @@ modem_db_device_t modem_db_devices[] = {
 			.get_fw_version = mc77x0_at_get_fw_version,
 		},
 	},
-#if 0
 	{
 		/* Sierra Wireless MC7750 */
 		.vendor		= "Sierra Wireless, Incorporated",
@@ -53,16 +52,17 @@ modem_db_device_t modem_db_devices[] = {
 				.num	= 3,
 				.type	= MODEM_PROTO_AT,
 			},
+#if 0
 			{
 				.num	= 8,
 				.type	= MODEM_PROTO_QCQMI,
 			},
+#endif
 		},
 		.functions		= {
-			.modem_get_fw_version = mc77x0_at_get_fw_version,
+			.get_fw_version = mc77x0_at_get_fw_version,
 		},
 	},
-#endif
 };
 
 /*------------------------------------------------------------------------*/
