@@ -32,6 +32,7 @@
 void* at_queue_thread_write(void* prm)
 {
 	at_queue_t* at_q = prm;
+	at_query_t* q;
 	void* buf = NULL;
 	size_t buf_len;
 
@@ -48,24 +49,24 @@ void* at_queue_thread_write(void* prm)
 		}
 
 		/* resolve pointer to query */
-		at_q->query = (at_query_t*)*((at_query_t**)buf);
+		q = (at_query_t*)*((at_query_t**)buf);
 
 		free(buf);
 
-		syslog(LOG_INFO | LOG_LOCAL7, "write() [%s]", at_q->query->cmd);
+		syslog(LOG_INFO | LOG_LOCAL7, "write() [%s]", q->cmd);
 
-		if(write(at_q->fd, at_q->query->cmd, strlen(at_q->query->cmd)) == -1)
+		if(write(at_q->fd, q->cmd, strlen(q->cmd)) == -1)
 		{
 			/* failed to write command */
-			at_q->query->error = at_q->last_error = __ME_WRITE_FAILED;
+			q->error = at_q->last_error = __ME_WRITE_FAILED;
 
 			/* reporting about failed command */
 			event_signal(at_q->event);
 
-			at_q->query = NULL;
-
 			continue;
 		}
+
+		at_q->query = q;
 
 		/* wait for answer */
 		event_wait(at_q->event);
@@ -91,18 +92,10 @@ void* at_queue_thread_read(void* prm)
 		{
 			++ timeout;
 
-			/* check timeout */
-			if(timeout > at_q->query->timeout)
+			/* check timeout or for read error */
+			if(timeout > at_q->query->timeout || res <= 0)
 			{
-				at_q->last_error = __ME_READ_FAILED;
-
-				goto query_done;
-			}
-
-			/* for read error */
-			if(res <= 0)
-			{
-				at_q->last_error = __ME_READ_FAILED;
+				at_q->query->error = __ME_READ_FAILED;
 
 				goto query_done;
 			}
@@ -141,7 +134,7 @@ void* at_queue_thread_read(void* prm)
 			at_q->query->pmatch = NULL;
 
 			/* no error detected, proceed collecting data */
-			if((at_q->last_error = at_parse_error(buf)) == -1)
+			if((at_q->query->error = at_parse_error(buf)) == -1)
 				continue;
 		}
 
@@ -152,7 +145,7 @@ void* at_queue_thread_read(void* prm)
 
 		query_done:
 		{
-			at_q->query->error = at_q->last_error;
+			at_q->last_error = at_q->query->error;
 
 			/* reporting about reply */
 			event_signal(at_q->query->event);
@@ -162,7 +155,6 @@ void* at_queue_thread_read(void* prm)
 
 			buf_len = 0;
 			timeout = 0;
-			at_q->last_error = -1;
 
 			/* notify writing thread for next command */
 			event_signal(at_q->event);

@@ -10,93 +10,64 @@
 
 int at_parse_cops_list(const char* s, modem_oper_t** opers)
 {
-    regmatch_t *re_subs;
-    modem_oper_t* oper;
-    int nopers;
-    regex_t re;
+	regmatch_t *pmatch;
+	modem_oper_t* oper;
+	size_t nmatch;
+	int nopers;
 
-    nopers = 0;
-    *opers = NULL;
+	nopers = 0;
+	*opers = NULL;
 
-    if(regcomp(&re, "\\(([0123]),\"(.{0,16})\",\"(.{0,16})\",\"([0-9]{5,16})\",([012])),?", REG_EXTENDED))
-        goto err;
+	while(*s)
+	{
+		if(re_parse(s, "\\(([0123]),\"(.{0,16})\",\"(.{0,16})\",\"([0-9]{5,16})\",([012])),?", &nmatch, &pmatch))
+			break;
 
-    /* memory for regexp result */
-    re_subs = malloc(sizeof(regmatch_t) * (re.re_nsub + 1));
+		/* increase memory for result */
+		*opers = realloc(*opers, sizeof(modem_oper_t) * (nopers + 1));
 
-    if(!re_subs)
-        goto malloc_err;
+		oper = (*opers + nopers);
 
-    while(*s)
-    {
-        if(regexec(&re, s, (re.re_nsub + 1), re_subs, 0))
-            break;
+		/* add new info about operator */
+		oper->stat = re_atoi(s, pmatch + 1);
+		re_strncpy(oper->longname, sizeof(oper->longname), s, pmatch + 2);
+		re_strncpy(oper->shortname, sizeof(oper->shortname), s, pmatch + 3);
+		re_strncpy(oper->numeric, sizeof(oper->numeric), s, pmatch + 4);
+		oper->act = re_atoi(s, pmatch + 5);
 
-        /* increase memory for result */
-        *opers = realloc(*opers, sizeof(modem_oper_t) * (nopers + 1));
+		++ nopers;
 
-        oper = (*opers + nopers);
+		/* next operator to parse */
+		s += pmatch->rm_eo - pmatch->rm_so;
 
-        /* add new info about operator */
-        oper->stat = regmatch_atoi(s, re_subs + 1);
-        regmatch_ncpy(oper->longname, sizeof(oper->longname), s, re_subs + 2);
-        regmatch_ncpy(oper->shortname, sizeof(oper->shortname), s, re_subs + 3);
-        regmatch_ncpy(oper->numeric, sizeof(oper->numeric), s, re_subs + 4);
-        oper->act = regmatch_atoi(s, re_subs + 5);
+		free(pmatch);
+	}
 
-        ++ nopers;
-
-        /* next operator */
-        s += re_subs[0].rm_eo - re_subs[0].rm_so;
-    }
-
-    free(re_subs);
-
-malloc_err:
-    regfree(&re);
-
-err:
-    return(nopers);
+	return(nopers);
 }
 
 /*------------------------------------------------------------------------*/
 
 int at_parse_error(const char* s)
 {
-    regmatch_t *re_subs;
-    int cme_error = -1;
-    char serror[6];
-    regex_t re;
+	regmatch_t* pmatch;
+	size_t nmatch;
+	int res = -1;
 
-    if(strstr(s, "\r\nERROR\r\n"))
-        /* modem failure (general error) or reporting is AT+CMEE=0 */
-        return(0);
+	if(strstr(s, "\r\nERROR\r\n"))
+		/* modem failure (general error) or error reporting is AT+CMEE=0 */
+		return(0);
 
-    if(regcomp(&re, "\\+CME ERROR: ([0-9]{1,5})\r\n", REG_EXTENDED))
-        goto err;
+	if(re_parse(s, "\\+CME ERROR: ([0-9]{1,5})\r\n", &nmatch, &pmatch))
+		/* can't parse, return -1 */
+		return(res);
 
-    /* memory for regexp result */
-    re_subs = malloc(sizeof(regmatch_t) * (re.re_nsub + 1));
+	/* getting parsed integer value of CME error */
+	res = re_atoi(s, pmatch + 1);
 
-    if(!re_subs)
-        goto malloc_err;
+	free(pmatch);
 
-    if(regexec(&re, s, (re.re_nsub + 1), re_subs, 0))
-        goto reg_err;
-
-    regmatch_ncpy(serror, sizeof(serror), s, re_subs + 1);
-
-    /* CME error */
-    cme_error = atoi(serror);
-
-reg_err:
-    free(re_subs);
-
-malloc_err:
-    regfree(&re);
-
-err:
-    return(cme_error);
+	return(res);
 }
 
 /*------------------------------------------------------------------------*/
