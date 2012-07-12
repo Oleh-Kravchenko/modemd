@@ -215,7 +215,7 @@ int modem_queues_add(modem_t* modem, modem_proto_t proto, void* queue)
 	/* queue item */
 	item->proto = proto;
 	item->queue = queue;
-	item->next = modem->queues ? modem->queues->next : NULL;
+	item->next = modem->queues;
 
 	/* inserting new queue */
 	modem->queues = item;
