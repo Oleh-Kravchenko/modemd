@@ -203,7 +203,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_GET_IMEI)
 		{
-			at_get_imei(priv, priv->reg.state.imei, sizeof(priv->reg.state.imei));
+			mdd->functions.get_imei(priv, priv->reg.state.imei, sizeof(priv->reg.state.imei));
 
 			state = RS_SET_CFUN;
 		}
@@ -351,7 +351,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 				continue;
 			}
 
-			if(!at_get_imsi(priv, priv->reg.state.imsi, sizeof(priv->reg.state.imsi)))
+			if(!mdd->functions.get_imsi(priv, priv->reg.state.imsi, sizeof(priv->reg.state.imsi)))
 			{
 				/* SIM busy? */
 				state_delay = 5;

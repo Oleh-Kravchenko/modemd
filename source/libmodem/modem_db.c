@@ -1,6 +1,7 @@
 #include "modem_db.h"
 
 #include "at/at_common.h"
+#include "qcqmi/qcqmi_common.h"
 
 #include "modems/mc77x0/at_func.h"
 #include "modems/mc77x0/registration.h"
@@ -21,6 +22,7 @@ modem_db_device_t modem_db_devices[] = {
 		},
 		.functions		= {
 			.get_fw_version = at_get_fw_version,
+			.get_imsi		= at_get_imsi,
 		},
 	},
 	{
@@ -38,6 +40,7 @@ modem_db_device_t modem_db_devices[] = {
 		},
 		.functions		= {
 			.get_fw_version = mc77x0_at_get_fw_version,
+			.get_imsi		= at_get_imsi,
 		},
 	},
 	{
@@ -52,15 +55,27 @@ modem_db_device_t modem_db_devices[] = {
 				.num	= 3,
 				.type	= MODEM_PROTO_AT,
 			},
-#if 0
 			{
 				.num	= 8,
 				.type	= MODEM_PROTO_QCQMI,
 			},
-#endif
 		},
 		.functions		= {
-			.get_fw_version = mc77x0_at_get_fw_version,
+			.get_fw_version	= mc77x0_at_get_fw_version,
+			.get_imsi		= qcqmi_get_imsi,
+			.get_imei		= qcqmi_get_imei,
+/*
+			__MODEM_DB_FUNC(get_signal_quality);
+			__MODEM_DB_FUNC(get_network_time);
+			__MODEM_DB_FUNC(get_imsi);
+			__MODEM_DB_FUNC(get_operator_name);
+			__MODEM_DB_FUNC(network_registration);
+			__MODEM_DB_FUNC(get_network_type);
+			__MODEM_DB_FUNC(change_pin);
+			__MODEM_DB_FUNC(get_fw_version);
+			__MODEM_DB_FUNC(operator_scan);
+			__MODEM_DB_FUNC(get_cell_id);
+*/
 		},
 	},
 };

@@ -50,6 +50,10 @@ int modem_init(const char* socket_path)
 {
 	modems = NULL;
 
+	printf("==== SLQSKillSDKProcess() %d\n", SLQSKillSDKProcess());
+	printf("==== SetSDKImagePath() %d\n", SetSDKImagePath("/bin/slqssdk"));
+	printf("==== SLQSStart() %d\n", SLQSStart());
+
 	return(0);
 }
 
@@ -62,6 +66,8 @@ void modem_cleanup(void)
 	/* forced modem close */
 	while(modems)
 		modem_close(modems->modem);
+
+	printf("==== SLQSKillSDKProcess() %d\n", SLQSKillSDKProcess());
 }
 
 /*------------------------------------------------------------------------*/
@@ -106,7 +112,7 @@ modem_t* modem_open_by_port(const char* port)
 		{
 			printf("(DD) Wait for modem ready..\n");
 
-			sleep(1);
+			sleep(20);
 		}
 
 		if(i == 0)
