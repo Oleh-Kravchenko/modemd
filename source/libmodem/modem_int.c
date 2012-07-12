@@ -256,7 +256,9 @@ int modem_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 
 time_t modem_get_network_time(modem_t* modem)
 {
-	return(at_get_network_time(modem));
+	const modem_db_device_t* mdd = modem->mdd;
+
+	return(mdd->functions.get_network_time(modem));
 }
 
 /*------------------------------------------------------------------------*/

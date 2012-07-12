@@ -61,13 +61,13 @@ modem_db_device_t modem_db_devices[] = {
 			},
 		},
 		.functions		= {
-			.get_fw_version	= mc77x0_at_get_fw_version,
-			.get_imsi		= qcqmi_get_imsi,
-			.get_imei		= qcqmi_get_imei,
+			.get_fw_version		= mc77x0_at_get_fw_version,
+			.get_imsi			= qcqmi_get_imsi,
+			.get_imei			= qcqmi_get_imei,
+			.get_network_time	= qcqmi_get_network_time,
 /*
 			__MODEM_DB_FUNC(get_signal_quality);
 			__MODEM_DB_FUNC(get_network_time);
-			__MODEM_DB_FUNC(get_imsi);
 			__MODEM_DB_FUNC(get_operator_name);
 			__MODEM_DB_FUNC(network_registration);
 			__MODEM_DB_FUNC(get_network_type);
