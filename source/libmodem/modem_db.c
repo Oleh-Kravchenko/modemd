@@ -65,6 +65,7 @@ modem_db_device_t modem_db_devices[] = {
 			.get_imsi			= qcqmi_get_imsi,
 			.get_imei			= qcqmi_get_imei,
 			.get_network_time	= qcqmi_get_network_time,
+			.get_signal_quality	= qcqmi_get_signal_quality,
 /*
 			__MODEM_DB_FUNC(get_signal_quality);
 			__MODEM_DB_FUNC(get_network_time);

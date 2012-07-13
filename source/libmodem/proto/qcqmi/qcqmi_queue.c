@@ -8,7 +8,7 @@
 
 /*------------------------------------------------------------------------*/
 
-qcqmi_queue_t* qcqmi_queue_open(const char* dev)
+qcqmi_queue_t* qcqmi_queue_open(const char* dev, const char* imei)
 {
 	qcqmi_queue_t* res;
 
@@ -16,9 +16,16 @@ qcqmi_queue_t* qcqmi_queue_open(const char* dev)
 		return(res);
 
 	res->terminate = 0;
-	res->last_error = -1;
+	res->last_error = QCWWANConnect(dev, imei);
 
-	printf("==== QCWWAN2kConnect(dev, 990000560045959) %d\n", QCWWAN2kConnect(dev, "990000560045959"));
+	printf("(II) QCWWAN2kConnect(%s, %s) = %d\n", dev, imei, res->last_error);
+
+	if(res->last_error != eQCWWAN_ERR_NONE)
+	{
+		free(res);
+
+		res = NULL;
+	}
 
 	return(res);
 }
@@ -44,7 +51,7 @@ void qcqmi_queue_suspend(qcqmi_queue_t* queue)
 
 /*------------------------------------------------------------------------*/
 
-void qcqmi_queue_resume(qcqmi_queue_t* queue, const char* dev)
+void qcqmi_queue_resume(qcqmi_queue_t* queue, const char* dev, const char* imei)
 {
 	printf("(WW) Not implemented %s()\n", __func__);
 }

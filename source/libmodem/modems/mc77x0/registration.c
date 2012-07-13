@@ -518,7 +518,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_GET_SIGNAL_QUALITY)
 		{
-			mc77x0_at_get_signal_quality(priv, &priv->reg.state.sq);
+			mdd->functions.get_signal_quality(priv, &priv->reg.state.sq);
 
 			state = RS_GET_NETWORK_TYPE;
 		}

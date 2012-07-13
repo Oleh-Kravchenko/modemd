@@ -7,4 +7,6 @@ char* qcqmi_get_imei(modem_t* modem, char* imei, size_t len);
 
 time_t qcqmi_get_network_time(modem_t* modem);
 
+int qcqmi_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq);
+
 #endif

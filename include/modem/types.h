@@ -113,7 +113,7 @@ typedef DIR modem_find_t;
 typedef struct
 {
 	/** signal quality in dBm */
-	int16_t dbm;
+	int8_t dbm;
 
 	/** signal level 0-5 */
 	uint8_t level;
