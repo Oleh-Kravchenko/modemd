@@ -1,6 +1,7 @@
 #include "modem_db.h"
 
 #include "at/at_common.h"
+
 #include "qcqmi/qcqmi_common.h"
 
 #include "modems/mc77x0/at_func.h"
@@ -21,8 +22,11 @@ modem_db_device_t modem_db_devices[] = {
 			},
 		},
 		.functions		= {
-			.get_fw_version = at_get_fw_version,
-			.get_imsi		= at_get_imsi,
+			.get_fw_version		= at_get_fw_version,
+			.get_imsi			= at_get_imsi,
+			.get_imei			= at_get_imei,
+			.get_network_time	= at_get_network_time,
+			.get_signal_quality	= at_get_signal_quality,
 		},
 	},
 	{
@@ -39,8 +43,11 @@ modem_db_device_t modem_db_devices[] = {
 			},
 		},
 		.functions		= {
-			.get_fw_version = mc77x0_at_get_fw_version,
-			.get_imsi		= at_get_imsi,
+			.get_fw_version		= mc77x0_at_get_fw_version,
+			.get_imsi			= at_get_imsi,
+			.get_imei			= at_get_imei,
+			.get_network_time	= at_get_network_time,
+			.get_signal_quality	= at_get_signal_quality,
 		},
 	},
 	{
@@ -62,13 +69,18 @@ modem_db_device_t modem_db_devices[] = {
 		},
 		.functions		= {
 			.get_fw_version		= mc77x0_at_get_fw_version,
+#ifdef __QCQMI
 			.get_imsi			= qcqmi_get_imsi,
 			.get_imei			= qcqmi_get_imei,
 			.get_network_time	= qcqmi_get_network_time,
 			.get_signal_quality	= qcqmi_get_signal_quality,
+#else
+			.get_imsi			= at_get_imsi,
+			.get_imei			= at_get_imei,
+			.get_network_time	= at_get_network_time,
+			.get_signal_quality	= at_get_signal_quality,
+#endif
 /*
-			__MODEM_DB_FUNC(get_signal_quality);
-			__MODEM_DB_FUNC(get_network_time);
 			__MODEM_DB_FUNC(get_operator_name);
 			__MODEM_DB_FUNC(network_registration);
 			__MODEM_DB_FUNC(get_network_type);

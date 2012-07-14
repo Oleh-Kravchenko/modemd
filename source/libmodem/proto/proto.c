@@ -6,8 +6,13 @@
 #include "proto.h"
 
 #include "utils/sysfs.h"
+
 #include "at/at_queue.h"
-#include "qcqmi/qcqmi_queue.h"
+#include "at/at_common.h"
+
+#ifdef __QCQMI
+#	include "qcqmi/qcqmi_queue.h"
+#endif /* __QCQMI */
 
 /*------------------------------------------------------------------------*/
 
@@ -48,6 +53,7 @@ int modem_queues_init(modem_t* modem)
 
 				break;
 
+#ifdef __QCQMI
 			case MODEM_PROTO_QCQMI:
 				at_get_imei(modem, imei, sizeof(imei));
 
@@ -74,6 +80,7 @@ int modem_queues_init(modem_t* modem)
 				}
 
 				break;
+#endif /* __QCQMI */
 
 			default:
 				printf("(EE) Driver not loaded or old firmware..\n");
@@ -104,9 +111,11 @@ void modem_queues_destroy(modem_t* modem)
 				at_queue_destroy(mq->queue);
 				break;
 
+#ifdef __QCQMI
 			case MODEM_PROTO_QCQMI:
 				qcqmi_queue_destroy(mq->queue);
 				break;
+#endif /* __QCQMI */
 
 			default:
 				printf("(EE) %s() queue %s not implemented\n", __func__, str_proto(mq->proto));
@@ -133,9 +142,11 @@ void modem_queues_suspend(modem_t* modem)
 				at_queue_suspend(mq->queue);
 				break;
 
+#ifdef __QCQMI
 			case MODEM_PROTO_QCQMI:
 				qcqmi_queue_suspend(mq->queue);
 				break;
+#endif /* __QCQMI */
 
 			default:
 				printf("(EE) %s() queue %s not implemented\n", __func__, str_proto(mq->proto));
@@ -174,11 +185,13 @@ void modem_queues_resume(modem_t* modem)
 				at_queue_resume(mq->queue, dev);
 				break;
 
+#ifdef __QCQMI
 			case MODEM_PROTO_QCQMI:
 				at_get_imei(modem, imei, sizeof(imei));
 				modem_get_iface_dev(modem->port, "qcqmi", mdd->iface[i].num, dev, sizeof(dev));
 				qcqmi_queue_resume(mq->queue, dev, imei);
 				break;
+#endif /* __QCQMI */
 
 			default:
 				printf("(EE) %s() queue %s not implemented\n", __func__, str_proto(mq->proto));
@@ -244,9 +257,11 @@ int modem_queues_last_error(modem_t* modem, modem_proto_t proto)
 				res = ((at_queue_t*)mq->queue)->last_error;
 				break;
 
+#ifdef __QCQMI
 			case MODEM_PROTO_QCQMI:
 				res = ((qcqmi_queue_t*)mq->queue)->last_error;
 				break;
+#endif /* __QCQMI */
 
 			default:
 				printf("(EE) %s() queue %s not implemented\n", __func__, str_proto(mq->proto));

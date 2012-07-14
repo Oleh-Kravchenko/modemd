@@ -34,8 +34,6 @@ proto/at/at_common.c
 proto/at/at_common.h
 proto/at/at_queue.c
 proto/at/at_queue.h
-proto/qcqmi/qcqmi_queue.c
-proto/qcqmi/qcqmi_queue.h
 hw/hw_common.c
 hw/hw_common.h
 modems/modem_conf.c
