@@ -7,10 +7,6 @@
 
 /*------------------------------------------------------------------------*/
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
-/*------------------------------------------------------------------------*/
-
 typedef void *(*registration_func_t)(modem_t*);
 
 typedef void *(*pthread_func_t)(void*);
@@ -25,11 +21,11 @@ typedef time_t (*get_network_time_func_t)(modem_t* modem);
 
 typedef char* (*get_imsi_func_t)(modem_t* modem, char* imsi, size_t len);
 
-typedef char* (*get_operator_name_func_t)(modem_t* modem, char *oper, size_t len);
+typedef char* (*get_operator_name_func_t)(modem_t* modem, char* oper, size_t len);
 
 typedef modem_network_reg_t (*network_registration_func_t)(modem_t* modem);
 
-typedef char* (*get_network_type_func_t)(modem_t* modem, char *network, size_t len);
+typedef char* (*get_network_type_func_t)(modem_t* modem, char* network, size_t len);
 
 typedef int (*change_pin_func_t)(modem_t* modem, const char* old_pin, const char* new_pin);
 

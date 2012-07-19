@@ -345,7 +345,9 @@ usb_device_info_t* modem_get_info(modem_t* modem, usb_device_info_t *mi)
 
 int modem_operator_scan(modem_t* modem, modem_oper_t** opers)
 {
-	return(at_operator_scan(modem, opers));
+	const modem_db_device_t* mdd = modem->mdd;
+
+	return(mdd->functions.operator_scan(modem, opers));
 }
 
 /*------------------------------------------------------------------------*/
@@ -400,7 +402,9 @@ int modem_operator_scan_is_running(modem_t* modem)
 
 int modem_get_cell_id(modem_t* modem)
 {
-	return(at_get_cell_id(modem));
+	const modem_db_device_t* mdd = modem->mdd;
+
+	return(mdd->functions.get_cell_id(modem));
 }
 
 /*------------------------------------------------------------------------*/

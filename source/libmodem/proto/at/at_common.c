@@ -337,7 +337,7 @@ modem_fw_ver_t* at_get_fw_version(modem_t* modem, modem_fw_ver_t* fw_info)
 
 /*------------------------------------------------------------------------*/
 
-char* at_get_operator_name(modem_t* modem, char* oper, int len)
+char* at_get_operator_name(modem_t* modem, char* oper, size_t len)
 {
 	at_queue_t* at_q;
 	at_query_t* q;
@@ -374,7 +374,7 @@ char* at_get_operator_name(modem_t* modem, char* oper, int len)
 
 /*-------------------------------------------------------------------------*/
 
-char* at_get_operator_number(modem_t* modem, char* oper_number, int len)
+char* at_get_operator_number(modem_t* modem, char* oper_number, size_t len)
 {
 	at_queue_t* at_q;
 	at_query_t* q;

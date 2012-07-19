@@ -13,6 +13,8 @@ JMK_O_OBJS = proto.o \
     at/at.o \
     qcqmi/qcqmi.o
 
+JMK_CFLAGS+=-D__QCQMI
+
 include $(JMK_ROOT)/pkg/modemd/modemd.mak
 
 $(call JMKE_INCLUDE_RULES)

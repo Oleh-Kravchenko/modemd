@@ -10,7 +10,7 @@ JMK_SUBDIRS=proto hw modems utils
 
 JMK_RAMDISK_LIB_FILES=$(JMK_SO_TARGET)
 
-JMK_CFLAGS=-I$(JMK_ROOT)/pkg/modemd/source/libmodem/proto
+JMK_CFLAGS=-I$(JMK_ROOT)/pkg/modemd/source/libmodem/proto -D__QCQMI
 
 OBJS=rpc.o modem_str.o
 
@@ -24,7 +24,6 @@ JMK_O_OBJS_$(JMK_A_TARGET)=$(OBJS) \
     utils/utils.o \
     modems/modems.o \
     proto/protocols.o \
-
 
 include $(JMK_ROOT)/pkg/modemd/modemd.mak
 

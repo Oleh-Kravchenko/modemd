@@ -490,7 +490,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_CHECK_REGISTRATION)
 		{
-			priv->reg.state.reg = mc77x0_at_network_registration(priv);
+			priv->reg.state.reg = mdd->functions.network_registration(priv);
 
 //			printf("%s\n", str_network_registration(priv->reg.state.reg));
 
@@ -524,7 +524,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_GET_NETWORK_TYPE)
 		{
-			mc7750_at_get_network_type(priv, priv->reg.state.network_type, sizeof(priv->reg.state.network_type));
+			mdd->functions.get_network_type(priv, priv->reg.state.network_type, sizeof(priv->reg.state.network_type));
 
 			state = RS_GET_OPERATOR_NUMBER;
 		}
@@ -537,7 +537,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_GET_OPERATOR_NAME)
 		{
-			if(!at_get_operator_name(priv, priv->reg.state.oper, sizeof(priv->reg.state.oper)))
+			if(!mdd->functions.get_operator_name(priv, priv->reg.state.oper, sizeof(priv->reg.state.oper)))
 				*priv->reg.state.oper = 0;
 
 			state = RS_CHECK_REGISTRATION;

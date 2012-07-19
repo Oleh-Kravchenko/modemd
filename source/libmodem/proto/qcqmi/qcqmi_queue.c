@@ -16,7 +16,7 @@ qcqmi_queue_t* qcqmi_queue_open(const char* dev, const char* imei)
 		return(res);
 
 	res->terminate = 0;
-	res->last_error = QCWWANConnect(dev, imei);
+	res->last_error = QCWWANConnect((CHAR*)dev, (CHAR*)imei);
 
 	printf("(II) QCWWAN2kConnect(%s, %s) = %d\n", dev, imei, res->last_error);
 
@@ -26,6 +26,8 @@ qcqmi_queue_t* qcqmi_queue_open(const char* dev, const char* imei)
 
 		res = NULL;
 	}
+
+	pthread_mutex_init(&res->mutex, NULL);
 
 	return(res);
 }
@@ -38,6 +40,8 @@ void qcqmi_queue_destroy(qcqmi_queue_t* queue)
 		return;
 
 	QCWWANDisconnect();
+
+	pthread_mutex_destroy(&queue->mutex);
 
 	free(queue);
 }

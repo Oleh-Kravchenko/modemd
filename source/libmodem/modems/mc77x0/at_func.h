@@ -5,9 +5,9 @@
 
 unsigned int mc77x0_at_get_freq_band(modem_t* modem);
 
-char* mc77x0_at_get_network_type(modem_t* modem, char *network, int len);
+char* mc77x0_at_get_network_type(modem_t* modem, char *network, size_t len);
 
-char* mc7750_at_get_network_type(modem_t* modem, char* network, int len);
+char* mc7750_at_get_network_type(modem_t* modem, char* network, size_t len);
 
 int mc77x0_at_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq);
 

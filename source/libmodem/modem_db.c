@@ -22,11 +22,16 @@ modem_db_device_t modem_db_devices[] = {
 			},
 		},
 		.functions		= {
-			.get_fw_version		= at_get_fw_version,
-			.get_imsi			= at_get_imsi,
-			.get_imei			= at_get_imei,
-			.get_network_time	= at_get_network_time,
-			.get_signal_quality	= at_get_signal_quality,
+			.get_fw_version			= at_get_fw_version,
+			.get_imsi				= at_get_imsi,
+			.get_imei				= at_get_imei,
+			.get_network_time		= at_get_network_time,
+			.get_signal_quality		= at_get_signal_quality,
+			.get_cell_id			= at_get_cell_id,
+//			.get_network_type		= at_get_network_type,
+			.network_registration	= at_network_registration,
+			.get_operator_name		= at_get_operator_name,
+			.operator_scan			= at_operator_scan,
 		},
 	},
 	{
@@ -43,11 +48,16 @@ modem_db_device_t modem_db_devices[] = {
 			},
 		},
 		.functions		= {
-			.get_fw_version		= mc77x0_at_get_fw_version,
-			.get_imsi			= at_get_imsi,
-			.get_imei			= at_get_imei,
-			.get_network_time	= at_get_network_time,
-			.get_signal_quality	= at_get_signal_quality,
+			.get_fw_version			= mc77x0_at_get_fw_version,
+			.get_imsi				= at_get_imsi,
+			.get_imei				= at_get_imei,
+			.get_network_time		= at_get_network_time,
+			.get_signal_quality		= at_get_signal_quality,
+			.get_cell_id			= at_get_cell_id,
+//			.get_network_type		= at_get_network_type,
+			.network_registration	= at_network_registration,
+			.get_operator_name		= at_get_operator_name,
+			.operator_scan			= at_operator_scan,
 		},
 	},
 	{
@@ -68,27 +78,36 @@ modem_db_device_t modem_db_devices[] = {
 			},
 		},
 		.functions		= {
-			.get_fw_version		= mc77x0_at_get_fw_version,
+			.get_fw_version			= mc77x0_at_get_fw_version,
 #ifdef __QCQMI
-			.get_imsi			= qcqmi_get_imsi,
-			.get_imei			= qcqmi_get_imei,
-			.get_network_time	= qcqmi_get_network_time,
-			.get_signal_quality	= qcqmi_get_signal_quality,
+			.get_imsi				= qcqmi_get_imsi,
+			.get_imei				= qcqmi_get_imei,
+			.get_network_time		= qcqmi_get_network_time,
+			.get_signal_quality		= qcqmi_get_signal_quality,
+			.get_cell_id			= qcqmi_get_cell_id,
+			.get_network_type		= qcqmi_get_network_type,
+			.network_registration	= qcqmi_network_registration,
+			.get_operator_name		= qcqmi_get_operator_name,
+			.operator_scan			= qcqmi_operator_scan,
 #else
-			.get_imsi			= at_get_imsi,
-			.get_imei			= at_get_imei,
-			.get_network_time	= at_get_network_time,
-			.get_signal_quality	= at_get_signal_quality,
+			.get_imsi				= at_get_imsi,
+			.get_imei				= at_get_imei,
+			.get_network_time		= at_get_network_time,
+			.get_signal_quality		= at_get_signal_quality,
+			.get_cell_id			= at_get_cell_id,
+			.get_network_type		= at_get_network_type,
+			.network_registration	= at_network_registration,
+			.get_operator_name		= at_get_operator_name,
+			.operator_scan			= at_operator_scan,
 #endif
+			.get_signal_quality		= at_get_signal_quality,
+
 /*
-			__MODEM_DB_FUNC(get_operator_name);
-			__MODEM_DB_FUNC(network_registration);
-			__MODEM_DB_FUNC(get_network_type);
-			__MODEM_DB_FUNC(change_pin);
 			__MODEM_DB_FUNC(get_fw_version);
-			__MODEM_DB_FUNC(operator_scan);
-			__MODEM_DB_FUNC(get_cell_id);
+			__MODEM_DB_FUNC(change_pin);				UIMChangePIN()
+														UIMVerifyPIN()
 */
+
 		},
 	},
 };

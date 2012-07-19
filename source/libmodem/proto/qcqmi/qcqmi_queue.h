@@ -1,6 +1,8 @@
 #ifndef __QCQMI_QUEUE_H
 #define __QCQMI_QUEUE_H
 
+#include <pthread.h>
+
 #include "modem/types.h"
 
 /*------------------------------------------------------------------------*/
@@ -10,6 +12,8 @@ typedef struct
 	int terminate;
 
 	unsigned long last_error;
+
+	pthread_mutex_t mutex;
 } qcqmi_queue_t;
 
 /*------------------------------------------------------------------------*/

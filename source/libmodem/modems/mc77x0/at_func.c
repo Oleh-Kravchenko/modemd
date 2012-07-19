@@ -193,7 +193,7 @@ unsigned int mc77x0_at_get_freq_band(modem_t* modem)
 
 /*------------------------------------------------------------------------*/
 
-char* at_get_network_type_gstatus(modem_t* modem, char *network, int len)
+char* at_get_network_type_gstatus(modem_t* modem, char *network, size_t len)
 {
 	at_queue_t* at_q;
 	at_query_t* q;
@@ -243,7 +243,7 @@ void mc77x0_modem_sw_reset(modem_t* modem)
 
 /*------------------------------------------------------------------------*/
 
-char* mc77x0_at_get_network_type(modem_t* modem, char* network, int len)
+char* mc77x0_at_get_network_type(modem_t* modem, char* network, size_t len)
 {
 	at_queue_t* at_q;
 	at_query_t* q;
@@ -270,7 +270,7 @@ char* mc77x0_at_get_network_type(modem_t* modem, char* network, int len)
 
 /*------------------------------------------------------------------------*/
 
-char* mc7750_at_get_network_type(modem_t* modem, char *network, int len)
+char* mc7750_at_get_network_type(modem_t* modem, char *network, size_t len)
 {
 	if(mc77x0_at_get_network_type(modem, network, len))
 		return(network);
