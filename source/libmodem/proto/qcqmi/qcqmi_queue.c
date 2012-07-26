@@ -8,6 +8,17 @@
 
 /*------------------------------------------------------------------------*/
 
+static int8_t static_signalStrength = 0;
+
+void SignalStrengthCallback(int8_t signalStrength, unsigned long radioInterface)
+{
+	printf("(CB) %s() signalStrength = %d, radioInterface = %d\n",
+		__func__, signalStrength, radioInterface
+	);
+}
+
+/*------------------------------------------------------------------------*/
+
 qcqmi_queue_t* qcqmi_queue_open(const char* dev, const char* imei)
 {
 	qcqmi_queue_t* res;
@@ -15,19 +26,23 @@ qcqmi_queue_t* qcqmi_queue_open(const char* dev, const char* imei)
 	if(!(res = malloc(sizeof(*res))))
 		return(res);
 
-	res->terminate = 0;
-	res->last_error = QCWWANConnect((CHAR*)dev, (CHAR*)imei);
+	memset(res, 0, sizeof(*res));
 
-	printf("(II) QCWWAN2kConnect(%s, %s) = %d\n", dev, imei, res->last_error);
+	printf("(II) QCWWAN2kConnect(%s, %s) = %d\n",
+		dev, imei, res->last_error = QCWWANConnect((CHAR*)dev, (CHAR*)imei));
 
 	if(res->last_error != eQCWWAN_ERR_NONE)
 	{
 		free(res);
 
 		res = NULL;
+
+		return(res);
 	}
 
 	pthread_mutex_init(&res->mutex, NULL);
+
+	SetSignalStrengthCallback(SignalStrengthCallback, sizeof(static_signalStrength), &static_signalStrength);
 
 	return(res);
 }
@@ -38,6 +53,8 @@ void qcqmi_queue_destroy(qcqmi_queue_t* queue)
 {
 	if(!queue)
 		return;
+
+	SetSignalStrengthCallback(NULL, 0, NULL);
 
 	QCWWANDisconnect();
 

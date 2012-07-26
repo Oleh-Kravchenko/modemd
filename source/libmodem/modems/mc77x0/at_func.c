@@ -4,10 +4,12 @@
 #include <modem/types.h>
 
 #include "proto.h"
+
 #include "at/at_queue.h"
 #include "at/at_common.h"
 
 #include "utils/re.h"
+#include "utils/str.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -315,4 +317,102 @@ modem_fw_ver_t* mc77x0_at_get_fw_version(modem_t* modem, modem_fw_ver_t* fw_info
 	at_query_free(q);
 
 	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+time_t mc77x0_at_get_network_time(modem_t* modem)
+{
+	at_queue_t* at_q;
+	at_query_t* q;
+	char dt[24];
+	struct tm tm;
+	time_t t = 0;
+
+	if(!(at_q = modem_proto_get(modem, MODEM_PROTO_AT)))
+		return(t);
+
+	q = at_query_create("AT!TIME?\r\n", "!TIME:.*\r\n([0-9,/]+\r\n[0-9,:]+) \\(local\\)\r\n[0-9,/]+\r\n[0-9,:]+ \\(UTC\\)\r\n\r\n\r\nOK\r\n");
+	at_query_exec(at_q->queue, q);
+
+	/* cutting TIME from the reply */
+	if(!at_query_is_error(q))
+	{
+		re_strncpy(dt, sizeof(dt), q->result, q->pmatch + 1);
+
+		/* parsing date and time */
+		strptime(dt, "%Y/%m/%d\r\n%H:%M:%S", &tm);
+
+		t = mktime(&tm);
+	}
+
+	at_query_free(q);
+
+	return(t);
+}
+
+/*------------------------------------------------------------------------*/
+
+int mc77x0_at_get_cell_id(modem_t* modem)
+{
+	int cell_id = 0;
+	at_queue_t* at_q;
+	at_query_t *q;
+
+	if(!(at_q = modem_proto_get(modem, MODEM_PROTO_AT)))
+		return(cell_id);
+
+	q = at_query_create("AT!GSMINFO?\r\n", "!GSMINFO:.*\r\nCell ID:[\t]*([0-9]+)\r\n.*\r\nOK\r\n");
+	at_query_exec(at_q->queue, q);
+
+	/* cutting Cell ID number from the reply */
+	if(!at_query_is_error(q))
+		cell_id = re_atoi(q->result, q->pmatch + 1);
+
+	at_query_free(q);
+
+	return(cell_id);
+}
+
+/*------------------------------------------------------------------------*/
+
+char* mc77x0_at_get_ccid(modem_t* modem, char* s, size_t len)
+{
+	char ccid[21] = {0};
+	at_queue_t* at_q;
+	at_query_t* q;
+	int i;
+
+	if(!(at_q = modem_proto_get(modem, MODEM_PROTO_AT)))
+		return(NULL);
+
+	q = at_query_create("AT+CRSM=176,12258,0,0,10\r\n", "\r\n\\+CRSM: 144,0,\"([0-9AFaf]+)\"\r\n\r\nOK\r\n");
+	at_query_exec(at_q->queue, q);
+
+	/* cutting ccid from the reply */
+	if(!at_query_is_error(q))
+	{
+		re_strncpy(ccid, sizeof(ccid), q->result, q->pmatch + 1);
+
+		for(i = 0; i < 20; i += 2)
+		{
+			if(ccid[i] == ccid[i + 1])
+				continue;
+
+			/* swapping symbols */
+			ccid[i] = ccid[i] + ccid[i + 1];
+			ccid[i + 1] = ccid[i] - ccid[i + 1];
+			ccid[i] = ccid[i] - ccid[i + 1];
+		}
+
+		trim_r_esc(ccid, "F");
+		trim_r_esc(ccid, "f");
+
+		strncpy(s, ccid, len - 1);
+		s[len - 1] = 0;
+	}
+
+	at_query_free(q);
+
+	return(*ccid ? s : NULL);
 }

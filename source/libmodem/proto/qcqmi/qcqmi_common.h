@@ -21,4 +21,8 @@ char* qcqmi_get_operator_name(modem_t* modem, char* oper, size_t len);
 
 int qcqmi_operator_scan(modem_t* modem, modem_oper_t** opers);
 
+int qcqmi_operator_select(modem_t* modem, int hni, modem_oper_act_t act);
+
+char* qcqmi_get_operator_number(modem_t* modem, char* oper_number, size_t len);
+
 #endif

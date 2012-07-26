@@ -1,9 +1,10 @@
 #include <time.h>
+#include <math.h>
+
+#include <modem/types.h>
 
 #include <SWIWWANCMAPI.h>
 #include <qmerrno.h>
-
-#include <modem/types.h>
 
 #include "qcqmi_queue.h"
 
@@ -11,16 +12,79 @@
 
 struct QmiNas3GppNetworkInfo
 {
-	WORD pMCC;
-	WORD pMNC;
-	ULONG pInUse;
-	ULONG pRoaming;
-	ULONG pForbidden;
-	ULONG pPreferred;
-	CHAR pDesription[0xff];
+	WORD mcc;
+
+	WORD mnc;
+
+	ULONG inuse;
+
+	ULONG roaming;
+
+	ULONG forbidden;
+
+	ULONG preferred;
+
+	CHAR name[0xff];
 };
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
+
+static void qcqmi_update_state(modem_t* modem)
+{
+	qcqmi_queue_t* qcqmi_q;
+	uint8_t i;
+
+	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
+		return;
+
+	pthread_mutex_lock(&qcqmi_q->mutex);
+
+	if(time(NULL) > qcqmi_q->state.next_update)
+	{
+		qcqmi_q->state.network_type_size = sizeof(qcqmi_q->state.network_type);
+
+		printf("(II) GetServingNetwork() = %d\n",
+			qcqmi_q->last_error = GetServingNetwork(
+				&qcqmi_q->state.reg_state,
+				&qcqmi_q->state.cs_domain,
+				&qcqmi_q->state.ps_domain,
+				&qcqmi_q->state.ran,
+				&qcqmi_q->state.network_type_size,
+				qcqmi_q->state.network_type,
+				&qcqmi_q->state.roaming,
+				&qcqmi_q->state.mcc,
+				&qcqmi_q->state.mnc,
+				sizeof(qcqmi_q->state.oper_name),
+				qcqmi_q->state.oper_name
+			)
+		);
+
+		if(qcqmi_q->last_error == eQCWWAN_ERR_NONE)
+		{
+			qcqmi_q->state.next_update = time(NULL) + 10;
+
+			printf("\treg_state = %d, cs_domain = %d, ps_domain = %d, ran = %d, roaming = %d, mcc = %d, mnc = %d, oper_name = %s\n",
+				qcqmi_q->state.reg_state,
+				qcqmi_q->state.cs_domain,
+				qcqmi_q->state.ps_domain,
+				qcqmi_q->state.ran,
+				qcqmi_q->state.roaming,
+				qcqmi_q->state.mcc,
+				qcqmi_q->state.mnc,
+				qcqmi_q->state.oper_name
+			);
+
+			printf("\tnetwork_type length = %d\n", qcqmi_q->state.network_type_size);
+
+			for(i = 0; i < qcqmi_q->state.network_type_size; ++ i)
+				printf("\t\tnetwork_type = %d\n", qcqmi_q->state.network_type[i]);
+		}
+	}
+
+	pthread_mutex_unlock(&qcqmi_q->mutex);
+}
+
+/*------------------------------------------------------------------------*/
 
 char* qcqmi_get_imsi(modem_t* modem, char* imsi, size_t len)
 {
@@ -31,7 +95,7 @@ char* qcqmi_get_imsi(modem_t* modem, char* imsi, size_t len)
 
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
-	printf("%s:%d (II) GetIMSI() = %d\n", __FILE__, __LINE__,
+	printf("(II) GetIMSI() = %d\n",
 		qcqmi_q->last_error = GetIMSI(len, imsi));
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
@@ -46,7 +110,7 @@ char* qcqmi_get_imsi(modem_t* modem, char* imsi, size_t len)
 	return(NULL);
 }
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
 char* qcqmi_get_imei(modem_t* modem, char* imei, size_t len)
 {
@@ -58,7 +122,7 @@ char* qcqmi_get_imei(modem_t* modem, char* imei, size_t len)
 
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
-	printf("%s:%d (II) GetSerialNumbers() = %d\n", __FILE__, __LINE__,
+	printf("(II) GetSerialNumbers() = %d\n",
 		qcqmi_q->last_error = GetSerialNumbers(sizeof(esn), esn, len, imei, sizeof(meid), meid));
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
@@ -73,7 +137,7 @@ char* qcqmi_get_imei(modem_t* modem, char* imei, size_t len)
 	return(NULL);
 }
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
 time_t qcqmi_get_network_time(modem_t* modem)
 {
@@ -88,7 +152,7 @@ time_t qcqmi_get_network_time(modem_t* modem)
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
 	/* count of 1.25 ms that have elapsed from the start of GPS time (Jan 6, 1980) */
-	printf("%s:%d (II) GetNetworkTime() = %d\n", __FILE__, __LINE__,
+	printf("(II) GetNetworkTime() = %d\n",
 		qcqmi_q->last_error = GetNetworkTime(&ts_modem, &ts_src));
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
@@ -118,7 +182,7 @@ int qcqmi_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
-	printf("%s:%d (II) GetSignalStrength() = %d\n", __FILE__, __LINE__,
+	printf("(II) GetSignalStrength() = %d\n",
 		qcqmi_q->last_error = GetSignalStrength(&sq->dbm, &radio));
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
@@ -135,8 +199,6 @@ int qcqmi_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 
 	printf("\tdbm = %d, level = %d, radio = %ld\n", sq->dbm, sq->level, radio);
 
-	qcqmi_get_cell_id(modem);
-
 	return(0);
 }
 
@@ -152,7 +214,7 @@ int qcqmi_get_cell_id(modem_t* modem)
 
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
-	printf("%s:%d (II) SLQSGetServingSystem() = %d\n", __FILE__, __LINE__,
+	printf("(II) SLQSGetServingSystem() = %d\n",
 		qcqmi_q->last_error = SLQSGetServingSystem(&srv));
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
@@ -160,7 +222,15 @@ int qcqmi_get_cell_id(modem_t* modem)
 	if(qcqmi_q->last_error != eQCWWAN_ERR_NONE)
 		return(0);
 
-	printf("\tcell id = %d\n", srv.CellID);
+    printf("\tSystemID = %d, NetworkID = %d, BasestationID = %d, BasestationLatitude = %d, BasestationLongitude = %d, Lac = %d, CellID = %d\n",
+		srv.SystemID,
+		srv.NetworkID,
+		srv.BasestationID,
+		srv.BasestationLatitude,
+		srv.BasestationLongitude,
+		srv.Lac,
+		srv.CellID
+	);
 
 	return(srv.CellID);
 }
@@ -170,44 +240,21 @@ int qcqmi_get_cell_id(modem_t* modem)
 char* qcqmi_get_network_type(modem_t* modem, char* network, size_t len)
 {
 	qcqmi_queue_t* qcqmi_q;
-	unsigned long reg_state;
-	unsigned long cs_domain;
-	unsigned long ps_domain;
-	unsigned long ran;
-	unsigned long roaming = 0;
-	uint8_t network_type[0x32];
-	uint8_t network_type_size = sizeof(network_type);
-	uint16_t mcc;
-	uint16_t mnc;
-	char oper_name[0x32];
+	uint8_t network_type = 0;
 
 	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
 		return(NULL);
 
+	qcqmi_update_state(modem);
+
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
-	printf("%s:%d (II) GetServingNetwork() = %d\n", __FILE__, __LINE__,
-		qcqmi_q->last_error = GetServingNetwork(
-			&reg_state,
-			&cs_domain,
-			&ps_domain,
-			&ran,
-			&network_type_size,
-			network_type,
-			&roaming,
-			&mcc,
-			&mnc,
-			sizeof(oper_name),
-			oper_name
-		)
-	);
+	if(qcqmi_q->state.network_type_size)
+		network_type = qcqmi_q->state.network_type[0];
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
 
-	if(qcqmi_q->last_error != eQCWWAN_ERR_NONE)
-		return(NULL);
-
-	switch(network_type[0])
+	switch(network_type)
 	{
 		case 1:
 			strncpy(network, "CDMA 1xRTT", len);
@@ -247,10 +294,6 @@ char* qcqmi_get_network_type(modem_t* modem, char* network, size_t len)
 
 	network[len - 1] = 0;
 
-	printf("\tnetwork_type = %d %s\n", network_type[0], network);
-
-//	printf("\toperator name = %s\n", oper_name);
-
 	return(network);
 }
 
@@ -260,52 +303,25 @@ modem_network_reg_t qcqmi_network_registration(modem_t* modem)
 {
 	modem_network_reg_t res = MODEM_NETWORK_REG_UNKNOWN;
 	qcqmi_queue_t* qcqmi_q;
-	unsigned long reg_state;
-	unsigned long cs_domain;
-	unsigned long ps_domain;
-	unsigned long ran;
-	unsigned long roaming = 0;
-	uint8_t network_type[0x32];
-	uint8_t network_type_size = sizeof(network_type);
-	uint16_t mcc;
-	uint16_t mnc;
-	char oper_name[0x32];
+	unsigned long roaming;
 
 	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
 		return(res);
 
+	qcqmi_update_state(modem);
+
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
-	printf("%s:%d (II) GetServingNetwork() = %d\n", __FILE__, __LINE__,
-		qcqmi_q->last_error = GetServingNetwork(
-			&reg_state,
-			&cs_domain,
-			&ps_domain,
-			&ran,
-			&network_type_size,
-			network_type,
-			&roaming,
-			&mcc,
-			&mnc,
-			sizeof(oper_name),
-			oper_name
-		)
-	);
+	res = qcqmi_q->state.reg_state;
+	roaming = qcqmi_q->state.roaming;
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
 
 	if(qcqmi_q->last_error != eQCWWAN_ERR_NONE)
 		return(res);
 
-	res = reg_state;
-
 	if(roaming)
 		res = MODEM_NETWORK_REG_ROAMING;
-
-	printf("\treg_state = %d, roaming = %d, text = %s\n",
-		reg_state, roaming, str_network_registration(res));
-
-//	printf("\toperator name = %s\n", oper_name);
 
 	return(res);
 }
@@ -315,48 +331,26 @@ modem_network_reg_t qcqmi_network_registration(modem_t* modem)
 char* qcqmi_get_operator_name(modem_t* modem, char* oper, size_t len)
 {
 	qcqmi_queue_t* qcqmi_q;
-	unsigned long reg_state;
-	unsigned long cs_domain;
-	unsigned long ps_domain;
-	unsigned long ran;
-	unsigned long roaming = 0;
-	uint8_t network_type[0x32];
-	uint8_t network_type_size = sizeof(network_type);
-	uint16_t mcc;
-	uint16_t mnc;
 
 	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
 		return(NULL);
 
+	qcqmi_update_state(modem);
+
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
-	printf("%s:%d (II) GetServingNetwork() = %d\n", __FILE__, __LINE__,
-		qcqmi_q->last_error = GetServingNetwork(
-			&reg_state,
-			&cs_domain,
-			&ps_domain,
-			&ran,
-			&network_type_size,
-			network_type,
-			&roaming,
-			&mcc,
-			&mnc,
-			len,
-			oper
-		)
-	);
+	strncpy(oper, qcqmi_q->state.oper_name, len);
+	oper[len - 1] = 0;
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
 
 	if(qcqmi_q->last_error != eQCWWAN_ERR_NONE)
 		return(NULL);
 
-	printf("\toperator name = %s\n", oper);
-
 	return(oper);
 }
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------*/
 
 int qcqmi_operator_scan(modem_t* modem, modem_oper_t** opers)
 {
@@ -369,7 +363,7 @@ int qcqmi_operator_scan(modem_t* modem, modem_oper_t** opers)
 
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
-	printf("%s:%d (II) PerformNetworkScan() = %d\n", __FILE__, __LINE__,
+	printf("(II) PerformNetworkScan() = %d\n",
 		qcqmi_q->last_error = PerformNetworkScan(&nni, (BYTE*)ni)
 	);
 
@@ -386,20 +380,101 @@ int qcqmi_operator_scan(modem_t* modem, modem_oper_t** opers)
 	for(i = 0; i < nni; ++ i)
 	{
 		printf("\tmcc = %d, mnc = %d, InUse = %d, Roaming = %d, Forbidden = %d, Preferred = %d, Description = %s\n",
-			ni[i].pMCC, ni[i].pMNC, ni[i].pInUse, ni[i].pRoaming, ni[i].pForbidden, ni[i].pPreferred, ni[i].pDesription);
+			ni[i].mcc, ni[i].mnc, ni[i].inuse, ni[i].roaming, ni[i].forbidden, ni[i].preferred, ni[i].name);
 
-		(*opers)[i].stat = 1;
+		if(ni[i].inuse == 1)
+			(*opers)[i].stat = MODEM_OPER_STAT_CURRENT;
+		else if(ni[i].forbidden == 1)
+			(*opers)[i].stat = MODEM_OPER_STAT_FORBIDDEN;
+		else if(ni[i].forbidden == 2)
+			(*opers)[i].stat = MODEM_OPER_STAT_AVAILABLE;
+		else
+			(*opers)[i].stat = MODEM_OPER_STAT_UNKNOWN;
 
-		strncpy((*opers)[i].longname, ni[i].pDesription, sizeof((*opers)[i].longname));
+		strncpy((*opers)[i].longname, ni[i].name, sizeof((*opers)[i].longname));
 		(*opers)[i].longname[sizeof((*opers)[i].longname) -1] = 0;
 
-		strncpy((*opers)[i].shortname, ni[i].pDesription, sizeof((*opers)[i].shortname));
+		strncpy((*opers)[i].shortname, ni[i].name, sizeof((*opers)[i].shortname));
 		(*opers)[i].shortname[sizeof((*opers)[i].shortname) -1] = 0;
 
-		snprintf((*opers)[i].numeric, sizeof((*opers)[i].numeric), "%03d%02d", ni[i].pMCC, ni[i].pMNC);
+		snprintf((*opers)[i].numeric, sizeof((*opers)[i].numeric), "%03d%02d", ni[i].mcc, ni[i].mnc);
 
-		(*opers)[i].act = 0;
+		(*opers)[i].act = MODEM_OPER_ACT_GSM;
 	}
 
 	return(nni);
+}
+
+/*------------------------------------------------------------------------*/
+
+int qcqmi_operator_select(modem_t* modem, int hni, modem_oper_act_t act)
+{
+	unsigned long reg_type = 1, rat = 5;
+	uint16_t mcc = 0, mnc = 0;
+	qcqmi_queue_t* qcqmi_q;
+	enum eQCWWANError err;
+
+	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
+		return(0);
+
+	/* reg_type, mcc, mnc and rat */
+	if(hni)
+	{
+		// mnc length calculation
+		int mnc_len = hni > 99999 ? 1000 : 100;
+
+		mcc = hni / mnc_len;
+		mnc = hni % mnc_len;
+
+		reg_type = 2;
+
+		/* rat */
+		switch(act)
+		{
+			case MODEM_OPER_ACT_GSM:
+				rat = 4;
+				break;
+
+			case MODEM_OPER_ACT_UTRAN:
+				rat = 5;
+				break;
+
+			default:
+				rat = 5;
+				break;
+		}
+	}
+
+	pthread_mutex_lock(&qcqmi_q->mutex);
+
+	printf("(II) InitiateNetworkRegistration(reg_type = %d, mcc = %d, mnc = %d, rat = %d) = %d\n",
+		reg_type, mcc, mnc, rat,
+		err = qcqmi_q->last_error = InitiateNetworkRegistration(reg_type, mcc, mnc, rat)
+	);
+
+	pthread_mutex_unlock(&qcqmi_q->mutex);
+
+	return(err != eQCWWAN_ERR_NONE);
+}
+
+/*------------------------------------------------------------------------*/
+
+char* qcqmi_get_operator_number(modem_t* modem, char* oper_number, size_t len)
+{
+	qcqmi_queue_t* qcqmi_q;
+	char* res = NULL;
+
+	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
+		return(NULL);
+
+	qcqmi_update_state(modem);
+
+	pthread_mutex_lock(&qcqmi_q->mutex);
+
+	if(qcqmi_q->state.mcc && qcqmi_q->state.mnc)
+		snprintf(res = oper_number, len, "%03d%02d", qcqmi_q->state.mcc, qcqmi_q->state.mnc);
+
+	pthread_mutex_unlock(&qcqmi_q->mutex);
+
+	return(res);
 }

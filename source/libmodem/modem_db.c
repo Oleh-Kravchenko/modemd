@@ -10,6 +10,7 @@
 /*------------------------------------------------------------------------*/
 
 modem_db_device_t modem_db_devices[] = {
+#if 0
 	{
 		/* HUAWEI E1550 */
 		.vendor_id	= 0x12d1,
@@ -22,16 +23,6 @@ modem_db_device_t modem_db_devices[] = {
 			},
 		},
 		.functions		= {
-			.get_fw_version			= at_get_fw_version,
-			.get_imsi				= at_get_imsi,
-			.get_imei				= at_get_imei,
-			.get_network_time		= at_get_network_time,
-			.get_signal_quality		= at_get_signal_quality,
-			.get_cell_id			= at_get_cell_id,
-//			.get_network_type		= at_get_network_type,
-			.network_registration	= at_network_registration,
-			.get_operator_name		= at_get_operator_name,
-			.operator_scan			= at_operator_scan,
 		},
 	},
 	{
@@ -48,18 +39,9 @@ modem_db_device_t modem_db_devices[] = {
 			},
 		},
 		.functions		= {
-			.get_fw_version			= mc77x0_at_get_fw_version,
-			.get_imsi				= at_get_imsi,
-			.get_imei				= at_get_imei,
-			.get_network_time		= at_get_network_time,
-			.get_signal_quality		= at_get_signal_quality,
-			.get_cell_id			= at_get_cell_id,
-//			.get_network_type		= at_get_network_type,
-			.network_registration	= at_network_registration,
-			.get_operator_name		= at_get_operator_name,
-			.operator_scan			= at_operator_scan,
 		},
 	},
+#endif
 	{
 		/* Sierra Wireless MC7750 */
 		.vendor		= "Sierra Wireless, Incorporated",
@@ -78,8 +60,20 @@ modem_db_device_t modem_db_devices[] = {
 			},
 		},
 		.functions		= {
+#if 0
 			.get_fw_version			= mc77x0_at_get_fw_version,
-#ifdef __QCQMI
+			.get_imsi				= at_get_imsi,
+			.get_imei				= at_get_imei,
+			.get_network_time		= mc77x0_at_get_network_time,
+			.get_signal_quality		= at_get_signal_quality,
+			.get_cell_id			= mc77x0_at_get_cell_id,
+			.get_network_type		= mc77x0_at_get_network_type,
+			.network_registration	= mc77x0_at_network_registration,
+			.get_operator_name		= at_get_operator_name,
+			.operator_scan			= at_operator_scan,
+			.operator_select		= at_operator_select,
+#else
+			.get_fw_version			= mc77x0_at_get_fw_version,
 			.get_imsi				= qcqmi_get_imsi,
 			.get_imei				= qcqmi_get_imei,
 			.get_network_time		= qcqmi_get_network_time,
@@ -89,25 +83,9 @@ modem_db_device_t modem_db_devices[] = {
 			.network_registration	= qcqmi_network_registration,
 			.get_operator_name		= qcqmi_get_operator_name,
 			.operator_scan			= qcqmi_operator_scan,
-#else
-			.get_imsi				= at_get_imsi,
-			.get_imei				= at_get_imei,
-			.get_network_time		= at_get_network_time,
-			.get_signal_quality		= at_get_signal_quality,
-			.get_cell_id			= at_get_cell_id,
-			.get_network_type		= at_get_network_type,
-			.network_registration	= at_network_registration,
-			.get_operator_name		= at_get_operator_name,
-			.operator_scan			= at_operator_scan,
+			.operator_select		= qcqmi_operator_select,
+			.get_operator_number	= qcqmi_get_operator_number,
 #endif
-			.get_signal_quality		= at_get_signal_quality,
-
-/*
-			__MODEM_DB_FUNC(get_fw_version);
-			__MODEM_DB_FUNC(change_pin);				UIMChangePIN()
-														UIMVerifyPIN()
-*/
-
 		},
 	},
 };

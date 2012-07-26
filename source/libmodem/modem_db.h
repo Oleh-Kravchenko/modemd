@@ -23,6 +23,8 @@ typedef char* (*get_imsi_func_t)(modem_t* modem, char* imsi, size_t len);
 
 typedef char* (*get_operator_name_func_t)(modem_t* modem, char* oper, size_t len);
 
+typedef char* (*get_operator_number_func_t)(modem_t* modem, char* oper_number, size_t len);
+
 typedef modem_network_reg_t (*network_registration_func_t)(modem_t* modem);
 
 typedef char* (*get_network_type_func_t)(modem_t* modem, char* network, size_t len);
@@ -34,6 +36,8 @@ typedef modem_fw_ver_t* (*get_fw_version_func_t)(modem_t* modem, modem_fw_ver_t*
 typedef int (*operator_scan_func_t)(modem_t* modem, modem_oper_t** opers);
 
 typedef int (*get_cell_id_func_t)(modem_t* modem);
+
+typedef int (*operator_select_func_t)(modem_t* modem, int hni, modem_oper_act_t act);
 
 /*------------------------------------------------------------------------*/
 
@@ -61,6 +65,8 @@ typedef struct
 			__MODEM_DB_FUNC(get_fw_version);
 			__MODEM_DB_FUNC(operator_scan);
 			__MODEM_DB_FUNC(get_cell_id);
+			__MODEM_DB_FUNC(operator_select);
+			__MODEM_DB_FUNC(get_operator_number);
 		#undef __MODEM_DB_FUNC
 	} functions;
 

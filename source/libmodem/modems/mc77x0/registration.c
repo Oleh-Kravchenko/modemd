@@ -415,7 +415,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_CCID_LOCK)
 		{
-			if(!at_get_ccid(priv, priv->reg.state.ccid, sizeof(priv->reg.state.ccid)))
+			if(!mc77x0_at_get_ccid(priv, priv->reg.state.ccid, sizeof(priv->reg.state.ccid)))
 			{
 				state_delay = 5;
 
@@ -478,21 +478,19 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_OPERATOR_SELECT)
 		{
-			if(conf.operator_number)
+			if(mdd->functions.operator_select(priv, conf.operator_number, conf.access_technology))
 			{
-				snprintf(s, sizeof(s), "AT+COPS=1,2,%d,%d\r\n", conf.operator_number, conf.access_technology);
-				at_raw_ok(priv, s);
+				// operator selection is failed, wait 5 seconds and try again
+				state_delay = 5;
+
+				continue;
 			}
-			else
-				at_raw_ok(priv, "AT+COPS=0\r\n");
 
 			state = RS_CHECK_REGISTRATION;
 		}
 		else if(state == RS_CHECK_REGISTRATION)
 		{
 			priv->reg.state.reg = mdd->functions.network_registration(priv);
-
-//			printf("%s\n", str_network_registration(priv->reg.state.reg));
 
 			/* if roaming disabled */
 			if(MODEM_NETWORK_REG_ROAMING == priv->reg.state.reg && !conf.roaming)
@@ -530,7 +528,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_GET_OPERATOR_NUMBER)
 		{
-			if(!at_get_operator_number(priv, priv->reg.state.oper_number, sizeof(priv->reg.state.oper_number)))
+			if(!mdd->functions.get_operator_number(priv, priv->reg.state.oper_number, sizeof(priv->reg.state.oper_number)))
 				*priv->reg.state.oper_number = 0;
 
 			state = RS_GET_OPERATOR_NAME;

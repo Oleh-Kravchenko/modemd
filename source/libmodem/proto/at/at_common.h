@@ -68,18 +68,10 @@ char* at_get_operator_number(modem_t* modem, char* oper_number, size_t len);
 
 /*------------------------------------------------------------------------*/
 
-int at_get_cell_id(modem_t* modem);
-
-/*------------------------------------------------------------------------*/
-
-time_t at_get_network_time(modem_t* modem);
-
-/*------------------------------------------------------------------------*/
-
-char* at_get_ccid(modem_t* modem, char* ccid, size_t len);
-
-/*------------------------------------------------------------------------*/
-
 int at_change_pin(modem_t* modem, const char* old_pin, const char* new_pin);
+
+/*------------------------------------------------------------------------*/
+
+int at_operator_select(modem_t* modem, int hni, modem_oper_act_t act);
 
 #endif /* __AT_COMMON_H */
