@@ -13,8 +13,8 @@ modem.c
 )
 
 ADD_LIBRARY(modem_int STATIC ${PROJECT_SOURCES}
-modem_db.c
-modem_db.h
+modem_info.c
+modem_info.h
 modem_int.c
 queue.h
 queue.c

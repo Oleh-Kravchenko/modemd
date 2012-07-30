@@ -2,8 +2,8 @@
 
 #include <modem/modem_str.h>
 
-#include "modem_db.h"
 #include "proto.h"
+#include "modem_info.h"
 
 #include "utils/sysfs.h"
 

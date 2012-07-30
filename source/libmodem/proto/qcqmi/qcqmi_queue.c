@@ -8,19 +8,26 @@
 
 /*------------------------------------------------------------------------*/
 
-static int8_t static_signalStrength = 0;
-
-void SignalStrengthCallback(int8_t signalStrength, unsigned long radioInterface)
+void CallBackSLQSSignalStrengths(struct SLQSSignalStrengthsInformation sssi)
 {
-	printf("(CB) %s() signalStrength = %d, radioInterface = %d\n",
-		__func__, signalStrength, radioInterface
-	);
+	printf("(CB) %s() signal strench = %d dBm\n", __func__, sssi.rxSignalStrengthInfo.rxSignalStrength);
 }
 
 /*------------------------------------------------------------------------*/
 
 qcqmi_queue_t* qcqmi_queue_open(const char* dev, const char* imei)
 {
+	struct SLQSSignalStrengthsIndReq sssiq = {
+		.rxSignalStrengthDelta = 1,
+		.ecioDelta = 1,
+		.ioDelta = 1,
+		.sinrDelta = 1,
+		.rsrqDelta = 1,
+		.ecioThresholdListLen = 5,
+		.ecioThresholdList = {-10, -20, -30, -40, -50,},
+		.sinrThresholdListLen = 5,
+		.sinrThresholdList = {10, 20, 30, 40, 50,},
+	};
 	qcqmi_queue_t* res;
 
 	if(!(res = malloc(sizeof(*res))))
@@ -42,7 +49,7 @@ qcqmi_queue_t* qcqmi_queue_open(const char* dev, const char* imei)
 
 	pthread_mutex_init(&res->mutex, NULL);
 
-	SetSignalStrengthCallback(SignalStrengthCallback, sizeof(static_signalStrength), &static_signalStrength);
+	printf("(II) SLQSSetSignalStrengthsCallback() = %d\n", SLQSSetSignalStrengthsCallback(CallBackSLQSSignalStrengths, &sssiq));
 
 	return(res);
 }
@@ -54,7 +61,7 @@ void qcqmi_queue_destroy(qcqmi_queue_t* queue)
 	if(!queue)
 		return;
 
-	SetSignalStrengthCallback(NULL, 0, NULL);
+	SLQSSetSignalStrengthsCallback(NULL, NULL);
 
 	QCWWANDisconnect();
 

@@ -18,7 +18,7 @@ JMK_O_OBJS_$(JMK_SO_TARGET)=$(OBJS) modem.o
 
 JMK_O_OBJS_$(JMK_A_TARGET)=$(OBJS) \
     queue.o \
-    modem_db.o \
+    modem_info.o \
     modem_int.o \
     hw/hw.o \
     utils/utils.o \

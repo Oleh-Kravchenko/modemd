@@ -171,8 +171,9 @@ time_t qcqmi_get_network_time(modem_t* modem)
 
 int qcqmi_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 {
+	struct slqsSignalStrengthInfo sssi;
 	qcqmi_queue_t* qcqmi_q;
-	unsigned long radio;
+	int i;
 
 	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
 		return(-1);
@@ -182,8 +183,24 @@ int qcqmi_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
-	printf("(II) GetSignalStrength() = %d\n",
-		qcqmi_q->last_error = GetSignalStrength(&sq->dbm, &radio));
+	memset(&sssi, 0, sizeof(sssi));
+
+	sssi.signalStrengthReqMask = 1;
+
+	printf("(II) SLQSGetSignalStrength() = %d\n",
+		qcqmi_q->last_error = SLQSGetSignalStrength(&sssi));
+
+	if(qcqmi_q->last_error == eQCWWAN_ERR_NONE)
+	{
+		printf("\tsssi.rxSignalStrengthListLen = %d\n",
+			sssi.rxSignalStrengthListLen);
+
+		sq->dbm =  sssi.rxSignalStrengthList[0].rxSignalStrength;
+
+		for(i = 0; i < sssi.rxSignalStrengthListLen; ++ i)
+			printf("\t\tsssi.rxSignalStrengthList[%d].rxSignalStrength = %d\n",
+				i, sssi.rxSignalStrengthList[i].rxSignalStrength);
+	}
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
 
@@ -197,7 +214,7 @@ int qcqmi_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 	sq->level += !!(sq->dbm >= -73);
 	sq->level += !!(sq->dbm >= -65);
 
-	printf("\tdbm = %d, level = %d, radio = %ld\n", sq->dbm, sq->level, radio);
+	printf("\tdbm = %d, level = %d\n", sq->dbm, sq->level);
 
 	return(0);
 }
@@ -320,7 +337,7 @@ modem_network_reg_t qcqmi_network_registration(modem_t* modem)
 	if(qcqmi_q->last_error != eQCWWAN_ERR_NONE)
 		return(res);
 
-	if(roaming)
+	if(!roaming)
 		res = MODEM_NETWORK_REG_ROAMING;
 
 	return(res);
@@ -409,19 +426,23 @@ int qcqmi_operator_scan(modem_t* modem, modem_oper_t** opers)
 
 int qcqmi_operator_select(modem_t* modem, int hni, modem_oper_act_t act)
 {
-	unsigned long reg_type = 1, rat = 5;
+	unsigned long reg_type = 1, rat = 0;
 	uint16_t mcc = 0, mnc = 0;
 	qcqmi_queue_t* qcqmi_q;
 	enum eQCWWANError err;
+	int mnc_len;
 
-	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
+	if(!hni)
 		return(0);
 
-	/* reg_type, mcc, mnc and rat */
+	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
+		return(-1);
+
 	if(hni)
 	{
-		// mnc length calculation
-		int mnc_len = hni > 99999 ? 1000 : 100;
+		/* reg_type, mcc, mnc and rat */
+		/* mnc length calculation */
+		mnc_len = hni > 99999 ? 1000 : 100;
 
 		mcc = hni / mnc_len;
 		mnc = hni % mnc_len;
@@ -440,7 +461,7 @@ int qcqmi_operator_select(modem_t* modem, int hni, modem_oper_act_t act)
 				break;
 
 			default:
-				rat = 5;
+				rat = 0;
 				break;
 		}
 	}

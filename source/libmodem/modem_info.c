@@ -1,4 +1,4 @@
-#include "modem_db.h"
+#include "modem_info.h"
 
 #include "at/at_common.h"
 

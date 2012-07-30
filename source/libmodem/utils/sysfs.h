@@ -4,8 +4,9 @@
 #include <stdint.h>
 #include <dirent.h>
 
-#include "modem/types.h"
-#include "modem_db.h"
+#include <modem/types.h>
+
+#include "modem_info.h"
 
 /*------------------------------------------------------------------------*/
 

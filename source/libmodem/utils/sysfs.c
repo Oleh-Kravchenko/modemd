@@ -9,7 +9,7 @@
 #include "re.h"
 #include "file.h"
 #include "sysfs.h"
-#include "modem_db.h"
+#include "modem_info.h"
 
 /*------------------------------------------------------------------------*/
 
