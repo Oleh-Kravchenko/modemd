@@ -19,7 +19,7 @@
 int modem_queues_init(modem_t* modem)
 {
 	const modem_db_device_t* mdd = modem->mdd;
-	char dev[0x100], imei[0x100];
+	char dev[0x100];
 	void* queue;
 	int i;
 
@@ -55,8 +55,6 @@ int modem_queues_init(modem_t* modem)
 
 #ifdef __QCQMI
 			case MODEM_PROTO_QCQMI:
-				at_get_imei(modem, imei, sizeof(imei));
-
 				if(!modem_get_iface_dev(modem->port, "qcqmi", mdd->iface[i].num, dev, sizeof(dev)))
 				{
 					printf("(EE) Failed modem_get_iface_dev(%d)..\n", mdd->iface[i].num);
@@ -64,7 +62,7 @@ int modem_queues_init(modem_t* modem)
 					goto err;
 				}
 
-				if(!(queue = qcqmi_queue_open(dev, imei)))
+				if(!(queue = qcqmi_queue_open(dev)))
 				{
 					printf("(EE) Failed qcqmi_queue_open()..\n");
 					goto err;
@@ -163,7 +161,7 @@ void modem_queues_resume(modem_t* modem)
 {
 	const modem_db_device_t* mdd = modem->mdd;
 	modem_queues_t* mq = modem->queues;
-	char dev[0x100], imei[0x100];
+	char dev[0x100];
 	int i;
 
 	while(mq)
@@ -187,9 +185,8 @@ void modem_queues_resume(modem_t* modem)
 
 #ifdef __QCQMI
 			case MODEM_PROTO_QCQMI:
-				at_get_imei(modem, imei, sizeof(imei));
 				modem_get_iface_dev(modem->port, "qcqmi", mdd->iface[i].num, dev, sizeof(dev));
-				qcqmi_queue_resume(mq->queue, dev, imei);
+				qcqmi_queue_resume(mq->queue, dev);
 				break;
 #endif /* __QCQMI */
 

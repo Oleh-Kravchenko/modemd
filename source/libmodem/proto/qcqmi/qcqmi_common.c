@@ -181,31 +181,27 @@ int qcqmi_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 	sq->dbm = 0;
 	sq->level = 0;
 
-	pthread_mutex_lock(&qcqmi_q->mutex);
-
 	memset(&sssi, 0, sizeof(sssi));
-
 	sssi.signalStrengthReqMask = 1;
+
+	pthread_mutex_lock(&qcqmi_q->mutex);
 
 	printf("(II) SLQSGetSignalStrength() = %d\n",
 		qcqmi_q->last_error = SLQSGetSignalStrength(&sssi));
-
-	if(qcqmi_q->last_error == eQCWWAN_ERR_NONE)
-	{
-		printf("\tsssi.rxSignalStrengthListLen = %d\n",
-			sssi.rxSignalStrengthListLen);
-
-		sq->dbm =  sssi.rxSignalStrengthList[0].rxSignalStrength;
-
-		for(i = 0; i < sssi.rxSignalStrengthListLen; ++ i)
-			printf("\t\tsssi.rxSignalStrengthList[%d].rxSignalStrength = %d\n",
-				i, sssi.rxSignalStrengthList[i].rxSignalStrength);
-	}
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
 
 	if(qcqmi_q->last_error != eQCWWAN_ERR_NONE)
 		return(-1);
+
+	printf("\tsssi.rxSignalStrengthListLen = %d\n",
+		sssi.rxSignalStrengthListLen);
+
+	sq->dbm =  sssi.rxSignalStrengthList[0].rxSignalStrength;
+
+	for(i = 0; i < sssi.rxSignalStrengthListLen; ++ i)
+		printf("\t\tsssi.rxSignalStrengthList[%d].rxSignalStrength = %d\n",
+			i, sssi.rxSignalStrengthList[i].rxSignalStrength);
 
 	/* calculation signal level */
 	sq->level += !!(sq->dbm >= -109);

@@ -8,50 +8,66 @@
 
 /*------------------------------------------------------------------------*/
 
-void CallBackSLQSSignalStrengths(struct SLQSSignalStrengthsInformation sssi)
+typedef struct device_info_s
 {
-	printf("(CB) %s() signal strench = %d dBm\n", __func__, sssi.rxSignalStrengthInfo.rxSignalStrength);
-}
+	uint8_t dev[256];
+
+	uint8_t key[16];
+} device_info_t;
 
 /*------------------------------------------------------------------------*/
 
-qcqmi_queue_t* qcqmi_queue_open(const char* dev, const char* imei)
+qcqmi_queue_t* qcqmi_queue_open(const char* dev)
 {
-	struct SLQSSignalStrengthsIndReq sssiq = {
-		.rxSignalStrengthDelta = 1,
-		.ecioDelta = 1,
-		.ioDelta = 1,
-		.sinrDelta = 1,
-		.rsrqDelta = 1,
-		.ecioThresholdListLen = 5,
-		.ecioThresholdList = {-10, -20, -30, -40, -50,},
-		.sinrThresholdListLen = 5,
-		.sinrThresholdList = {10, 20, 30, 40, 50,},
-	};
+	int i;
 	qcqmi_queue_t* res;
+	uint8_t key[16] = {0};
+	device_info_t devices[10];
+	uint8_t n_devices = ARRAY_SIZE(devices);
 
 	if(!(res = malloc(sizeof(*res))))
 		return(res);
 
 	memset(res, 0, sizeof(*res));
 
-	printf("(II) QCWWAN2kConnect(%s, %s) = %d\n",
-		dev, imei, res->last_error = QCWWANConnect((CHAR*)dev, (CHAR*)imei));
+	printf("(II) QCWWAN2kEnumerateDevices() = %d\n",
+		res->last_error = QCWWAN2kEnumerateDevices(&n_devices, devices));
 
 	if(res->last_error != eQCWWAN_ERR_NONE)
+		goto err;
+
+	/* let's find our modem key by dev path */
+	for(i = 0; i < n_devices; ++ i)
 	{
-		free(res);
+		if(!strcmp(devices[i].dev, dev))
+		{
+			printf("\tNode: %s, Key: %s\n", devices[i].dev, devices[i].key);
 
-		res = NULL;
+			strncpy(key, devices[i].key, sizeof(key));
+			key[sizeof(key) - 1] = 0;
 
-		return(res);
+			break;
+		}
 	}
+
+	/* if modem key is invalid, then error */
+	if(!*key)
+		goto err;
+
+	printf("(II) QCWWAN2kConnect(%s, %s) = %d\n",
+		dev, key, res->last_error = QCWWAN2kConnect(dev, key));
+
+	if(res->last_error != eQCWWAN_ERR_NONE)
+		goto err;
 
 	pthread_mutex_init(&res->mutex, NULL);
 
-	printf("(II) SLQSSetSignalStrengthsCallback() = %d\n", SLQSSetSignalStrengthsCallback(CallBackSLQSSignalStrengths, &sssiq));
-
 	return(res);
+
+err:
+	free(res);
+
+	return(NULL);
 }
 
 /*------------------------------------------------------------------------*/
@@ -60,8 +76,6 @@ void qcqmi_queue_destroy(qcqmi_queue_t* queue)
 {
 	if(!queue)
 		return;
-
-	SLQSSetSignalStrengthsCallback(NULL, NULL);
 
 	QCWWANDisconnect();
 
@@ -79,7 +93,7 @@ void qcqmi_queue_suspend(qcqmi_queue_t* queue)
 
 /*------------------------------------------------------------------------*/
 
-void qcqmi_queue_resume(qcqmi_queue_t* queue, const char* dev, const char* imei)
+void qcqmi_queue_resume(qcqmi_queue_t* queue, const char* dev)
 {
 	printf("(WW) Not implemented %s()\n", __func__);
 }

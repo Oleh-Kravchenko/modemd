@@ -60,19 +60,6 @@ modem_db_device_t modem_db_devices[] = {
 			},
 		},
 		.functions		= {
-#if 0
-			.get_fw_version			= mc77x0_at_get_fw_version,
-			.get_imsi				= at_get_imsi,
-			.get_imei				= at_get_imei,
-			.get_network_time		= mc77x0_at_get_network_time,
-			.get_signal_quality		= at_get_signal_quality,
-			.get_cell_id			= mc77x0_at_get_cell_id,
-			.get_network_type		= mc77x0_at_get_network_type,
-			.network_registration	= mc77x0_at_network_registration,
-			.get_operator_name		= at_get_operator_name,
-			.operator_scan			= at_operator_scan,
-			.operator_select		= at_operator_select,
-#else
 			.get_fw_version			= mc77x0_at_get_fw_version,
 			.get_imsi				= qcqmi_get_imsi,
 			.get_imei				= qcqmi_get_imei,
@@ -85,7 +72,6 @@ modem_db_device_t modem_db_devices[] = {
 			.operator_scan			= qcqmi_operator_scan,
 			.operator_select		= qcqmi_operator_select,
 			.get_operator_number	= qcqmi_get_operator_number,
-#endif
 		},
 	},
 };
