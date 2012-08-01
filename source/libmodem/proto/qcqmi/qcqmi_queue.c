@@ -19,11 +19,10 @@ typedef struct device_info_s
 
 qcqmi_queue_t* qcqmi_queue_open(const char* dev)
 {
-	int i;
 	qcqmi_queue_t* res;
 	uint8_t key[16] = {0};
 	device_info_t devices[10];
-	uint8_t n_devices = ARRAY_SIZE(devices);
+	uint8_t i, n_devices = ARRAY_SIZE(devices);
 
 	if(!(res = malloc(sizeof(*res))))
 		return(res);

@@ -380,19 +380,19 @@ int qcqmi_operator_scan(modem_t* modem, modem_oper_t** opers)
 		qcqmi_q->last_error = PerformNetworkScan(&nni, (BYTE*)ni)
 	);
 
-	printf("\toperators scanned = %d\n", nni);
-
 	pthread_mutex_unlock(&qcqmi_q->mutex);
 
 	if(qcqmi_q->last_error != eQCWWAN_ERR_NONE)
 		return(0);
+
+	printf("\toperators found = %d\n", nni);
 
 	if(!(*opers = malloc(sizeof(**opers) * nni)))
 		return(0);
 
 	for(i = 0; i < nni; ++ i)
 	{
-		printf("\tmcc = %d, mnc = %d, InUse = %d, Roaming = %d, Forbidden = %d, Preferred = %d, Description = %s\n",
+		printf("\t\tmcc = %d, mnc = %d, InUse = %d, Roaming = %d, Forbidden = %d, Preferred = %d, Description = %s\n",
 			ni[i].mcc, ni[i].mnc, ni[i].inuse, ni[i].roaming, ni[i].forbidden, ni[i].preferred, ni[i].name);
 
 		if(ni[i].inuse == 1)
