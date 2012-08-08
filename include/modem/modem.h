@@ -147,6 +147,8 @@ int modem_operator_scan(modem_t* modem, modem_oper_t** opers);
  */
 int modem_get_cell_id(modem_t* modem);
 
+int modem_set_default_profile(modem_data_profile_t* profile);
+
 /***************************************************************************
  * functions for openrg                                                    *
  **************************************************************************/
@@ -165,5 +167,15 @@ int modem_operator_scan_start(modem_t* modem, const char* file);
  * @remark this function only for openrg
  */
 int modem_operator_scan_is_running(modem_t* modem);
+
+/***************************************************************************
+ * functions for wwan                                                      *
+ **************************************************************************/
+
+int modem_set_wwan_profile(modem_t* modem, modem_data_profile_t* profile);
+
+int modem_start_wwan(modem_t* modem);
+
+int modem_stop_wwan(modem_t* modem);
 
 #endif /* __MODEM_H */

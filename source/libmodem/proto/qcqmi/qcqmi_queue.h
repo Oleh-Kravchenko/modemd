@@ -44,6 +44,8 @@ typedef struct
 	pthread_mutex_t mutex;
 
 	serving_system_info_t state;
+
+	unsigned long sessionid;
 } qcqmi_queue_t;
 
 /*------------------------------------------------------------------------*/

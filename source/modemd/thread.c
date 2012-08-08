@@ -371,13 +371,58 @@ rpc_packet_t* modem_get_last_error_packet(modemd_client_thread_t* priv, rpc_pack
 
 	if(!priv->modem)
 		return(NULL);
-	
+
 	err = modem_get_last_error(priv->modem);
 
 	return
 	(
 		rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)&err, sizeof(err))
 	);
+}
+
+/*------------------------------------------------------------------------*/
+
+rpc_packet_t* modem_set_wwan_profile_packet(modemd_client_thread_t* priv, rpc_packet_t* p)
+{
+	rpc_packet_t *res = NULL;
+
+	if(!priv->modem)
+		return(NULL);
+
+	if(!modem_set_wwan_profile(priv->modem, (modem_data_profile_t*)p->data))
+		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)p, sizeof(*p));
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+rpc_packet_t* modem_start_wwan_packet(modemd_client_thread_t* priv, rpc_packet_t* p)
+{
+	rpc_packet_t *res = NULL;
+
+	if(!priv->modem)
+		return(NULL);
+
+	if(!modem_start_wwan(priv->modem))
+		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)p, sizeof(*p));
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+rpc_packet_t* modem_stop_wwan_packet(modemd_client_thread_t* priv, rpc_packet_t* p)
+{
+	rpc_packet_t *res = NULL;
+
+	if(!priv->modem)
+		return(NULL);
+
+	if(!modem_stop_wwan(priv->modem))
+		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)p, sizeof(*p));
+
+	return(res);
 }
 
 /*------------------------------------------------------------------------*/
@@ -389,21 +434,24 @@ const rpc_function_info_t rpc_functions[] = {
 	{"modem_close", modem_close_packet},
 	{"modem_get_info", modem_get_info_packet},
 	{"modem_get_last_error", modem_get_last_error_packet},
-	{"modem_get_imei", modem_get_imei_packet,						  0},
-	{"modem_change_pin", modem_change_pin_packet,					  0},
-	{"modem_get_fw_version", modem_get_fw_version_packet,			  0},
-	{"modem_network_registration", modem_network_registration_packet,  0},
-	{"modem_get_imsi", modem_get_imsi_packet,						  0},
-	{"modem_operator_scan_start", modem_operator_scan_start_packet,	0},
-	{"modem_operator_scan_is_running", modem_operator_scan_is_running_packet, 0},
-	{"modem_get_signal_quality", modem_get_signal_quality_packet,	  1},
-	{"modem_operator_scan", modem_operator_scan_packet,				1},
-	{"modem_at_command", modem_at_command_packet,					  1},
-	{"modem_get_network_time", modem_get_network_time_packet,		  1},
-	{"modem_get_operator_name", modem_get_operator_name_packet,		1},
-	{"modem_get_network_type", modem_get_network_type_packet,		  1},
-	{"modem_get_cell_id", modem_get_cell_id_packet,					1},
-	{"modem_conf_reload", modem_conf_reload_packet,					0},
+	{"modem_get_imei", modem_get_imei_packet,									0},
+	{"modem_change_pin", modem_change_pin_packet,								0},
+	{"modem_get_fw_version", modem_get_fw_version_packet,						0},
+	{"modem_network_registration", modem_network_registration_packet,			0},
+	{"modem_get_imsi", modem_get_imsi_packet,									0},
+	{"modem_operator_scan_start", modem_operator_scan_start_packet,				0},
+	{"modem_operator_scan_is_running", modem_operator_scan_is_running_packet,	0},
+	{"modem_get_signal_quality", modem_get_signal_quality_packet,				1},
+	{"modem_operator_scan", modem_operator_scan_packet,							1},
+	{"modem_at_command", modem_at_command_packet,								1},
+	{"modem_get_network_time", modem_get_network_time_packet,					1},
+	{"modem_get_operator_name", modem_get_operator_name_packet,					1},
+	{"modem_get_network_type", modem_get_network_type_packet,					1},
+	{"modem_get_cell_id", modem_get_cell_id_packet,								1},
+	{"modem_conf_reload", modem_conf_reload_packet,								0},
+	{"modem_set_wwan_profile", modem_set_wwan_profile_packet,					1},
+	{"modem_start_wwan", modem_start_wwan_packet,								1},
+	{"modem_stop_wwan", modem_stop_wwan_packet,									1},
 	{{0, 0, 0}},
 };
 
@@ -432,16 +480,6 @@ void* ThreadWrapper(void* prm)
 		{
 			if(strcmp(rpc_func->name, p_in->func) == 0)
 			{
-/*
-				if(rpc_func->reg_need && priv.locked)
-				{
-					printf("(WW) Denied function %s Registration is not complete\n",
-						rpc_func->name);
-
-					break;
-				}
-*/
-
 				/* execute function */
 				p_out = rpc_func->func(priv, p_in);
 

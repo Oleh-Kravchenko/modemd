@@ -495,3 +495,107 @@ char* qcqmi_get_operator_number(modem_t* modem, char* oper_number, size_t len)
 
 	return(res);
 }
+
+/*------------------------------------------------------------------------*/
+
+int qcqmi_set_wwan_profile(modem_t* modem, modem_data_profile_t* profile)
+{
+	int res = -1;
+	qcqmi_queue_t* qcqmi_q;
+	ULONG uauth = profile->auth;
+
+	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
+		return(res);
+
+	qcqmi_update_state(modem);
+
+	pthread_mutex_lock(&qcqmi_q->mutex);
+
+	printf("(II) SetDefaultProfileLTE(%d, \"%s\", \"%s\", \"%s\") = %d\n",
+		profile->auth, profile->apn, profile->username, profile->password,
+		qcqmi_q->last_error = SetDefaultProfileLTE(0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &uauth, "profile3", profile->apn, profile->username, profile->password));
+
+	res = qcqmi_q->last_error != eQCWWAN_ERR_NONE;
+
+	pthread_mutex_unlock(&qcqmi_q->mutex);
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int qcqmi_start_wwan(modem_t* modem)
+{
+	int res = -1;
+	qcqmi_queue_t* qcqmi_q;
+
+	ULONG PDPType;
+	ULONG IPAddressv4;
+	ULONG PrimaryDNSv4;
+	ULONG SecondaryDNSv4;
+	USHORT IPAddressv6;
+	USHORT PrimaryDNSv6;
+	USHORT SecondaryDNSv6;
+	ULONG Authentication;
+	CHAR ProfileName[33];
+	CHAR apn[101];
+	CHAR username[33];
+	ULONG failurereason;
+
+	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
+		return(res);
+
+	qcqmi_update_state(modem);
+
+	pthread_mutex_lock(&qcqmi_q->mutex);
+
+	printf("(II) GetDefaultProfileLTE() = %d\n",
+		qcqmi_q->last_error = GetDefaultProfileLTE(0, &PDPType, &IPAddressv4,
+			&PrimaryDNSv4, &SecondaryDNSv4, &IPAddressv6, &PrimaryDNSv6,
+			&SecondaryDNSv6, &Authentication, sizeof(ProfileName),
+			ProfileName, sizeof(apn), apn, sizeof(username), username));
+
+	if(qcqmi_q->last_error == eQCWWAN_ERR_NONE)
+	{
+		printf("(II) StartDataSessionLTE(\"%s\", %d, \"%s\") = %d\n",
+			apn, Authentication, username,
+			qcqmi_q->last_error = StartDataSessionLTE(NULL, NULL, NULL, NULL,
+				NULL, NULL, NULL, apn, NULL, NULL, &Authentication,
+				username, NULL, &qcqmi_q->sessionid, &failurereason, 0x08));
+
+		printf("\tsessionid = %d, failurereason = %d\n", qcqmi_q->sessionid, failurereason);
+	}
+
+	res = qcqmi_q->last_error != eQCWWAN_ERR_NONE;
+
+	pthread_mutex_unlock(&qcqmi_q->mutex);
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int qcqmi_stop_wwan(modem_t* modem)
+{
+	int res = -1;
+	qcqmi_queue_t* qcqmi_q;
+
+	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
+		return(res);
+
+	qcqmi_update_state(modem);
+
+	pthread_mutex_lock(&qcqmi_q->mutex);
+
+	if(qcqmi_q->sessionid)
+	{
+		printf("(II) StopDataSession() = %d\n", qcqmi_q->last_error = StopDataSession(qcqmi_q->sessionid));
+
+		if(qcqmi_q->last_error == eQCWWAN_ERR_NONE)
+			res = qcqmi_q->sessionid = 0;
+	}
+
+	pthread_mutex_unlock(&qcqmi_q->mutex);
+
+	return(res);
+}

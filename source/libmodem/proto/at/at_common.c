@@ -413,24 +413,11 @@ char* at_get_operator_number(modem_t* modem, char* oper_number, size_t len)
 
 int at_change_pin(modem_t* modem, const char* old_pin, const char* new_pin)
 {
-	at_queue_t* at_q;
-	at_query_t* q;
 	char cmd[0x100];
-	int res;
-
-	if(!(at_q = modem_proto_get(modem, MODEM_PROTO_AT)))
-		return(res);
 
 	snprintf(cmd, sizeof(cmd), "AT+CPWD=\"SC\",\"%s\",\"%s\"\r\n", old_pin, new_pin);
 
-	q = at_query_create(cmd, "\r\nOK\r\n");
-	at_query_exec(at_q->queue, q);
-
-	res = at_query_is_error(q);
-
-	at_query_free(q);
-
-	return(res);
+	return(at_raw_ok(modem, cmd));
 }
 
 /*------------------------------------------------------------------------*/
@@ -448,4 +435,30 @@ int at_operator_select(modem_t* modem, int hni, modem_oper_act_t act)
 	}
 
 	return(at_raw_ok(modem, cmd));
+}
+
+/*------------------------------------------------------------------------*/
+
+int at_set_default_profile(modem_t* modem, modem_data_profile_t* profile)
+{
+	char cmd[0x100];
+	int res;
+
+	if(profile->auth)
+	{
+		snprintf(cmd, sizeof(cmd), "AT$QCPDPP=3,%d,\"%s\",\"%s\"",
+			profile->auth, profile->password, profile->username);
+	}
+	else
+	{
+		strncpy(cmd, "AT$QCPDPP=3,0", sizeof(cmd));
+		cmd[sizeof(cmd) - 1] = 0;
+	}
+
+	if((res = at_raw_ok(modem, cmd)))
+		return(res);
+
+	snprintf(cmd, sizeof(cmd), "AT+CGDCONT=3,\"IP\",\"%s\"", profile->apn);
+
+	return(res = at_raw_ok(modem, cmd));
 }

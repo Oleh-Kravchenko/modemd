@@ -186,6 +186,9 @@ void modem_close(modem_t* modem)
 	modem_list_t* item, *prev;
 	void* thread_res;
 
+	if(!modem)
+		return;
+
 	/* decrements modem clients */
 	if(modem->refs > 0)
 	{
@@ -523,4 +526,31 @@ err_fopen:
 exit:
 	free(priv);
 	return(NULL);
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_set_wwan_profile(modem_t* modem, modem_data_profile_t* profile)
+{
+	const modem_db_device_t* mdd = modem->mdd;
+
+	return(mdd->functions.set_wwan_profile(modem, profile));
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_start_wwan(modem_t* modem)
+{
+	const modem_db_device_t* mdd = modem->mdd;
+
+	return(mdd->functions.start_wwan(modem));
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_stop_wwan(modem_t* modem)
+{
+	const modem_db_device_t* mdd = modem->mdd;
+
+	return(mdd->functions.stop_wwan(modem));
 }

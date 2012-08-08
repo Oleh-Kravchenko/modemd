@@ -72,6 +72,9 @@ modem_db_device_t modem_db_devices[] = {
 			.operator_scan			= qcqmi_operator_scan,
 			.operator_select		= qcqmi_operator_select,
 			.get_operator_number	= qcqmi_get_operator_number,
+			.set_wwan_profile		= qcqmi_set_wwan_profile,
+			.start_wwan				= qcqmi_start_wwan,
+			.stop_wwan				= qcqmi_stop_wwan,
 		},
 	},
 };

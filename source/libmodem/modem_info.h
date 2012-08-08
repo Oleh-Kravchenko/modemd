@@ -39,6 +39,13 @@ typedef int (*get_cell_id_func_t)(modem_t* modem);
 
 typedef int (*operator_select_func_t)(modem_t* modem, int hni, modem_oper_act_t act);
 
+typedef int (*set_wwan_profile_func_t)(modem_t* modem, modem_data_profile_t* profile);
+
+typedef int (*start_wwan_func_t)(modem_t* modem);
+
+typedef int (*stop_wwan_func_t)(modem_t* modem);
+
+
 /*------------------------------------------------------------------------*/
 
 typedef struct
@@ -67,6 +74,9 @@ typedef struct
 			__MODEM_DB_FUNC(get_cell_id);
 			__MODEM_DB_FUNC(operator_select);
 			__MODEM_DB_FUNC(get_operator_number);
+			__MODEM_DB_FUNC(set_wwan_profile);
+			__MODEM_DB_FUNC(start_wwan);
+			__MODEM_DB_FUNC(stop_wwan);
 		#undef __MODEM_DB_FUNC
 	} functions;
 

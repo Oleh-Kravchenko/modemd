@@ -25,4 +25,10 @@ int qcqmi_operator_select(modem_t* modem, int hni, modem_oper_act_t act);
 
 char* qcqmi_get_operator_number(modem_t* modem, char* oper_number, size_t len);
 
+int qcqmi_set_wwan_profile(modem_t* modem, modem_data_profile_t* profile);
+
+int qcqmi_start_wwan(modem_t* modem);
+
+int qcqmi_stop_wwan(modem_t* modem);
+
 #endif
