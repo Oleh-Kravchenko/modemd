@@ -45,6 +45,11 @@ typedef int (*start_wwan_func_t)(modem_t* modem);
 
 typedef int (*stop_wwan_func_t)(modem_t* modem);
 
+typedef modem_cpin_state_t (*cpin_state_func_t)(modem_t* modem);
+
+typedef int (*cpin_pin_func_t)(modem_t* modem, const char* pin);
+
+typedef int (*cpin_puk_func_t)(modem_t* modem, const char* puk, const char* pin);
 
 /*------------------------------------------------------------------------*/
 
@@ -77,6 +82,9 @@ typedef struct
 			__MODEM_DB_FUNC(set_wwan_profile);
 			__MODEM_DB_FUNC(start_wwan);
 			__MODEM_DB_FUNC(stop_wwan);
+			__MODEM_DB_FUNC(cpin_state);
+			__MODEM_DB_FUNC(cpin_pin);
+			__MODEM_DB_FUNC(cpin_puk);
 		#undef __MODEM_DB_FUNC
 	} functions;
 

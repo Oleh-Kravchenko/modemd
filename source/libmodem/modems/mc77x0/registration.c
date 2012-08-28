@@ -266,7 +266,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_CHECK_PIN)
 		{
-			switch(at_cpin_state(priv))
+			switch(mdd->functions.cpin_state(priv))
 			{
 				case MODEM_CPIN_STATE_PIN:
 					state = RS_SET_PIN;
@@ -297,10 +297,12 @@ void* mc77x0_thread_reg(modem_t *priv)
 						return(NULL);
 					}
 			}
+
+			state_delay = 5;
 		}
 		else if(state == RS_SET_PIN)
 		{
-			if(*conf.pin && !at_cpin_pin(priv, conf.pin))
+			if(*conf.pin && !mdd->functions.cpin_pin(priv, conf.pin))
 			{
 				state = RS_GET_IMSI;
 			}
@@ -322,7 +324,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 		}
 		else if(state == RS_SET_PUK)
 		{
-			if(*conf.pin && *conf.puk && !at_cpin_puk(priv, conf.puk, conf.pin))
+			if(*conf.pin && *conf.puk && !mdd->functions.cpin_puk(priv, conf.puk, conf.pin))
 			{
 				state = RS_GET_IMSI;
 			}

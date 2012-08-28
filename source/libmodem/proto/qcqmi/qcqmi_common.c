@@ -507,8 +507,6 @@ int qcqmi_set_wwan_profile(modem_t* modem, modem_data_profile_t* profile)
 	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
 		return(res);
 
-	qcqmi_update_state(modem);
-
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
 	printf("(II) SetDefaultProfileLTE(%d, \"%s\", \"%s\", \"%s\") = %d\n",
@@ -544,8 +542,6 @@ int qcqmi_start_wwan(modem_t* modem)
 
 	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
 		return(res);
-
-	qcqmi_update_state(modem);
 
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
@@ -583,8 +579,6 @@ int qcqmi_stop_wwan(modem_t* modem)
 	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
 		return(res);
 
-	qcqmi_update_state(modem);
-
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
 	if(qcqmi_q->sessionid)
@@ -593,6 +587,140 @@ int qcqmi_stop_wwan(modem_t* modem)
 
 		if(qcqmi_q->last_error == eQCWWAN_ERR_NONE)
 			res = qcqmi_q->sessionid = 0;
+	}
+
+	pthread_mutex_unlock(&qcqmi_q->mutex);
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+modem_cpin_state_t qcqmi_cpin_state(modem_t* modem)
+{
+	modem_cpin_state_t res = MODEM_CPIN_STATE_UNKNOWN;
+	qcqmi_queue_t* qcqmi_q;
+	unsigned long VerifyRetriesLeft = 0;
+	unsigned long UnblockRetriesLeft = 0;
+	unsigned long Status;
+
+	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
+		return(res);
+
+	pthread_mutex_lock(&qcqmi_q->mutex);
+
+	printf("(II) UIMGetPINStatus() = %d\n", qcqmi_q->last_error =
+		UIMGetPINStatus(1, &Status, &VerifyRetriesLeft, &UnblockRetriesLeft)
+	);
+
+	if(qcqmi_q->last_error == eQCWWAN_ERR_NONE)
+	{
+		printf("\tStatus = %d, VerifyRetriesLeft = %d, UnblockRetriesLeft = %d\n",
+			Status, VerifyRetriesLeft, UnblockRetriesLeft
+		);
+
+		switch(Status)
+		{
+			/* PIN not initialized */
+			case 0:
+				res = MODEM_CPIN_STATE_UNKNOWN;
+				break;
+
+			/* PIN enabled, not verified */
+			case 1:
+				res = MODEM_CPIN_STATE_PIN;
+				break;
+
+			/* PIN enabled, verified */
+			case 2:
+				res = MODEM_CPIN_STATE_READY;
+				break;
+
+			/* PIN disabled */
+			case 3:
+				res = MODEM_CPIN_STATE_READY;
+				break;
+
+			/* PIN blocked */
+			case 4:
+				res = MODEM_CPIN_STATE_PUK;
+				break;
+
+			/* PIN permanently blocked */
+			case 5:
+
+			default:
+				res = MODEM_CPIN_STATE_UNKNOWN;
+				break;
+		}
+	}
+
+	pthread_mutex_unlock(&qcqmi_q->mutex);
+
+	printf("\t\tres = %d\n", res);
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int qcqmi_cpin_pin(modem_t* modem, const char* pin)
+{
+	qcqmi_queue_t* qcqmi_q;
+	unsigned long VerifyRetriesLeft = 0;
+	unsigned long UnblockRetriesLeft = 0;
+	unsigned long Status;
+	int res = -1;
+
+	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
+		return(res);
+
+	pthread_mutex_lock(&qcqmi_q->mutex);
+
+	printf("(II) UIMVerifyPIN() = %d\n", qcqmi_q->last_error =
+		UIMVerifyPIN(1, pin, &VerifyRetriesLeft, &UnblockRetriesLeft)
+	);
+
+	if(qcqmi_q->last_error == eQCWWAN_ERR_NONE)
+	{
+		printf("\tVerifyRetriesLeft = %d, UnblockRetriesLeft = %d\n",
+			VerifyRetriesLeft, UnblockRetriesLeft
+		);
+
+		res = 0;
+	}
+
+	pthread_mutex_unlock(&qcqmi_q->mutex);
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int qcqmi_cpin_puk(modem_t* modem, const char* puk, const char* pin)
+{
+	qcqmi_queue_t* qcqmi_q;
+	unsigned long VerifyRetriesLeft = 0;
+	unsigned long UnblockRetriesLeft = 0;
+	unsigned long Status;
+	int res = -1;
+
+	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
+		return(res);
+
+	pthread_mutex_lock(&qcqmi_q->mutex);
+
+	printf("(II) UIMUnblockPIN() = %d\n", qcqmi_q->last_error =
+		UIMUnblockPIN(1, puk, pin, &VerifyRetriesLeft, &UnblockRetriesLeft)
+	);
+
+	if(qcqmi_q->last_error == eQCWWAN_ERR_NONE)
+	{
+		printf("\tVerifyRetriesLeft = %d, UnblockRetriesLeft = %d\n",
+			VerifyRetriesLeft, UnblockRetriesLeft
+		);
+
+		res = 0;
 	}
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
