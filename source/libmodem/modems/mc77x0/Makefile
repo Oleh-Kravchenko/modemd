@@ -7,7 +7,7 @@ JMK_O_TARGET=mc77x0.o
 
 JMK_CFLAGS=-I$(JMK_ROOT)/pkg/modemd/source/libmodem -I$(JMK_ROOT)/pkg/modemd/source/libmodem/proto
 
-JMK_O_OBJS=at_func.o registration.o
+JMK_O_OBJS=at_func.o
 
 include $(JMK_ROOT)/pkg/modemd/modemd.mak
 

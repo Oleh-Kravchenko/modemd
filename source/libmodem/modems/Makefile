@@ -9,7 +9,7 @@ JMK_SUBDIRS=mc77x0
 
 JMK_CFLAGS=-I$(JMK_ROOT)/pkg/modemd/source/libmodem
 
-JMK_O_OBJS = modem_conf.o \
+JMK_O_OBJS = modem_conf.o registration.o \
     mc77x0/mc77x0.o
 
 include $(JMK_ROOT)/pkg/modemd/modemd.mak

@@ -9,17 +9,19 @@
 #include "modem/modem_str.h"
 #include "modem/modem_errno.h"
 
+#include "utils/str.h"
+#include "utils/re.h"
+
 #include "proto.h"
+
 #include "at/at_queue.h"
 #include "at/at_utils.h"
 #include "at/at_common.h"
 
 #include "modems/modem_conf.h"
-#include "modems/mc77x0/registration.h"
-#include "modems/mc77x0/at_func.h"
+#include "modems/registration.h"
 
-#include "utils/str.h"
-#include "utils/re.h"
+#include "modems/mc77x0/at_func.h"
 
 /*------------------------------------------------------------------------*/
 

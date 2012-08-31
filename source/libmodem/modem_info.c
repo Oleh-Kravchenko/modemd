@@ -1,13 +1,12 @@
 #include "modem_info.h"
 
 #include "at/at_common.h"
-
 #include "qcqmi/qcqmi_common.h"
 
-#include "modems/mc77x0/at_func.h"
-#include "modems/mc77x0/registration.h"
+#include "modems/registration.h"
 
 #include "modems/e1550/at_func.h"
+#include "modems/mc77x0/at_func.h"
 
 /*------------------------------------------------------------------------*/
 
