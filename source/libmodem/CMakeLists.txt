@@ -42,6 +42,8 @@ modems/mc77x0/at_func.c
 modems/mc77x0/at_func.h
 modems/mc77x0/registration.c
 modems/mc77x0/registration.h
+modems/e1550/at_func.h
+modems/e1550/at_func.c
 )
 
 SET_TARGET_PROPERTIES(modem PROPERTIES DEFINE_SYMBOL __LIBMODEM_EXPORTS)
