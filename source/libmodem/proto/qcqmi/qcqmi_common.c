@@ -6,6 +6,8 @@
 #include <SWIWWANCMAPI.h>
 #include <qmerrno.h>
 
+#include "utils/re.h"
+
 #include "qcqmi_queue.h"
 
 /*-------------------------------------------------------------------------*/
@@ -80,6 +82,53 @@ static void qcqmi_update_state(modem_t* modem)
 				printf("\t\tnetwork_type = %d\n", qcqmi_q->state.network_type[i]);
 		}
 	}
+
+#if 1
+	ULONG err;
+
+	unsigned long long band = 0;
+	if(SLQSGetBandCapability(&band) == eQCWWAN_ERR_NONE)
+		printf("(II) SLQSGetBandCapability() band = 0x%lx\n", band);
+
+    ULONG CurrentChannelTXRate;
+    ULONG CurrentChannelRXRate;
+    ULONG MaxChannelTXRate;
+    ULONG MaxChannelRXRate;
+
+	printf("(II) GetConnectionRate() = %d\n", err = GetConnectionRate(&CurrentChannelTXRate, &CurrentChannelRXRate, &MaxChannelTXRate, &MaxChannelRXRate));
+
+	if(err == eQCWWAN_ERR_NONE)
+	{
+		printf("\tCurrentChannelTXRate = %ld, CurrentChannelRXRate = %ld, MaxChannelTXRate = %ld, MaxChannelRXRate = %ld\n",
+			CurrentChannelTXRate, CurrentChannelRXRate, MaxChannelTXRate, MaxChannelRXRate
+		);
+	}
+
+    ULONG MaxTXChannelRate;
+    ULONG MaxRXChannelRate;
+    ULONG DataServiceCapability;
+    ULONG SimCapability;
+    ULONG RadioIfacesSize = 10;
+    BYTE  RadioIfaces[10];
+	
+	printf("(II) GetDeviceCapabilities() = %d\n", err = GetDeviceCapabilities(
+		&MaxTXChannelRate,
+		&MaxRXChannelRate,
+		&DataServiceCapability,
+		&SimCapability,
+		&RadioIfacesSize,
+		RadioIfaces)
+	);
+
+	if(err == eQCWWAN_ERR_NONE)
+	{
+		printf("\tMaxTXChannelRate = %d, MaxRXChannelRate = %d, DataServiceCapability = %d, SimCapability = %d\n", MaxTXChannelRate, MaxRXChannelRate, DataServiceCapability, SimCapability);
+		printf("\tRadioIfacesSize = %d\n", RadioIfacesSize);
+
+		for(i = 0; i < RadioIfacesSize; ++ i)
+			printf("\t\tRadioIfaces = %d\n", RadioIfaces[i]);
+	}
+#endif
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
 }
@@ -725,5 +774,54 @@ int qcqmi_cpin_puk(modem_t* modem, const char* puk, const char* pin)
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
 
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+modem_fw_ver_t* qcqmi_get_fw_version(modem_t* modem, modem_fw_ver_t* fw_info)
+{
+	struct qmifwinfo_s qcqmi_fw;
+	modem_fw_ver_t* res = NULL;
+	qcqmi_queue_t* qcqmi_q;
+	char release[0x100];
+	regmatch_t* pmatch;
+	size_t nmatch;
+	struct tm tm;
+
+	if(!(qcqmi_q = modem_proto_get(modem, MODEM_PROTO_QCQMI)))
+		return(res);
+
+	pthread_mutex_lock(&qcqmi_q->mutex);
+
+	printf("(II) SLQSGetFirmwareInfo() = %d\n",
+		qcqmi_q->last_error = SLQSGetFirmwareInfo(&qcqmi_fw)
+	);
+
+	if(qcqmi_q->last_error == eQCWWAN_ERR_NONE)
+	{
+		printf("\tmodelid = %s\n", qcqmi_fw.dev.s.modelid_str);
+		printf("\tbootversion = %s\n", qcqmi_fw.dev.s.bootversion_str);
+		printf("\tappversion = %s\n", qcqmi_fw.dev.s.appversion_str);
+		printf("\tsku = %s\n", qcqmi_fw.dev.s.sku_str);
+		printf("\tpackageid = %s\n", qcqmi_fw.dev.s.packageid_str);
+		printf("\tcarrier = %s\n", qcqmi_fw.dev.s.carrier_str);
+		printf("\tpriversion = %s\n", qcqmi_fw.dev.s.priversion_str);
+
+		/* parsing firmware release date and version */
+		if(!re_parse(qcqmi_fw.dev.s.appversion_str, "(SWI.*) .* .* ([0-9,/]+ [0-9,:]+)", &nmatch, &pmatch))
+		{
+			re_strncpy(fw_info->firmware, sizeof(fw_info->firmware), qcqmi_fw.dev.s.appversion_str, pmatch + 1);
+			re_strncpy(release, sizeof(release), qcqmi_fw.dev.s.appversion_str, pmatch + 2);
+
+			strptime(release, "%Y/%m/%d\r\n%H:%M:%S", &tm);
+			fw_info->release = mktime(&tm);
+
+			res = fw_info;
+		}
+	}
+
+	pthread_mutex_unlock(&qcqmi_q->mutex);
+	
 	return(res);
 }

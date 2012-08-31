@@ -37,4 +37,6 @@ int qcqmi_cpin_pin(modem_t* modem, const char* pin);
 
 int qcqmi_cpin_puk(modem_t* modem, const char* puk, const char* pin);
 
+modem_fw_ver_t* qcqmi_get_fw_version(modem_t* modem, modem_fw_ver_t* fw_info);
+
 #endif

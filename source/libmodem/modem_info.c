@@ -60,7 +60,7 @@ modem_db_device_t modem_db_devices[] = {
 			},
 		},
 		.functions		= {
-			.get_fw_version			= mc77x0_at_get_fw_version,
+			.get_fw_version			= qcqmi_get_fw_version,
 			.get_imsi				= qcqmi_get_imsi,
 			.get_imei				= qcqmi_get_imei,
 			.get_network_time		= qcqmi_get_network_time,
