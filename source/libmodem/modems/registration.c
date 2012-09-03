@@ -36,7 +36,6 @@ enum registration_state_e
 	RS_CMEE_NUMBER,
 	RS_GET_FIRMWARE_VER,
 	RS_GET_IMEI,
-	RS_SET_CFUN,
 	RS_READ_CONFIG,
 	RS_SET_BAND,
 	RS_SET_APN,
@@ -66,7 +65,6 @@ static const char *RS_STR[] =
 	__STR(RS_CMEE_NUMBER),
 	__STR(RS_GET_FIRMWARE_VER),
 	__STR(RS_GET_IMEI),
-	__STR(RS_SET_CFUN),
 	__STR(RS_READ_CONFIG),
 	__STR(RS_SET_BAND),
 	__STR(RS_SET_APN),
@@ -206,17 +204,6 @@ void* mc77x0_thread_reg(modem_t *priv)
 		else if(state == RS_GET_IMEI)
 		{
 			mdd->functions.get_imei(priv, priv->reg.state.imei, sizeof(priv->reg.state.imei));
-
-			state = RS_SET_CFUN;
-		}
-		else if(state == RS_SET_CFUN)
-		{
-			if(at_raw_ok(priv, "AT+CFUN=1\r\n"))
-			{
-				state_delay = 5;
-
-				continue;
-			}
 
 			state = RS_READ_CONFIG;
 		}

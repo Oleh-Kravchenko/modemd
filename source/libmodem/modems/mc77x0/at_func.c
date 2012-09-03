@@ -300,7 +300,7 @@ modem_fw_ver_t* mc77x0_at_get_fw_version(modem_t* modem, modem_fw_ver_t* fw_info
 
 	at_query_exec(at_q->queue, q);
 
-	/* cutting Operator name from the answer */
+	/* cutting firmware version from the answer */
 	if(!at_query_is_error(q))
 	{
 		/* create result */

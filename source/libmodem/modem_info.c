@@ -27,7 +27,6 @@ modem_db_device_t modem_db_devices[] = {
 			.get_imsi				= at_get_imsi,
 			.get_imei				= at_get_imei,
 			.get_signal_quality		= at_get_signal_quality,
-//			.get_cell_id			= at_get_cell_id,
 			.get_network_type		= e1550_at_get_network_type,
 			.network_registration	= at_network_registration,
 			.get_operator_name		= at_get_operator_name,
@@ -70,12 +69,14 @@ modem_db_device_t modem_db_devices[] = {
 			.operator_scan			= qcqmi_operator_scan,
 			.operator_select		= qcqmi_operator_select,
 			.get_operator_number	= qcqmi_get_operator_number,
-			.set_wwan_profile		= qcqmi_set_wwan_profile,
-			.start_wwan				= qcqmi_start_wwan,
-			.stop_wwan				= qcqmi_stop_wwan,
 			.cpin_state				= qcqmi_cpin_state,
 			.cpin_pin				= qcqmi_cpin_pin,
 			.cpin_puk				= qcqmi_cpin_puk,
+
+			/* data session */
+			.set_wwan_profile		= qcqmi_set_wwan_profile,
+			.start_wwan				= qcqmi_start_wwan,
+			.stop_wwan				= qcqmi_stop_wwan,
 		},
 	},
 #endif /* __QCQMI */
