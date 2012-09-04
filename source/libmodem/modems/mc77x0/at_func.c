@@ -168,7 +168,7 @@ modem_network_reg_t mc77x0_at_network_registration(modem_t* modem)
 
 /*------------------------------------------------------------------------*/
 
-unsigned int mc77x0_at_get_freq_band(modem_t* modem)
+uint8_t mc77x0_at_get_freq_band(modem_t* modem)
 {
 	at_queue_t* at_q;
 	at_query_t* q;
@@ -191,6 +191,77 @@ unsigned int mc77x0_at_get_freq_band(modem_t* modem)
 	at_query_free(q);
 
 	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int mc77x0_at_get_freq_bands(modem_t* modem, freq_band_t** band_list)
+{
+	at_queue_t* at_q;
+	at_query_t* q;
+
+	regmatch_t* pmatch;
+	freq_band_t* item;
+	unsigned int i, j = 0;
+    size_t nmatch;
+	char* bands;
+	char* index;
+	char* name;
+	int nbands = 0;
+
+	if(!(at_q = modem_proto_get(modem, MODEM_PROTO_AT)))
+		return(nbands);
+
+	q = at_query_create("AT!BAND=?\r\n", "\r\nIndex, Name\r\n(.*)\r\nOK\r\n");
+
+	at_query_exec(at_q->queue, q);
+
+	if(!at_query_is_error(q))
+		bands = re_strdup(q->result, q->pmatch + 1);
+
+	at_query_free(q);
+
+	if(!bands)
+		return(nbands);
+
+	while(!re_parse(bands + j, "([0-9A-Fa-f]{2}), ([A-Za-z0-9 ]+)\r\n", &nmatch, &pmatch))
+	{
+		*band_list = item = realloc(*band_list, sizeof(freq_band_t) * (nbands + 1));
+
+		index = re_strdup(bands + j, pmatch + 1);
+		name = re_strdup(bands + j, pmatch + 2); trim(name);
+
+		j += re_strlen(pmatch);
+
+		/* band index */
+		sscanf(index, "%02X", &i);
+		item[nbands].index = i;
+
+		/* band name */
+		strncpy(item[nbands].name, name, sizeof(item[nbands].name) - 1);
+		item[nbands].name[sizeof(item[nbands].name) - 1] = 0;
+
+		free(index);
+		free(name);
+		free(pmatch);
+
+		++ nbands;
+	}
+
+	free(bands);
+
+	return(nbands);
+}
+
+/*------------------------------------------------------------------------*/
+
+int mc77x0_at_set_freq_band(modem_t* modem, uint8_t band_index)
+{
+	char cmd[0x100];
+
+	snprintf(cmd, sizeof(cmd), "AT!BAND=%02X\r\n", band_index);
+
+	return(at_raw_ok(modem, cmd));
 }
 
 /*------------------------------------------------------------------------*/
@@ -415,4 +486,18 @@ char* mc77x0_at_get_ccid(modem_t* modem, char* s, size_t len)
 	at_query_free(q);
 
 	return(*ccid ? s : NULL);
+}
+
+/*------------------------------------------------------------------------*/
+
+int mc77x0_at_start_wwan(modem_t* modem)
+{
+	return(at_raw_ok(modem, "AT!SCACT=3,1\r\n"));
+}
+
+/*------------------------------------------------------------------------*/
+
+int mc77x0_at_stop_wwan(modem_t* modem)
+{
+	return(at_raw_ok(modem, "AT!SCACT=0\r\n"));
 }

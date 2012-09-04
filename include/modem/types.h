@@ -258,4 +258,13 @@ typedef struct
 	modem_find_t* find;
 } __attribute__((__packed__)) modem_find_first_next_t;
 
+/*------------------------------------------------------------------------*/
+
+typedef struct freq_band_s
+{
+	uint8_t index;
+
+	char name[31];
+} __attribute__((__packed__)) freq_band_t;
+
 #endif /* __MODEM_TYPES_H */

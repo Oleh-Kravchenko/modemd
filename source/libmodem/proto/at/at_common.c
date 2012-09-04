@@ -439,7 +439,7 @@ int at_operator_select(modem_t* modem, int hni, modem_oper_act_t act)
 
 /*------------------------------------------------------------------------*/
 
-int at_set_default_profile(modem_t* modem, modem_data_profile_t* profile)
+int at_set_wwan_profile(modem_t* modem, modem_data_profile_t* profile)
 {
 	char cmd[0x100];
 	int res;
@@ -447,7 +447,8 @@ int at_set_default_profile(modem_t* modem, modem_data_profile_t* profile)
 	if(profile->auth)
 	{
 		snprintf(cmd, sizeof(cmd), "AT$QCPDPP=3,%d,\"%s\",\"%s\"",
-			profile->auth, profile->password, profile->username);
+			profile->auth, profile->password, profile->username
+		);
 	}
 	else
 	{
@@ -455,10 +456,12 @@ int at_set_default_profile(modem_t* modem, modem_data_profile_t* profile)
 		cmd[sizeof(cmd) - 1] = 0;
 	}
 
+	/* setup authorization data */
 	if((res = at_raw_ok(modem, cmd)))
 		return(res);
 
 	snprintf(cmd, sizeof(cmd), "AT+CGDCONT=3,\"IP\",\"%s\"", profile->apn);
 
+	/* setup APN */
 	return(res = at_raw_ok(modem, cmd));
 }

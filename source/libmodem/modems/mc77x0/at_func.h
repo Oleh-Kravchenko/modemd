@@ -5,8 +5,6 @@
 
 #include <modem/types.h>
 
-unsigned int mc77x0_at_get_freq_band(modem_t* modem);
-
 char* mc77x0_at_get_network_type(modem_t* modem, char *network, size_t len);
 
 char* mc7750_at_get_network_type(modem_t* modem, char* network, size_t len);
@@ -24,5 +22,20 @@ int mc77x0_at_get_cell_id(modem_t* modem);
 time_t mc77x0_at_get_network_time(modem_t* modem);
 
 char* mc77x0_at_get_ccid(modem_t* modem, char* ccid, size_t len);
+
+/* data session */
+
+int mc77x0_at_start_wwan(modem_t* modem);
+
+int mc77x0_at_stop_wwan(modem_t* modem);
+
+/* band selection */
+
+uint8_t mc77x0_at_get_freq_band(modem_t* modem);
+
+int mc77x0_at_set_freq_band(modem_t* modem, uint8_t band_index);
+
+int mc77x0_at_get_freq_bands(modem_t* modem, freq_band_t** band_list);
+
 
 #endif /* __MC77x0_AT_FUNC_H */

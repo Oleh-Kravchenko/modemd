@@ -38,7 +38,7 @@ int at_parse_cops_list(const char* s, modem_oper_t** opers)
 		++ nopers;
 
 		/* next operator to parse */
-		s += pmatch->rm_eo - pmatch->rm_so;
+		s += re_strlen(pmatch);
 
 		free(pmatch);
 	}

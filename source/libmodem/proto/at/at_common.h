@@ -76,6 +76,6 @@ int at_operator_select(modem_t* modem, int hni, modem_oper_act_t act);
 
 /*------------------------------------------------------------------------*/
 
-int at_set_default_profile(modem_t* modem, modem_data_profile_t* profile);
+int at_set_wwan_profile(modem_t* modem, modem_data_profile_t* profile);
 
 #endif /* __AT_COMMON_H */

@@ -97,7 +97,6 @@ void* mc77x0_thread_reg(modem_t *priv)
 	int periodical_reset;
 	int state_delay = 0;
 	modem_conf_t conf;
-	char s[0x100];
 
 	int last_error;
 	int prev_last_error = 0;
@@ -231,9 +230,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 			if(conf.frequency_band != modem_band)
 			{
 				/* band selection */
-				snprintf(s, sizeof(s), "AT!BAND=%02X\r\n", conf.frequency_band);
-
-				if(at_raw_ok(priv, s))
+				if(mc77x0_at_set_freq_band(priv, conf.frequency_band))
 				{
 					priv->reg.last_error = at_q->last_error;
 
