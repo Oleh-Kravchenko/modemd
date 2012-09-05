@@ -204,7 +204,7 @@ int mc77x0_at_get_freq_bands(modem_t* modem, freq_band_t** band_list)
 	freq_band_t* item;
 	unsigned int i, j = 0;
     size_t nmatch;
-	char* bands;
+	char* bands = NULL;
 	char* index;
 	char* name;
 	int nbands = 0;
@@ -492,7 +492,7 @@ char* mc77x0_at_get_ccid(modem_t* modem, char* s, size_t len)
 
 int mc77x0_at_start_wwan(modem_t* modem)
 {
-	return(at_raw_ok(modem, "AT!SCACT=3,1\r\n"));
+	return(at_raw_ok(modem, "AT!SCACT=1,3\r\n"));
 }
 
 /*------------------------------------------------------------------------*/
@@ -500,4 +500,47 @@ int mc77x0_at_start_wwan(modem_t* modem)
 int mc77x0_at_stop_wwan(modem_t* modem)
 {
 	return(at_raw_ok(modem, "AT!SCACT=0\r\n"));
+}
+
+/*------------------------------------------------------------------------*/
+
+int mc77x0_at_state_wwan(modem_t* modem)
+{
+	at_queue_t* at_q;
+	at_query_t* q;
+
+	regmatch_t* pmatch;
+    size_t nmatch;
+	char* s = NULL;
+	size_t i = 0;
+	int res = 0;
+
+	if(!(at_q = modem_proto_get(modem, MODEM_PROTO_AT)))
+		return(res);
+
+	q = at_query_create("AT!SCACT?\r\n", "\r\n(.*)\r\nOK\r\n");
+
+	at_query_exec(at_q->queue, q);
+
+	if(!at_query_is_error(q))
+		s = re_strdup(q->result, q->pmatch + 1);
+
+	at_query_free(q);
+
+	if(!s)
+		return(res);
+
+	while(!re_parse(s + i, "!SCACT: [0-9]+,([0-9]+)\r\n", &nmatch, &pmatch))
+	{
+		if((res = re_atoi(s + i, pmatch + 1)))
+			break;
+
+		i += re_strlen(pmatch);
+
+		free(pmatch);
+	}
+
+	free(s);
+
+	return(res);
 }
