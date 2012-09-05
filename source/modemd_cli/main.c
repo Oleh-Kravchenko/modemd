@@ -114,6 +114,26 @@ int conf_read_cmdline(int argc, char** argv)
 
 /*------------------------------------------------------------------------*/
 
+const char* modem_signal_level_str(uint8_t level)
+{
+	const static char* slevel[] =
+	{
+		"",
+		"#",
+		"##",
+		"###",
+		"####",
+		"#####"
+	};
+
+	if(level > 5)
+		level = 5;
+
+	return(slevel[level]);
+}
+
+/*------------------------------------------------------------------------*/
+
 void modem_test(const char* port)
 {
 	modem_signal_quality_t sq;
@@ -159,7 +179,7 @@ void modem_test(const char* port)
 		printf("Network: [%s]\n", msg);
 
 	if(!modem_get_signal_quality(modem, &sq))
-		printf("Signal: [%d] dBm, [%d] Level\n", sq.dbm, sq.level);
+		printf("Signal: [%d] dBm, [%-5s] Level\n", sq.dbm, modem_signal_level_str(sq.level));
 
 	if((t = modem_get_network_time(modem)))
 	{
