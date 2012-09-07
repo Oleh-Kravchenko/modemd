@@ -365,7 +365,6 @@ modem_network_reg_t qcqmi_network_registration(modem_t* modem)
 {
 	modem_network_reg_t res = MODEM_NETWORK_REG_UNKNOWN;
 	qcqmi_queue_t* qcqmi_q;
-	unsigned long roaming;
 
 	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
 		return(res);
@@ -374,16 +373,30 @@ modem_network_reg_t qcqmi_network_registration(modem_t* modem)
 
 	pthread_mutex_lock(&qcqmi_q->mutex);
 
-	res = qcqmi_q->state.reg_state;
-	roaming = qcqmi_q->state.roaming;
+	switch(qcqmi_q->state.reg_state)
+	{
+		case 0:
+			res = MODEM_NETWORK_REG_FAILED;
+			break;
+
+		case 1:
+			res = qcqmi_q->state.roaming ? MODEM_NETWORK_REG_HOME : MODEM_NETWORK_REG_ROAMING;
+			break;
+
+		case 2:
+			res = MODEM_NETWORK_REG_SEARCHING;
+			break;
+
+		case 3:
+			res = MODEM_NETWORK_REG_DENIED;
+			break;
+
+		default:
+			res = MODEM_NETWORK_REG_UNKNOWN;
+			break;
+	}
 
 	pthread_mutex_unlock(&qcqmi_q->mutex);
-
-	if(qcqmi_q->last_error != eQCWWAN_ERR_NONE)
-		return(res);
-
-	if(!roaming)
-		res = MODEM_NETWORK_REG_ROAMING;
 
 	return(res);
 }
