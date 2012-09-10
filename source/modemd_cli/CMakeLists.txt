@@ -8,6 +8,6 @@ main.c
 
 ADD_EXECUTABLE(modemd_cli ${PROJECT_SOURCES})
 
-TARGET_LINK_LIBRARIES(modemd_cli modem)
+TARGET_LINK_LIBRARIES(modemd_cli modem pthread)
 
 INSTALL(TARGETS modemd_cli DESTINATION bin)

@@ -151,7 +151,7 @@ void modem_test(const char* port)
 
 	/* if modem detected, this printf will be waste */
 	if(!opt_detect_modems && modem_get_info(modem, &mi))
-		printf("\nDevice: [port: %s] [%04hx:%04hx] [%s %s]\n",
+		printf("\n      Device: [port: %s] [%04hx:%04hx] [%s %s]\n",
 			mi.port, mi.id_vendor, mi.id_product, mi.vendor, mi.product);
 
 #if _DEV_EDITION /* for testing purpose */
@@ -167,25 +167,25 @@ void modem_test(const char* port)
 	/* show modem info */
 
 	if(modem_get_imei(modem, msg, sizeof(msg)))
-		printf("IMEI: [%s]\n", msg);
+		printf("        IMEI: [%s]\n", msg);
 
 	if(modem_get_imsi(modem, msg, sizeof(msg)))
-		printf("IMSI: [%s]\n", msg);
+		printf("        IMSI: [%s]\n", msg);
 
 	if(modem_get_operator_name(modem, msg, sizeof(msg)))
-		printf("Operator: [%s]\n", msg);
+		printf("    Operator: [%s]\n", msg);
 
 	if(modem_get_network_type(modem, msg, sizeof(msg)))
-		printf("Network: [%s]\n", msg);
+		printf("     Network: [%s]\n", msg);
 
 	if(!modem_get_signal_quality(modem, &sq))
-		printf("Signal: [%d] dBm, [%-5s] Level\n", sq.dbm, modem_signal_level_str(sq.level));
+		printf("      Signal: [%d] dBm, [%-5s] Level\n", sq.dbm, modem_signal_level_str(sq.level));
 
 	if((t = modem_get_network_time(modem)))
 	{
 		tm = gmtime(&t);
 		strftime(msg, sizeof(msg), "%Y.%m.%d %H:%M:%S", tm);
-		printf("Modem time: %s", asctime(tm));
+		printf("  Modem time: %s", asctime(tm));
 	}
 
 	printf("Registration: [%s]\n", str_network_registration(modem_network_registration(modem)));
@@ -194,11 +194,11 @@ void modem_test(const char* port)
 	{
 		tm = gmtime(&fw_info.release);
 		strftime(msg, sizeof(msg), "%Y.%m.%d %H:%M:%S", tm);
-		printf("Firmware: [%s], Release: [%s]\n", fw_info.firmware, msg);
+		printf("    Firmware: [%s], Release: [%s]\n", fw_info.firmware, msg);
 	}
 
 	if((cell_id = modem_get_cell_id(modem)))
-		printf("Cell ID: [%d]\n", cell_id);
+		printf("     Cell ID: [%d]\n", cell_id);
 
 #if _DEV_EDITION /* for testing purpose */
 	if(!modem_operator_scan_start(modem, "/tmp/op_list.conf"))
@@ -271,10 +271,10 @@ int main(int argc, char** argv)
 
 	/* show configuration */
 	printf(
-		"	 Basename: %s\n"
+		"     Basename: %s\n"
 		"  Socket file: %s\n"
-		"		 Port: %s\n"
-		"	  Command: %s\n"
+		"         Port: %s\n"
+		"      Command: %s\n"
 		"Detect modems: %s\n"
 		"  Test modems: %s\n",
 		argv[0], opt_sock_path, opt_modem_port, opt_modem_cmd,
@@ -297,7 +297,7 @@ int main(int argc, char** argv)
 
 		while(find)
 		{
-			printf("\nDevice: [port: %s] [%04hx:%04hx] [%s %s]\n",
+			printf("\n      Device: [port: %s] [%04hx:%04hx] [%s %s]\n",
 				mi.port, mi.id_vendor, mi.id_product, mi.vendor, mi.product);
 
 			if(opt_modems_test)
