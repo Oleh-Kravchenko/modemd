@@ -51,6 +51,13 @@ typedef int (*cpin_pin_func_t)(modem_t* modem, const char* pin);
 
 typedef int (*cpin_puk_func_t)(modem_t* modem, const char* puk, const char* pin);
 
+typedef int (*get_freq_bands_func_t)(modem_t* modem, freq_band_t** band_list);
+
+typedef int (*get_freq_band_func_t)(modem_t* modem);
+
+typedef int (*set_freq_band_func_t)(modem_t* modem, int band_index);
+
+
 /*------------------------------------------------------------------------*/
 
 typedef struct
@@ -85,6 +92,9 @@ typedef struct
 			__MODEM_DB_FUNC(cpin_state);
 			__MODEM_DB_FUNC(cpin_pin);
 			__MODEM_DB_FUNC(cpin_puk);
+			__MODEM_DB_FUNC(get_freq_bands);
+			__MODEM_DB_FUNC(get_freq_band);
+			__MODEM_DB_FUNC(set_freq_band);
 		#undef __MODEM_DB_FUNC
 	} functions;
 

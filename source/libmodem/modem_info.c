@@ -26,7 +26,7 @@ modem_db_device_t modem_db_devices[] = {
 			.get_fw_version			= at_get_fw_version,
 			.get_imsi				= at_get_imsi,
 			.get_imei				= at_get_imei,
-			.get_signal_quality		= at_get_signal_quality,
+			.get_signal_quality		= mc77x0_at_get_signal_quality,
 			.get_network_type		= e1550_at_get_network_type,
 			.network_registration	= at_network_registration,
 			.get_operator_name		= at_get_operator_name,
@@ -36,6 +36,9 @@ modem_db_device_t modem_db_devices[] = {
 			.cpin_state				= at_cpin_state,
 			.cpin_pin				= at_cpin_pin,
 			.cpin_puk				= at_cpin_puk,
+			.get_freq_bands			= e1550_at_get_freq_bands,
+			.get_freq_band			= e1550_at_get_freq_band,
+			.set_freq_band			= e1550_at_set_freq_band,
 		},
 	},
 	{
@@ -52,7 +55,7 @@ modem_db_device_t modem_db_devices[] = {
 			},
 		},
 		.functions		= {
-			.get_fw_version			= at_get_fw_version,
+			.get_fw_version			= mc77x0_at_get_fw_version,
 			.get_imsi				= at_get_imsi,
 			.get_imei				= at_get_imei,
 			.get_network_time		= mc77x0_at_get_network_time,
@@ -67,11 +70,15 @@ modem_db_device_t modem_db_devices[] = {
 			.cpin_state				= at_cpin_state,
 			.cpin_pin				= at_cpin_pin,
 			.cpin_puk				= at_cpin_puk,
+			.get_freq_bands			= mc77x0_at_get_freq_bands,
+			.get_freq_band			= mc77x0_at_get_freq_band,
+			.set_freq_band			= mc77x0_at_set_freq_band,
 
 			/* data session */
 			.set_wwan_profile		= at_set_wwan_profile,
 			.start_wwan				= mc77x0_at_start_wwan,
 			.stop_wwan				= mc77x0_at_stop_wwan,
+//			.state_wwan				= mc77x0_at_state_wwan,
 		},
 	},
 #ifdef __QCQMI
@@ -108,6 +115,9 @@ modem_db_device_t modem_db_devices[] = {
 			.cpin_state				= qcqmi_cpin_state,
 			.cpin_pin				= qcqmi_cpin_pin,
 			.cpin_puk				= qcqmi_cpin_puk,
+			.get_freq_bands			= mc77x0_at_get_freq_bands,
+			.get_freq_band			= mc77x0_at_get_freq_band,
+			.set_freq_band			= mc77x0_at_set_freq_band,
 
 			/* data session */
 			.set_wwan_profile		= qcqmi_set_wwan_profile,

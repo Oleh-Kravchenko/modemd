@@ -33,9 +33,9 @@ int mc77x0_at_state_wwan(modem_t* modem);
 
 /* band selection */
 
-uint8_t mc77x0_at_get_freq_band(modem_t* modem);
+int mc77x0_at_get_freq_band(modem_t* modem);
 
-int mc77x0_at_set_freq_band(modem_t* modem, uint8_t band_index);
+int mc77x0_at_set_freq_band(modem_t* modem, int band_index);
 
 int mc77x0_at_get_freq_bands(modem_t* modem, freq_band_t** band_list);
 

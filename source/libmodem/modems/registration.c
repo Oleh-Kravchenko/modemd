@@ -223,11 +223,11 @@ void* mc77x0_thread_reg(modem_t *priv)
 		else if(state == RS_SET_BAND)
 		{
 			/* current modem band */
-			int modem_band = mc77x0_at_get_freq_band(priv);
+			int band = mdd->functions.get_freq_band(priv);
 			
-			printf("(II) Modem Band is %d\n", modem_band);
+			printf("(II) Modem Band is %x\n", band);
 
-			if(conf.frequency_band != modem_band)
+			if(conf.frequency_band != band)
 			{
 				/* band selection */
 				if(mc77x0_at_set_freq_band(priv, conf.frequency_band))
@@ -283,8 +283,6 @@ void* mc77x0_thread_reg(modem_t *priv)
 						return(NULL);
 					}
 			}
-
-			state_delay = 5;
 		}
 		else if(state == RS_SET_PIN)
 		{

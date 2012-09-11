@@ -168,12 +168,12 @@ modem_network_reg_t mc77x0_at_network_registration(modem_t* modem)
 
 /*------------------------------------------------------------------------*/
 
-uint8_t mc77x0_at_get_freq_band(modem_t* modem)
+int mc77x0_at_get_freq_band(modem_t* modem)
 {
 	at_queue_t* at_q;
 	at_query_t* q;
 	char band[0x100];
-	unsigned int res = -1;
+	int res = -1;
 
 	if(!(at_q = modem_proto_get(modem, MODEM_PROTO_AT)))
 		return(res);
@@ -185,7 +185,7 @@ uint8_t mc77x0_at_get_freq_band(modem_t* modem)
 	if(!at_query_is_error(q))
 	{
 		re_strncpy(band, sizeof(band), q->result, q->pmatch + 1);
-		sscanf(band, "%02X", &res);
+		sscanf(band, "%02X", (unsigned int*)&res);
 	}
 
 	at_query_free(q);
@@ -231,7 +231,7 @@ int mc77x0_at_get_freq_bands(modem_t* modem, freq_band_t** band_list)
 		index = re_strdup(bands + j, pmatch + 1);
 		name = re_strdup(bands + j, pmatch + 2); trim(name);
 
-		j += re_strlen(pmatch);
+		j += pmatch->rm_eo;
 
 		/* band index */
 		sscanf(index, "%02X", &i);
@@ -255,7 +255,7 @@ int mc77x0_at_get_freq_bands(modem_t* modem, freq_band_t** band_list)
 
 /*------------------------------------------------------------------------*/
 
-int mc77x0_at_set_freq_band(modem_t* modem, uint8_t band_index)
+int mc77x0_at_set_freq_band(modem_t* modem, int band_index)
 {
 	char cmd[0x100];
 
@@ -535,7 +535,7 @@ int mc77x0_at_state_wwan(modem_t* modem)
 		if((res = re_atoi(s + i, pmatch + 1)))
 			break;
 
-		i += re_strlen(pmatch);
+		i += pmatch->rm_eo;
 
 		free(pmatch);
 	}
