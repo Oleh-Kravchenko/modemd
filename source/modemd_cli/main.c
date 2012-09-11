@@ -201,19 +201,32 @@ void modem_test(const char* port)
 		printf("     Cell ID: [%d]\n", cell_id);
 
 #if _DEV_EDITION /* for testing purpose */
+	const char wait_bar[] = "|/-\\";
+	int nbar = 0;
+
 	if(!modem_operator_scan_start(modem, "/tmp/op_list.conf"))
 	{
-		puts("Operator scanning is started");
+		printf("    Scanning: [\r");
+		fflush(stdout);
 
 		while(modem_operator_scan_is_running(modem) == 1)
 		{
-			sleep(1);
-			puts("Operator scanning is running");
+			printf("    Scanning: [%c]\r", wait_bar[nbar]);
+			fflush(stdout);
+
+			++ nbar;
+
+			if(nbar == sizeof(wait_bar) - 1)
+				nbar = 0;
+
+			usleep(200000);
 		}
+
+		printf("    Scanning: [/tmp/op_list.conf]\n");
 	}
 #endif /* _DEV_EDITION */
 
-#if _DEV_EDITION /* for testing purpose */
+#if 0
 	modem_oper_t *opers = NULL;
 	int i;
 
