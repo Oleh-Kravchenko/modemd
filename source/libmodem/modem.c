@@ -22,14 +22,14 @@ static int sock = -1;
 int modem_init(const char* socket_path)
 {
 	struct sockaddr_un sa_srv;
-	int res = 0;
+
+	if(sock != -1)
+		/* already initialized */
+		return(0);
 
 	/* creating socket client */
 	if((sock = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0)
-	{
-		res = -1;
-		goto err_socket;
-	}
+		return(-1);
 
 	/* filling address */
 	memset(&sa_srv, 0, sizeof(sa_srv));
@@ -43,11 +43,11 @@ int modem_init(const char* socket_path)
 		close(sock);
 
 		sock = -1;
-		res = -1;
+
+		return(-1);
 	}
 
-err_socket:
-	return(res);
+	return(0);
 }
 
 /*------------------------------------------------------------------------*/
