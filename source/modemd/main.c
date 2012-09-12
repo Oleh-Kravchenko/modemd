@@ -21,8 +21,11 @@
 
 /*------------------------------------------------------------------------*/
 
-int terminate = 0;
-int sock = -1;
+static int sock = -1;
+
+static int terminate = 0;
+
+static modem_t* modem = NULL;
 
 /*------------------------------------------------------------------------*/
 
@@ -96,6 +99,9 @@ int srv_run(void)
 		res = -1;
 		goto err_listen;
 	}
+
+	if(*conf.port)
+		modem = modem_open_by_port(conf.port);
 
 	sa_client_len = sizeof(sa_client);
 
@@ -176,7 +182,6 @@ void create_pid_file(const char* path)
 
 int main(int argc, char** argv)
 {
-	modem_t* modem = NULL;
 	int res;
 
 	if((res = conf_read_cmdline(argc, argv)))
@@ -210,9 +215,6 @@ int main(int argc, char** argv)
 	}
 
 	modem_init(NULL);
-
-	if(*conf.port)
-		modem = modem_open_by_port(conf.port);
 
 	/* run socket server */
 	if(srv_run())
