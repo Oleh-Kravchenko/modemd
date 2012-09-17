@@ -3,4 +3,25 @@
 [ ] переписать поток регистрации, что бы он работал независимо от типа протокола используемого модемом
 [ ] журналирование событий (вызовы QCQMI-функций, АТ-команды) через syslog
 [ ] добавить поддержку qcqmi slqssdk
-[ ] добавить проверку результата функций
+[ ] Коды ошибок:
+	err_no_error
+	err_registration_denied,
+	err_roaming_restricted,
+	err_config_load
+	err_no_response
+	err_network_lost,
+	err_freq_band_selection,
+	err_operator_selection,
+	err_registration_in_progress
+	err_pin_required,
+	err_puk_required,
+	err_wrong_pin_puk,
+	err_lock_ccid,
+	err_lock_mcc,
+	err_lock_mnc,
+	err_lock_msin,
+	err_sim_not_present,
+	err_sim_blocked,
+	err_sim_busy,
+	err_sim_invalid,
+	err_function_is_not_supported
