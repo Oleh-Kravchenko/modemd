@@ -17,8 +17,18 @@ modem_db_device_t modem_db_devices[] = {
 		.product_id	= 0x1001,
 		.thread_reg	= mc77x0_thread_reg,
 		.iface		= {
+#if 0
 			{
 				.num	= 0,
+				.type	= MODEM_PROTO_AT_PPP,
+			},
+			{
+				.num	= 1,
+				.type	= MODEM_PROTO_VOICE, /* PCM 8 Khz 16 bit signed little endian */
+			},
+#endif
+			{
+				.num	= 2,
 				.type	= MODEM_PROTO_AT,
 			},
 		},

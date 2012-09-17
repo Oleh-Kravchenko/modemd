@@ -265,6 +265,9 @@ time_t modem_get_network_time(modem_t* modem)
 {
 	const modem_db_device_t* mdd = modem->mdd;
 
+	if(!mdd->functions.get_network_time)
+		return(0);
+
 	return(mdd->functions.get_network_time(modem));
 }
 
@@ -406,6 +409,9 @@ int modem_operator_scan_is_running(modem_t* modem)
 int modem_get_cell_id(modem_t* modem)
 {
 	const modem_db_device_t* mdd = modem->mdd;
+
+	if(!mdd->functions.get_cell_id)
+		return(0);
 
 	return(mdd->functions.get_cell_id(modem));
 }
