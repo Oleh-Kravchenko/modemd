@@ -504,19 +504,19 @@ int mc77x0_at_stop_wwan(modem_t* modem)
 
 /*------------------------------------------------------------------------*/
 
-int mc77x0_at_state_wwan(modem_t* modem)
+modem_state_wwan_t mc77x0_at_state_wwan(modem_t* modem)
 {
 	at_queue_t* at_q;
 	at_query_t* q;
 
 	regmatch_t* pmatch;
-    size_t nmatch;
 	char* s = NULL;
+	int state = 0;
+    size_t nmatch;
 	size_t i = 0;
-	int res = 0;
 
 	if(!(at_q = modem_proto_get(modem, MODEM_PROTO_AT)))
-		return(res);
+		return(MODEM_STATE_WWAN_UKNOWN);
 
 	q = at_query_create("AT!SCACT?\r\n", "\r\n(.*)\r\nOK\r\n");
 
@@ -528,11 +528,12 @@ int mc77x0_at_state_wwan(modem_t* modem)
 	at_query_free(q);
 
 	if(!s)
-		return(res);
+		return(MODEM_STATE_WWAN_UKNOWN);
 
+	/* looking all profiles */
 	while(!re_parse(s + i, "!SCACT: [0-9]+,([0-9]+)\r\n", &nmatch, &pmatch))
 	{
-		if((res = re_atoi(s + i, pmatch + 1)))
+		if((state = re_atoi(s + i, pmatch + 1)))
 			break;
 
 		i += pmatch->rm_eo;
@@ -542,5 +543,20 @@ int mc77x0_at_state_wwan(modem_t* modem)
 
 	free(s);
 
-	return(res);
+	printf("(II) mc77x0_at_state_wwan() = %d\n", state);
+
+	switch(state)
+	{
+		case 0:
+			return(MODEM_STATE_WWAN_DISCONNECTED);
+
+		case 1:
+			return(MODEM_STATE_WWAN_CONNECTED);
+
+		case 2:
+			return(MODEM_STATE_WWAN_CONNECTING);
+
+		default:
+			return(MODEM_STATE_WWAN_UKNOWN);
+	}
 }

@@ -636,3 +636,26 @@ int modem_stop_wwan(modem_t* modem)
 
 	return(res);
 }
+
+/*------------------------------------------------------------------------*/
+
+modem_state_wwan_t modem_state_wwan(modem_t* modem)
+{
+	modem_state_wwan_t res = MODEM_STATE_WWAN_UKNOWN;
+	rpc_packet_t* p;
+
+	/* build packet and send it */
+	p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
+
+	if(p && p->hdr.data_len == sizeof(res))
+		res = *((modem_state_wwan_t*)p->data);
+
+	rpc_free(p);
+
+	return(res);
+}

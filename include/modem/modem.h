@@ -178,4 +178,6 @@ int modem_start_wwan(modem_t* modem);
 
 int modem_stop_wwan(modem_t* modem);
 
+modem_state_wwan_t modem_state_wwan(modem_t* modem);
+
 #endif /* __MODEM_H */

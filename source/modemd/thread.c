@@ -427,6 +427,22 @@ rpc_packet_t* modem_stop_wwan_packet(modemd_client_thread_t* priv, rpc_packet_t*
 
 /*------------------------------------------------------------------------*/
 
+rpc_packet_t* modem_state_wwan_packet(modemd_client_thread_t* priv, rpc_packet_t* p)
+{
+	rpc_packet_t *res = NULL;
+	modem_state_wwan_t state;
+
+	if(!priv->modem)
+		return(NULL);
+
+	state = modem_state_wwan(priv->modem);
+	res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)&state, sizeof(state));
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
 const rpc_function_info_t rpc_functions[] = {
 	{"modem_find_first", modem_find_first_packet},
 	{"modem_find_next", modem_find_next_packet},
@@ -452,6 +468,7 @@ const rpc_function_info_t rpc_functions[] = {
 	{"modem_set_wwan_profile", modem_set_wwan_profile_packet,					1},
 	{"modem_start_wwan", modem_start_wwan_packet,								1},
 	{"modem_stop_wwan", modem_stop_wwan_packet,									1},
+	{"modem_state_wwan", modem_state_wwan_packet,								1},
 	{{0, 0, 0}},
 };
 

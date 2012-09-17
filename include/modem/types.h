@@ -27,6 +27,16 @@ typedef enum
 
 typedef enum
 {
+	MODEM_STATE_WWAN_UKNOWN = -1,
+	MODEM_STATE_WWAN_DISCONNECTED = 0,
+	MODEM_STATE_WWAN_CONNECTED,
+	MODEM_STATE_WWAN_CONNECTING
+} __attribute__((__packed__)) modem_state_wwan_t;
+
+/*------------------------------------------------------------------------*/
+
+typedef enum
+{
 	MODEM_NETWORK_REG_FAILED	= 0,
 	MODEM_NETWORK_REG_HOME,
 	MODEM_NETWORK_REG_SEARCHING,

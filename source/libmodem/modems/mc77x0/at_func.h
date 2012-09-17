@@ -29,7 +29,7 @@ int mc77x0_at_start_wwan(modem_t* modem);
 
 int mc77x0_at_stop_wwan(modem_t* modem);
 
-int mc77x0_at_state_wwan(modem_t* modem);
+modem_state_wwan_t mc77x0_at_state_wwan(modem_t* modem);
 
 /* band selection */
 

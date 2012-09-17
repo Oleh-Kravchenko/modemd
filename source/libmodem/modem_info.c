@@ -88,7 +88,7 @@ modem_db_device_t modem_db_devices[] = {
 			.set_wwan_profile		= at_set_wwan_profile,
 			.start_wwan				= mc77x0_at_start_wwan,
 			.stop_wwan				= mc77x0_at_stop_wwan,
-//			.state_wwan				= mc77x0_at_state_wwan,
+			.state_wwan				= mc77x0_at_state_wwan,
 		},
 	},
 #ifdef __QCQMI

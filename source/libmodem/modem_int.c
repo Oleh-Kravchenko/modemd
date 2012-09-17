@@ -560,3 +560,12 @@ int modem_stop_wwan(modem_t* modem)
 
 	return(mdd->functions.stop_wwan(modem));
 }
+
+/*------------------------------------------------------------------------*/
+
+modem_state_wwan_t modem_state_wwan(modem_t* modem)
+{
+	const modem_db_device_t* mdd = modem->mdd;
+
+	return(mdd->functions.state_wwan(modem));
+}
