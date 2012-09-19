@@ -31,6 +31,8 @@ int qcqmi_start_wwan(modem_t* modem);
 
 int qcqmi_stop_wwan(modem_t* modem);
 
+modem_state_wwan_t qcqmi_state_wwan(modem_t* modem);
+
 modem_cpin_state_t qcqmi_cpin_state(modem_t* modem);
 
 int qcqmi_cpin_pin(modem_t* modem, const char* pin);

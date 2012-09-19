@@ -133,6 +133,7 @@ modem_db_device_t modem_db_devices[] = {
 			.set_wwan_profile		= qcqmi_set_wwan_profile,
 			.start_wwan				= qcqmi_start_wwan,
 			.stop_wwan				= qcqmi_stop_wwan,
+			.state_wwan				= qcqmi_state_wwan,
 		},
 	},
 #endif /* __QCQMI */
