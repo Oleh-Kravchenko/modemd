@@ -600,7 +600,7 @@ int qcqmi_start_wwan(modem_t* modem)
 	CHAR ProfileName[33];
 	CHAR apn[101];
 	CHAR username[33];
-	ULONG failurereason;
+	ULONG failurereason = 0;
 
 	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
 		return(res);
@@ -621,7 +621,7 @@ int qcqmi_start_wwan(modem_t* modem)
 				NULL, NULL, NULL, apn, NULL, NULL, &Authentication,
 				username, NULL, &qcqmi_q->sessionid, &failurereason, 0x08));
 
-		printf("\tsessionid = %d, failurereason = %d\n", qcqmi_q->sessionid, failurereason);
+		printf("\tsessionid = 0x%d, failurereason = 0x%x\n", qcqmi_q->sessionid, failurereason);
 	}
 
 	res = qcqmi_q->last_error != eQCWWAN_ERR_NONE;
@@ -660,32 +660,7 @@ int qcqmi_stop_wwan(modem_t* modem)
 
 modem_state_wwan_t qcqmi_state_wwan(modem_t* modem)
 {
-	modem_state_wwan_t res = MODEM_STATE_WWAN_UKNOWN;
-	qcqmi_queue_t* qcqmi_q;
-	unsigned long state;
-
-	if(!(qcqmi_q = (qcqmi_queue_t*)modem_proto_get(modem, MODEM_PROTO_QCQMI)))
-		return(res);
-
-	pthread_mutex_lock(&qcqmi_q->mutex);
-
-	printf("(II) GetSessionState() = %d\n", qcqmi_q->last_error = GetSessionState(&state));
-
-	if(qcqmi_q->last_error != eQCWWAN_ERR_NONE)
-	{
-		printf("\tstate = %d\n", state);
-
-		if(state == 1 || state == 3) /* DISCONNECTED || SUSPENDED */
-			res = MODEM_STATE_WWAN_DISCONNECTED;
-		else if(state == 2) /* CONNECTED */
-			res = MODEM_STATE_WWAN_CONNECTED;
-		else if(state == 4) /* AUTHENTICATING */
-			res = MODEM_STATE_WWAN_CONNECTING;
-	}
-
-	pthread_mutex_unlock(&qcqmi_q->mutex);
-
-	return(res);
+	return(state_wwan);
 }
 
 /*------------------------------------------------------------------------*/

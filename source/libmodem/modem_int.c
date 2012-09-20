@@ -11,7 +11,6 @@
 #include "utils/sysfs.h"
 #include "at/at_common.h"
 #include "at/at_queue.h"
-#include "qcqmi/qcqmi_queue.h"
 #include "proto.h"
 
 /*------------------------------------------------------------------------*/
@@ -50,12 +49,6 @@ int modem_init(const char* socket_path)
 {
 	modems = NULL;
 
-#ifdef __QCQMI
-	printf("==== SLQSKillSDKProcess() %d\n", SLQSKillSDKProcess());
-	printf("==== SetSDKImagePath() %d\n", SetSDKImagePath("/bin/slqssdk"));
-	printf("==== SLQSStart() %d\n", SLQSStart());
-#endif /* __QCQMI */
-
 	return(0);
 }
 
@@ -68,10 +61,6 @@ void modem_cleanup(void)
 	/* forced modem close */
 	while(modems)
 		modem_close(modems->modem);
-
-#ifdef __QCQMI
-	printf("==== SLQSKillSDKProcess() %d\n", SLQSKillSDKProcess());
-#endif /* __QCQMI */
 }
 
 /*------------------------------------------------------------------------*/

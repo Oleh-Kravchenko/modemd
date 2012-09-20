@@ -50,6 +50,10 @@ typedef struct
 
 /*------------------------------------------------------------------------*/
 
+extern modem_state_wwan_t state_wwan;
+
+/*------------------------------------------------------------------------*/
+
 qcqmi_queue_t* qcqmi_queue_open(const char* dev);
 
 void qcqmi_queue_destroy(qcqmi_queue_t* queue);
