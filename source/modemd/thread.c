@@ -400,12 +400,13 @@ rpc_packet_t* modem_set_wwan_profile_packet(modemd_client_thread_t* priv, rpc_pa
 rpc_packet_t* modem_start_wwan_packet(modemd_client_thread_t* priv, rpc_packet_t* p)
 {
 	rpc_packet_t *res = NULL;
+	int32_t result;
 
 	if(!priv->modem)
 		return(NULL);
 
-	if(!modem_start_wwan(priv->modem))
-		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)p, sizeof(*p));
+	if(!(result = modem_start_wwan(priv->modem)))
+		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)&result, sizeof(result));
 
 	return(res);
 }
@@ -415,12 +416,13 @@ rpc_packet_t* modem_start_wwan_packet(modemd_client_thread_t* priv, rpc_packet_t
 rpc_packet_t* modem_stop_wwan_packet(modemd_client_thread_t* priv, rpc_packet_t* p)
 {
 	rpc_packet_t *res = NULL;
+	int32_t result;
 
 	if(!priv->modem)
 		return(NULL);
 
-	if(!modem_stop_wwan(priv->modem))
-		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)p, sizeof(*p));
+	if(!(result = modem_stop_wwan(priv->modem)))
+		res = rpc_create(TYPE_RESPONSE, p->func, (uint8_t*)&result, sizeof(result));
 
 	return(res);
 }

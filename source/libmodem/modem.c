@@ -230,7 +230,7 @@ modem_find_t* modem_find_next(modem_find_t* find, usb_device_info_t* mi)
 modem_t* modem_open_by_port(const char* port)
 {
 	rpc_packet_t* p;
-	modem_t* res;
+	modem_t* res = NULL;
 
 	/* build packet and send it */
 	p = rpc_create(TYPE_QUERY, __func__, (uint8_t*)port, strlen(port));
@@ -240,7 +240,8 @@ modem_t* modem_open_by_port(const char* port)
 	/* receive result and unpack it */
 	p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
-	res = (modem_t*)p->data;
+	if(p && p->hdr.data_len == sizeof(*res))
+		res = (modem_t*)p->data;
 
 	rpc_free(p);
 
