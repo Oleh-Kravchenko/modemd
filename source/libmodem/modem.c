@@ -660,3 +660,30 @@ modem_state_wwan_t modem_state_wwan(modem_t* modem)
 
 	return(res);
 }
+
+/*------------------------------------------------------------------------*/
+
+char* modem_ussd_cmd(modem_t* modem, const char* query)
+{
+	rpc_packet_t* p;
+	char* res = NULL;
+
+	/* build packet and send it */
+	p = rpc_create(TYPE_QUERY, __func__, (uint8_t*)query, strlen(query) + 1);
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
+
+	if(p && p->hdr.data_len)
+		if((res = malloc(p->hdr.data_len + 1)))
+		{
+			memcpy(res, p->data, p->hdr.data_len);
+			res[p->hdr.data_len] = 0;
+		}
+
+	rpc_free(p);
+
+	return(res);
+}

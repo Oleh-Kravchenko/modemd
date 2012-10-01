@@ -83,7 +83,7 @@ int modem_get_last_reg_error(modem_t* modem);
  * @param query AT query for modem
  * @return result for command
  *
- * After usage must be called free(opers)
+ * After usage must be called free() for result
  */
 char* modem_at_command(modem_t* modem, const char* query);
 
@@ -148,6 +148,17 @@ int modem_operator_scan(modem_t* modem, modem_oper_t** opers);
 int modem_get_cell_id(modem_t* modem);
 
 int modem_set_default_profile(modem_data_profile_t* profile);
+
+/**
+ * @brief execute USSD command on modem
+ * @param modem modem handle
+ * @param query USSD query for modem
+ * @return result for command
+ *
+ * Example: *111#
+ * After usage must be called free() for result
+ */
+char* modem_ussd_cmd(modem_t* modem, const char* query);
 
 /***************************************************************************
  * functions for openrg                                                    *

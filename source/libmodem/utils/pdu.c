@@ -16,6 +16,10 @@ char* encode_pdu(const uint8_t* data, size_t len)
 	size_t i;
 	div_t q;
 
+	/* invalid length */
+	if(!len)
+		return(NULL);
+
 	q = div(len * 7, 8);
 
 	/* calculation memory size for result */
@@ -72,7 +76,7 @@ size_t decode_pdu(const char* enc, uint8_t** data)
 			l -= 7;
 
 		/* error, invalid characters in the string */
-		if(l > 16 || h > 16)
+		if(l > 0xf || h > 0xf)
 			break;
 
 		step = (i ++) % 7;

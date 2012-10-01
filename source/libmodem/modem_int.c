@@ -558,3 +558,15 @@ modem_state_wwan_t modem_state_wwan(modem_t* modem)
 
 	return(mdd->functions.state_wwan(modem));
 }
+
+/*------------------------------------------------------------------------*/
+
+char* modem_ussd_cmd(modem_t* modem, const char* query)
+{
+	const modem_db_device_t* mdd = modem->mdd;
+
+	if(mdd->functions.ussd_cmd)
+		return(mdd->functions.ussd_cmd(modem, query));
+
+	return(NULL);
+}

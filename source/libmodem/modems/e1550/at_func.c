@@ -9,6 +9,7 @@
 #include "at/at_common.h"
 
 #include "utils/re.h"
+#include "utils/pdu.h"
 #include "utils/str.h"
 
 /*------------------------------------------------------------------------*/
@@ -136,8 +137,8 @@ int e1550_at_get_freq_band(modem_t* modem)
 
 	regmatch_t* pmatch;
     size_t nmatch;
+	char band[0x100];
 	int res = -1;
-	char* band;
 
 	if(!(at_q = modem_proto_get(modem, MODEM_PROTO_AT)))
 		return(res);
@@ -148,7 +149,7 @@ int e1550_at_get_freq_band(modem_t* modem)
 
 	if(!at_query_is_error(q))
 	{
-		band = re_strdup(q->result, q->pmatch + 1);
+		re_strncpy(band, sizeof(band), q->result, q->pmatch + 1);
 		sscanf(band, "%X", (unsigned int*)&res);
 	}
 
@@ -166,4 +167,42 @@ int e1550_at_set_freq_band(modem_t* modem, int band_index)
 	snprintf(cmd, sizeof(cmd), "AT^SYSCFG=16,3,%X,2,4\r\n", band_index);
 
 	return(at_raw_ok(modem, cmd));
+}
+
+/*------------------------------------------------------------------------*/
+
+char* e1550_at_ussd_cmd(modem_t* modem, const char* query)
+{
+	uint8_t *data;
+	size_t len;
+	char* reqs;
+	char* resp;
+	char* res;
+
+	/* encoding request */
+	if(!(reqs = encode_pdu((uint8_t*)query, strlen(query))))
+		return(NULL);
+
+	if(!(resp = at_ussd_cmd(modem, reqs)))
+		goto err;
+
+	if(!(len = decode_pdu(resp, &data)))
+		goto err1;
+
+	if(!(res = malloc(len + 1)))
+		goto err2;
+
+	memcpy(res, data, len);
+	res[len] = 0;
+
+err2:
+	free(data);
+
+err1:
+	free(resp);
+
+err:
+	free(reqs);
+
+	return(res);
 }

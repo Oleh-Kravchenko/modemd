@@ -59,6 +59,7 @@ typedef int (*get_freq_band_func_t)(modem_t* modem);
 
 typedef int (*set_freq_band_func_t)(modem_t* modem, int band_index);
 
+typedef char* (*ussd_cmd_func_t)(modem_t* modem, const char* query);
 
 /*------------------------------------------------------------------------*/
 
@@ -74,31 +75,32 @@ typedef struct
 
 	struct
 	{
-		#define __MODEM_DB_FUNC(s) s##_func_t s
-			__MODEM_DB_FUNC(get_imei);
-			__MODEM_DB_FUNC(get_signal_quality);
-			__MODEM_DB_FUNC(get_network_time);
-			__MODEM_DB_FUNC(get_imsi);
-			__MODEM_DB_FUNC(get_operator_name);
-			__MODEM_DB_FUNC(network_registration);
-			__MODEM_DB_FUNC(get_network_type);
-			__MODEM_DB_FUNC(change_pin);
-			__MODEM_DB_FUNC(get_fw_version);
-			__MODEM_DB_FUNC(operator_scan);
-			__MODEM_DB_FUNC(get_cell_id);
-			__MODEM_DB_FUNC(operator_select);
-			__MODEM_DB_FUNC(get_operator_number);
-			__MODEM_DB_FUNC(set_wwan_profile);
-			__MODEM_DB_FUNC(start_wwan);
-			__MODEM_DB_FUNC(stop_wwan);
-			__MODEM_DB_FUNC(state_wwan);
-			__MODEM_DB_FUNC(cpin_state);
-			__MODEM_DB_FUNC(cpin_pin);
-			__MODEM_DB_FUNC(cpin_puk);
-			__MODEM_DB_FUNC(get_freq_bands);
-			__MODEM_DB_FUNC(get_freq_band);
-			__MODEM_DB_FUNC(set_freq_band);
-		#undef __MODEM_DB_FUNC
+		#define __MODEM_INFO_FUNC(s) s##_func_t s
+			__MODEM_INFO_FUNC(get_imei);
+			__MODEM_INFO_FUNC(get_signal_quality);
+			__MODEM_INFO_FUNC(get_network_time);
+			__MODEM_INFO_FUNC(get_imsi);
+			__MODEM_INFO_FUNC(get_operator_name);
+			__MODEM_INFO_FUNC(network_registration);
+			__MODEM_INFO_FUNC(get_network_type);
+			__MODEM_INFO_FUNC(change_pin);
+			__MODEM_INFO_FUNC(get_fw_version);
+			__MODEM_INFO_FUNC(operator_scan);
+			__MODEM_INFO_FUNC(get_cell_id);
+			__MODEM_INFO_FUNC(operator_select);
+			__MODEM_INFO_FUNC(get_operator_number);
+			__MODEM_INFO_FUNC(set_wwan_profile);
+			__MODEM_INFO_FUNC(start_wwan);
+			__MODEM_INFO_FUNC(stop_wwan);
+			__MODEM_INFO_FUNC(state_wwan);
+			__MODEM_INFO_FUNC(cpin_state);
+			__MODEM_INFO_FUNC(cpin_pin);
+			__MODEM_INFO_FUNC(cpin_puk);
+			__MODEM_INFO_FUNC(get_freq_bands);
+			__MODEM_INFO_FUNC(get_freq_band);
+			__MODEM_INFO_FUNC(set_freq_band);
+			__MODEM_INFO_FUNC(ussd_cmd);
+		#undef __MODEM_INFO_FUNC
 	} functions;
 
 	registration_func_t thread_reg;

@@ -465,3 +465,33 @@ int at_set_wwan_profile(modem_t* modem, modem_data_profile_t* profile)
 	/* setup APN */
 	return(res = at_raw_ok(modem, cmd));
 }
+
+/*------------------------------------------------------------------------*/
+
+char* at_ussd_cmd(modem_t* modem, const char* query)
+{
+	at_queue_t* at_q = modem_proto_get(modem, MODEM_PROTO_AT);
+	at_query_t *q;
+	char s[0x100];
+	char* res = NULL;
+
+	if(!at_q)
+		return(NULL);
+
+	/* formating at command */
+	snprintf(s, sizeof(s), "AT+CUSD=1,\"%s\",15\r\n", query);
+
+	q = at_query_create(s, "\\+CUSD: ([0-9]{1}),\"(.+)\",15\r\n");
+	q->timeout = 20;
+	at_query_exec(at_q->queue, q);
+
+	if(q->result)
+	{
+		printf("(II) USSD status = %d\n", re_atoi(q->result, q->pmatch + 1));
+		res = re_strdup(q->result, q->pmatch + 2);
+	}
+
+	at_query_free(q);
+
+	return(res);
+}

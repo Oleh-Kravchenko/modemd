@@ -49,6 +49,7 @@ modem_db_device_t modem_db_devices[] = {
 			.get_freq_bands			= e1550_at_get_freq_bands,
 			.get_freq_band			= e1550_at_get_freq_band,
 			.set_freq_band			= e1550_at_set_freq_band,
+//			.ussd_cmd				= e1550_at_ussd_cmd,
 		},
 	},
 	{
@@ -83,6 +84,7 @@ modem_db_device_t modem_db_devices[] = {
 			.get_freq_bands			= mc77x0_at_get_freq_bands,
 			.get_freq_band			= mc77x0_at_get_freq_band,
 			.set_freq_band			= mc77x0_at_set_freq_band,
+			.ussd_cmd				= at_ussd_cmd,
 
 			/* data session */
 			.set_wwan_profile		= at_set_wwan_profile,
