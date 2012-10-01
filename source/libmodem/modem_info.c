@@ -49,7 +49,7 @@ modem_db_device_t modem_db_devices[] = {
 			.get_freq_bands			= e1550_at_get_freq_bands,
 			.get_freq_band			= e1550_at_get_freq_band,
 			.set_freq_band			= e1550_at_set_freq_band,
-//			.ussd_cmd				= e1550_at_ussd_cmd,
+			.ussd_cmd				= e1550_at_ussd_cmd,
 		},
 	},
 	{
