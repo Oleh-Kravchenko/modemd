@@ -111,14 +111,14 @@ typedef struct
 
 		modem_proto_t type;
 	} iface[__MODEM_IFACE_MAX];
-} modem_db_device_t;
+} modem_info_device_t;
  
 /*------------------------------------------------------------------------*/
 
-extern modem_db_device_t modem_db_devices[];
+extern modem_info_device_t modem_info_devices[];
 
 /*------------------------------------------------------------------------*/
 
-extern const int modem_db_devices_cnt;
+extern const int modem_info_devices_cnt;
 
 #endif /* __MODEM_DB_H */

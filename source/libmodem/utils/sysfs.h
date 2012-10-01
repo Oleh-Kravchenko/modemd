@@ -22,7 +22,7 @@ int modem_is_supported(const char* vendor, const char* product, uint16_t vendor_
 
 /*------------------------------------------------------------------------*/
 
-const modem_db_device_t* modem_db_get_info(const char* vendor, const char* product, uint16_t vendor_id, uint16_t product_id);
+const modem_info_device_t* modem_db_get_info(const char* vendor, const char* product, uint16_t vendor_id, uint16_t product_id);
 
 /*------------------------------------------------------------------------*/
 

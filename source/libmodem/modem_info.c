@@ -10,7 +10,7 @@
 
 /*------------------------------------------------------------------------*/
 
-modem_db_device_t modem_db_devices[] = {
+modem_info_device_t modem_info_devices[] = {
 	{
 		/* HUAWEI E1550 */
 		.vendor_id	= 0x12d1,
@@ -143,4 +143,4 @@ modem_db_device_t modem_db_devices[] = {
 
 /*------------------------------------------------------------------------*/
 
-const int modem_db_devices_cnt = ARRAY_SIZE(modem_db_devices);
+const int modem_info_devices_cnt = ARRAY_SIZE(modem_info_devices);

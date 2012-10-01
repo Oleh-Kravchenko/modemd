@@ -125,8 +125,8 @@ modem_t* modem_open_by_port(const char* port)
 		goto err;
 
 	/* starting registration routine */
-	if(((const modem_db_device_t*)res->mdd)->thread_reg)
-		pthread_create(&res->reg.thread, NULL, (pthread_func_t)((const modem_db_device_t*)res->mdd)->thread_reg, res);
+	if(((const modem_info_device_t*)res->mdd)->thread_reg)
+		pthread_create(&res->reg.thread, NULL, (pthread_func_t)((const modem_info_device_t*)res->mdd)->thread_reg, res);
 	else
 		res->reg.thread = 0;
 
@@ -252,7 +252,7 @@ int modem_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 
 time_t modem_get_network_time(modem_t* modem)
 {
-	const modem_db_device_t* mdd = modem->mdd;
+	const modem_info_device_t* mdd = modem->mdd;
 
 	if(!mdd->functions.get_network_time)
 		return(0);
@@ -340,7 +340,7 @@ usb_device_info_t* modem_get_info(modem_t* modem, usb_device_info_t *mi)
 
 int modem_operator_scan(modem_t* modem, modem_oper_t** opers)
 {
-	const modem_db_device_t* mdd = modem->mdd;
+	const modem_info_device_t* mdd = modem->mdd;
 
 	return(mdd->functions.operator_scan(modem, opers));
 }
@@ -397,7 +397,7 @@ int modem_operator_scan_is_running(modem_t* modem)
 
 int modem_get_cell_id(modem_t* modem)
 {
-	const modem_db_device_t* mdd = modem->mdd;
+	const modem_info_device_t* mdd = modem->mdd;
 
 	if(!mdd->functions.get_cell_id)
 		return(0);
@@ -450,7 +450,7 @@ int modem_get_last_error(modem_t* modem)
 
 void modem_conf_reload(modem_t* modem)
 {
-	const modem_db_device_t* mdd = modem->mdd;
+	const modem_info_device_t* mdd = modem->mdd;
 	void* thread_res;
 
 	if(!modem->reg.thread)
@@ -527,7 +527,7 @@ exit:
 
 int modem_set_wwan_profile(modem_t* modem, modem_data_profile_t* profile)
 {
-	const modem_db_device_t* mdd = modem->mdd;
+	const modem_info_device_t* mdd = modem->mdd;
 
 	return(mdd->functions.set_wwan_profile(modem, profile));
 }
@@ -536,7 +536,7 @@ int modem_set_wwan_profile(modem_t* modem, modem_data_profile_t* profile)
 
 int modem_start_wwan(modem_t* modem)
 {
-	const modem_db_device_t* mdd = modem->mdd;
+	const modem_info_device_t* mdd = modem->mdd;
 
 	return(mdd->functions.start_wwan(modem));
 }
@@ -545,7 +545,7 @@ int modem_start_wwan(modem_t* modem)
 
 int modem_stop_wwan(modem_t* modem)
 {
-	const modem_db_device_t* mdd = modem->mdd;
+	const modem_info_device_t* mdd = modem->mdd;
 
 	return(mdd->functions.stop_wwan(modem));
 }
@@ -554,7 +554,7 @@ int modem_stop_wwan(modem_t* modem)
 
 modem_state_wwan_t modem_state_wwan(modem_t* modem)
 {
-	const modem_db_device_t* mdd = modem->mdd;
+	const modem_info_device_t* mdd = modem->mdd;
 
 	return(mdd->functions.state_wwan(modem));
 }
@@ -563,7 +563,7 @@ modem_state_wwan_t modem_state_wwan(modem_t* modem)
 
 char* modem_ussd_cmd(modem_t* modem, const char* query)
 {
-	const modem_db_device_t* mdd = modem->mdd;
+	const modem_info_device_t* mdd = modem->mdd;
 
 	if(mdd->functions.ussd_cmd)
 		return(mdd->functions.ussd_cmd(modem, query));

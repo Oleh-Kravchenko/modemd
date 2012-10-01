@@ -20,20 +20,20 @@ int modem_is_supported(const char* vendor, const char* product, uint16_t vendor_
 
 /*------------------------------------------------------------------------*/
 
-const modem_db_device_t* modem_db_get_info(const char* vendor, const char* product, uint16_t vendor_id, uint16_t product_id)
+const modem_info_device_t* modem_db_get_info(const char* vendor, const char* product, uint16_t vendor_id, uint16_t product_id)
 {
 	int i;
 
-	for(i = 0; i < modem_db_devices_cnt; ++ i)
+	for(i = 0; i < modem_info_devices_cnt; ++ i)
 	{
 		if
 		(
-			modem_db_devices[i].vendor_id == vendor_id &&
-			modem_db_devices[i].product_id == product_id &&
-			!re_strcmp(vendor, modem_db_devices[i].vendor) &&
-			!re_strcmp(product, modem_db_devices[i].product)
+			modem_info_devices[i].vendor_id == vendor_id &&
+			modem_info_devices[i].product_id == product_id &&
+			!re_strcmp(vendor, modem_info_devices[i].vendor) &&
+			!re_strcmp(product, modem_info_devices[i].product)
 		)
-			return(&modem_db_devices[i]);
+			return(&modem_info_devices[i]);
 	}
 
 	return(NULL);

@@ -18,7 +18,7 @@
 
 int modem_queues_init(modem_t* modem)
 {
-	const modem_db_device_t* mdd = modem->mdd;
+	const modem_info_device_t* mdd = modem->mdd;
 	char dev[0x100];
 	void* queue;
 	int i;
@@ -159,7 +159,7 @@ void modem_queues_suspend(modem_t* modem)
 
 void modem_queues_resume(modem_t* modem)
 {
-	const modem_db_device_t* mdd = modem->mdd;
+	const modem_info_device_t* mdd = modem->mdd;
 	modem_queues_t* mq = modem->queues;
 	char dev[0x100];
 	int i;
