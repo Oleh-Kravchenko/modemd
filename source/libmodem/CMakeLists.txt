@@ -20,6 +20,8 @@ queue.h
 queue.c
 utils/re.c
 utils/str.c
+utils/pdu.h
+utils/pdu.c
 utils/file.c
 utils/sysfs.c
 utils/event.h
