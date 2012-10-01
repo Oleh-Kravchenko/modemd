@@ -23,8 +23,8 @@ modem_db_device_t modem_db_devices[] = {
 				.type	= MODEM_PROTO_AT_PPP,
 			},
 			{
-				.num	= 1,
-				.type	= MODEM_PROTO_VOICE, /* PCM 8 Khz 16 bit signed little endian */
+				.num	= 1,                 /* PCM 8 Khz 16 bit signed little endian */
+				.type	= MODEM_PROTO_VOICE, /* 115200 8N1 HFCN, SFCN */
 			},
 #endif
 			{
