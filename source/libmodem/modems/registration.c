@@ -230,7 +230,7 @@ void* mc77x0_thread_reg(modem_t *priv)
 			if(conf.frequency_band != band)
 			{
 				/* band selection */
-				if(mc77x0_at_set_freq_band(priv, conf.frequency_band))
+				if(mdd->functions.set_freq_band(priv, conf.frequency_band))
 				{
 					priv->reg.last_error = at_q->last_error;
 
