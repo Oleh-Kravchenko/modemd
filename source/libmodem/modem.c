@@ -22,14 +22,14 @@ static int sock = -1;
 int modem_init(const char* socket_path)
 {
 	struct sockaddr_un sa_srv;
-	int res = 0;
+
+	if(sock != -1)
+		/* already initialized */
+		return(0);
 
 	/* creating socket client */
 	if((sock = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0)
-	{
-		res = -1;
-		goto err_socket;
-	}
+		return(-1);
 
 	/* filling address */
 	memset(&sa_srv, 0, sizeof(sa_srv));
@@ -43,11 +43,11 @@ int modem_init(const char* socket_path)
 		close(sock);
 
 		sock = -1;
-		res = -1;
+
+		return(-1);
 	}
 
-err_socket:
-	return(res);
+	return(0);
 }
 
 /*------------------------------------------------------------------------*/
@@ -230,7 +230,7 @@ modem_find_t* modem_find_next(modem_find_t* find, usb_device_info_t* mi)
 modem_t* modem_open_by_port(const char* port)
 {
 	rpc_packet_t* p;
-	modem_t* res;
+	modem_t* res = NULL;
 
 	/* build packet and send it */
 	p = rpc_create(TYPE_QUERY, __func__, (uint8_t*)port, strlen(port));
@@ -240,7 +240,8 @@ modem_t* modem_open_by_port(const char* port)
 	/* receive result and unpack it */
 	p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
 
-	res = (modem_t*)p->data;
+	if(p && p->hdr.data_len == sizeof(*res))
+		res = (modem_t*)p->data;
 
 	rpc_free(p);
 
@@ -562,6 +563,125 @@ int modem_get_last_error(modem_t* modem)
 
 	if(p && p->hdr.data_len == sizeof(int32_t))
 		res = *((int32_t*)p->data);
+
+	rpc_free(p);
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_set_wwan_profile(modem_t* modem, modem_data_profile_t* profile)
+{
+	rpc_packet_t* p;
+	int res = -1;
+
+	/* build packet and send it */
+	p = rpc_create(TYPE_QUERY, __func__, (uint8_t*)profile, sizeof(*profile));
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
+
+	if(p && p->hdr.data_len)
+		res = 0;
+
+	rpc_free(p);
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_start_wwan(modem_t* modem)
+{
+	rpc_packet_t* p;
+	int res = -1;
+
+	/* build packet and send it */
+	p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
+
+	if(p && p->hdr.data_len == sizeof(int32_t))
+		res = *((int32_t*)p->data);
+
+	rpc_free(p);
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_stop_wwan(modem_t* modem)
+{
+	rpc_packet_t* p;
+	int res = -1;
+
+	/* build packet and send it */
+	p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
+
+	if(p && p->hdr.data_len == sizeof(int32_t))
+		res = *((int32_t*)p->data);
+
+	rpc_free(p);
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+modem_state_wwan_t modem_state_wwan(modem_t* modem)
+{
+	modem_state_wwan_t res = MODEM_STATE_WWAN_UKNOWN;
+	rpc_packet_t* p;
+
+	/* build packet and send it */
+	p = rpc_create(TYPE_QUERY, __func__, NULL, 0);
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
+
+	if(p && p->hdr.data_len == sizeof(res))
+		res = *((modem_state_wwan_t*)p->data);
+
+	rpc_free(p);
+
+	return(res);
+}
+
+/*------------------------------------------------------------------------*/
+
+char* modem_ussd_cmd(modem_t* modem, const char* query)
+{
+	rpc_packet_t* p;
+	char* res = NULL;
+
+	/* build packet and send it */
+	p = rpc_create(TYPE_QUERY, __func__, (uint8_t*)query, strlen(query) + 1);
+	rpc_send(sock, p);
+	rpc_free(p);
+
+	/* receive result and unpack it */
+	p = rpc_recv_func(sock, __func__, __DEFAULT_TRIES);
+
+	if(p && p->hdr.data_len)
+		if((res = malloc(p->hdr.data_len + 1)))
+		{
+			memcpy(res, p->data, p->hdr.data_len);
+			res[p->hdr.data_len] = 0;
+		}
 
 	rpc_free(p);
 

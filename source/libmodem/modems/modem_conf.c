@@ -113,7 +113,7 @@ int modem_conf_read(const char* port, modem_conf_t* conf)
 		}
 		else if(strstr(s, CONF_BAND) == s)
 		{
-			conf->frequency_band = atoi(s + strlen(CONF_BAND));
+			sscanf(s + strlen(CONF_BAND), "%x", (unsigned int*)&conf->frequency_band);
 		}
 		else if(strstr(s, CONF_PERIODICAL_RST) == s)
 		{

@@ -12,11 +12,12 @@ modemd_conf_t conf;
 /*------------------------------------------------------------------------*/
 
 const char help[] =
-	"Usage: %s [-h] [-s SOCKET] [-p PID] [-l]\n"
+	"Usage: %s [-h] [-s SOCKET] [-p PID] [-l] [-i BUS-DEV]\n"
 	"-h - show this help\n"
 	"-s - file socket path (default: /var/run/%s.ctl)\n"
 	"-p - pid file path (default: /var/run/%s.pid)\n"
-	"-l - log to syslog\n";
+	"-l - log to syslog\n"
+	"-i - initialize modem on port, for example 1-1\n";
 
 /*------------------------------------------------------------------------*/
 
@@ -24,14 +25,15 @@ int conf_read_cmdline(int argc, char** argv)
 {
 	int param;
 
-	/* receiving default parameters */
+	/* setup default parameters */
 	strncpy(conf.basename, basename(argv[0]), sizeof(conf.basename) - 1);
 	conf.basename[sizeof(conf.basename) - 1] = 0;
 	snprintf(conf.sock_path, sizeof(conf.sock_path), "/var/run/%s.ctl", conf.basename);
 	snprintf(conf.pid_path, sizeof(conf.pid_path), "/var/run/%s.pid", conf.basename);
+	*conf.port = 0;
 
 	/* analyze command line */
-	while((param = getopt(argc, argv, "hs:p:l")) != -1)
+	while((param = getopt(argc, argv, "hs:p:li:")) != -1)
 	{
 		switch(param)
 		{
@@ -47,6 +49,11 @@ int conf_read_cmdline(int argc, char** argv)
 			case 'p':
 				strncpy(conf.pid_path, optarg, sizeof(conf.pid_path) - 1);
 				conf.pid_path[sizeof(conf.pid_path) - 1] = 0;
+				break;
+
+			case 'i':
+				strncpy(conf.port, optarg, sizeof(conf.port) - 1);
+				conf.port[sizeof(conf.port) - 1] = 0;
 				break;
 
 			case 'l':

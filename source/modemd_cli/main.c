@@ -23,25 +23,30 @@ const char help[] =
 	MODEMD_CLI_NAME " -h\n"
 	MODEMD_CLI_NAME " [-s SOCKET] [-t] -d\n"
 	MODEMD_CLI_NAME " [-s SOCKET] [-t] -p PORT\n"
+	MODEMD_CLI_NAME " [-s SOCKET] -u USSD -d\n"
+	MODEMD_CLI_NAME " [-s SOCKET] -u USSD -p PORT\n\n"
 	MODEMD_CLI_NAME " [-s SOCKET] -c COMMAND -d\n"
-	MODEMD_CLI_NAME " [-s SOCKET] -c COMMAND -p PORT \n\n"
+	MODEMD_CLI_NAME " [-s SOCKET] -c COMMAND -p PORT\n\n"
 	"Keys:\n"
 	"-h - show this help\n"
 	"-s - file socket path (default: /var/run/" MODEMD_NAME ".ctl)\n"
 	"-d - detect all known modems\n"
 	"-p - modem port, for example 1-1\n"
-	"-c - execute at command\n"
+	"-u - execute USSD command\n"
+	"-c - execute AT command\n"
 	"-t - perform a standard sequence of commands on modem\n\n"
 	"Examples:\n"
 	MODEMD_CLI_NAME " -d -c ATI                             - show AT information\n"
 	MODEMD_CLI_NAME " -d -c 'AT+CGDCONT=1,\"IP\",\"apn.com\"'   - set apn\n"
-	MODEMD_CLI_NAME " -d -c 'AT+CPIN=\"1111\"'                - set pin code";
+	MODEMD_CLI_NAME " -d -c 'AT+CPIN=\"1111\"'                - set pin code\n"
+	MODEMD_CLI_NAME " -d -u '*111#'                         - USSD request";
 
 /*------------------------------------------------------------------------*/
 
 static char opt_sock_path[0x100];
 static char opt_modem_port[0x100];
 static char opt_modem_cmd[0x100];
+static char opt_modem_ussd[0x100];
 static int opt_detect_modems;
 static int opt_modems_test;
 
@@ -55,11 +60,12 @@ int conf_read_cmdline(int argc, char** argv)
 	snprintf(opt_sock_path, sizeof(opt_sock_path), "/var/run/%s.ctl", MODEMD_NAME);
 	*opt_modem_port = 0;
 	*opt_modem_cmd = 0;
+	*opt_modem_ussd = 0;
 	opt_detect_modems = 0;
 	opt_modems_test = 0;
 
 	/* analyze command line */
-	while((param = getopt(argc, argv, "hs:dp:c:t")) != -1)
+	while((param = getopt(argc, argv, "hs:dp:c:tu:")) != -1)
 	{
 		switch(param)
 		{
@@ -86,13 +92,18 @@ int conf_read_cmdline(int argc, char** argv)
 				opt_modems_test = 1;
 				break;
 
+			case 'u':
+				strncpy(opt_modem_ussd, optarg, sizeof(opt_modem_ussd) - 1);
+				opt_modem_ussd[sizeof(opt_modem_ussd) - 1] = 0;
+				break;
+
 			default: /* '?' */
 				puts(help);
 				return(1);
 		}
 	}
 
-	/* check input paramets and their conficts */
+	/* check input paramets ... */
 	if(!*opt_modem_port && !opt_detect_modems)
 	{
 		puts(help);
@@ -102,7 +113,9 @@ int conf_read_cmdline(int argc, char** argv)
 	/* ... and their conficts */
 	if(
 		(opt_detect_modems && *opt_modem_port) ||
-		(opt_modems_test && *opt_modem_cmd)
+		(opt_modems_test && *opt_modem_cmd) ||
+		(opt_modems_test && *opt_modem_ussd) ||
+		(*opt_modem_cmd && *opt_modem_ussd)
 	)
 	{
 		puts(help);
@@ -110,6 +123,26 @@ int conf_read_cmdline(int argc, char** argv)
 	}
 
 	return(0);
+}
+
+/*------------------------------------------------------------------------*/
+
+const char* modem_signal_level_str(uint8_t level)
+{
+	const static char* slevel[] =
+	{
+		"",
+		"#",
+		"##",
+		"###",
+		"####",
+		"#####"
+	};
+
+	if(level > 5)
+		level = 5;
+
+	return(slevel[level]);
 }
 
 /*------------------------------------------------------------------------*/
@@ -131,8 +164,8 @@ void modem_test(const char* port)
 
 	/* if modem detected, this printf will be waste */
 	if(!opt_detect_modems && modem_get_info(modem, &mi))
-		printf("\nDevice: [port: %s] [%04hx:%04hx] [%s %s]\n",
-			mi.port, mi.id_vendor, mi.id_product, mi.manufacturer, mi.product);
+		printf("\n      Device: [port: %s] [%04hx:%04hx] [%s %s]\n",
+			mi.port, mi.id_vendor, mi.id_product, mi.vendor, mi.product);
 
 #if _DEV_EDITION /* for testing purpose */
 	int giveup;
@@ -147,25 +180,25 @@ void modem_test(const char* port)
 	/* show modem info */
 
 	if(modem_get_imei(modem, msg, sizeof(msg)))
-		printf("IMEI: [%s]\n", msg);
+		printf("        IMEI: [%s]\n", msg);
 
 	if(modem_get_imsi(modem, msg, sizeof(msg)))
-		printf("IMSI: [%s]\n", msg);
+		printf("        IMSI: [%s]\n", msg);
 
 	if(modem_get_operator_name(modem, msg, sizeof(msg)))
-		printf("Operator: [%s]\n", msg);
+		printf("    Operator: [%s]\n", msg);
 
 	if(modem_get_network_type(modem, msg, sizeof(msg)))
-		printf("Network: [%s]\n", msg);
+		printf("     Network: [%s]\n", msg);
 
 	if(!modem_get_signal_quality(modem, &sq))
-		printf("Signal: [%d] dBm, [%d] Level\n", sq.dbm, sq.level);
+		printf("      Signal: [%d] dBm, [%-5s] Level\n", sq.dbm, modem_signal_level_str(sq.level));
 
 	if((t = modem_get_network_time(modem)))
 	{
 		tm = gmtime(&t);
 		strftime(msg, sizeof(msg), "%Y.%m.%d %H:%M:%S", tm);
-		printf("Modem time: %s", asctime(tm));
+		printf("  Modem time: %s", asctime(tm));
 	}
 
 	printf("Registration: [%s]\n", str_network_registration(modem_network_registration(modem)));
@@ -174,26 +207,39 @@ void modem_test(const char* port)
 	{
 		tm = gmtime(&fw_info.release);
 		strftime(msg, sizeof(msg), "%Y.%m.%d %H:%M:%S", tm);
-		printf("Firmware: [%s], Release: [%s]\n", fw_info.firmware, msg);
+		printf("    Firmware: [%s], Release: [%s]\n", fw_info.firmware, msg);
 	}
 
 	if((cell_id = modem_get_cell_id(modem)))
-		printf("Cell ID: [%d]\n", cell_id);
+		printf("     Cell ID: [%d]\n", cell_id);
 
 #if _DEV_EDITION /* for testing purpose */
+	const char wait_bar[] = "|/-\\";
+	int nbar = 0;
+
 	if(!modem_operator_scan_start(modem, "/tmp/op_list.conf"))
 	{
-		puts("Operator scanning is started");
+		printf("    Scanning: [\r");
+		fflush(stdout);
 
 		while(modem_operator_scan_is_running(modem) == 1)
 		{
-			sleep(1);
-			puts("Operator scanning is running");
+			printf("    Scanning: [%c]\r", wait_bar[nbar]);
+			fflush(stdout);
+
+			++ nbar;
+
+			if(nbar == sizeof(wait_bar) - 1)
+				nbar = 0;
+
+			usleep(200000);
 		}
+
+		printf("    Scanning: [/tmp/op_list.conf]\n");
 	}
 #endif /* _DEV_EDITION */
 
-#if _DEV_EDITION /* for testing purpose */
+#if 0
 	modem_oper_t *opers = NULL;
 	int i;
 
@@ -240,6 +286,42 @@ void print_modem_at_cmd(const char* port, const char* cmd)
 
 /*------------------------------------------------------------------------*/
 
+void print_modem_ussd_cmd(const char* port, const char* cmd)
+{
+	modem_t* modem;
+	char *answer;
+
+	/* try open modem */
+	if(!(modem = modem_open_by_port(port)))
+		return;
+
+	answer = modem_ussd_cmd(modem, cmd);
+
+	if(answer)
+		printf("      Answer: [%s]\n", answer);
+
+	free(answer);
+
+	/* close modem */
+	modem_close(modem);
+}
+
+/*------------------------------------------------------------------------*/
+
+void modem_do(const char* port)
+{
+	if(opt_modems_test)
+		modem_test(port);
+
+	if(*opt_modem_cmd)
+		print_modem_at_cmd(port, opt_modem_cmd);
+
+	if(*opt_modem_ussd)
+		print_modem_ussd_cmd(port, opt_modem_ussd);
+}
+
+/*------------------------------------------------------------------------*/
+
 int main(int argc, char** argv)
 {
 	usb_device_info_t mi;
@@ -251,10 +333,10 @@ int main(int argc, char** argv)
 
 	/* show configuration */
 	printf(
-		"	 Basename: %s\n"
+		"     Basename: %s\n"
 		"  Socket file: %s\n"
-		"		 Port: %s\n"
-		"	  Command: %s\n"
+		"         Port: %s\n"
+		"      Command: %s\n"
 		"Detect modems: %s\n"
 		"  Test modems: %s\n",
 		argv[0], opt_sock_path, opt_modem_port, opt_modem_cmd,
@@ -277,26 +359,16 @@ int main(int argc, char** argv)
 
 		while(find)
 		{
-			printf("\nDevice: [port: %s] [%04hx:%04hx] [%s %s]\n",
-				mi.port, mi.id_vendor, mi.id_product, mi.manufacturer, mi.product);
+			printf("\n      Device: [port: %s] [%04hx:%04hx] [%s %s]\n",
+				mi.port, mi.id_vendor, mi.id_product, mi.vendor, mi.product);
 
-			if(opt_modems_test)
-				modem_test(mi.port);
-
-			if(*opt_modem_cmd)
-				print_modem_at_cmd(mi.port, opt_modem_cmd);
+			modem_do(mi.port);
 
 			find = modem_find_next(find, &mi);
 		}
 	}
 	else if(*opt_modem_port)
-	{
-		if(opt_modems_test)
-			modem_test(opt_modem_port);
-
-		if(*opt_modem_cmd)
-			print_modem_at_cmd(opt_modem_port, opt_modem_cmd);
-	}
+		modem_do(opt_modem_port);
 
 	modem_cleanup();
 

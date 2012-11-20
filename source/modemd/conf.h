@@ -9,6 +9,8 @@ typedef struct
 
 	char basename[0x100];
 
+	char port[0x100];
+
 	int syslog;
 
 	int daemonize;

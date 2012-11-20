@@ -7,7 +7,7 @@
 #include <modem/modem_errno.h>
 
 /***************************************************************************
- * Initialization                                                          *
+ * function for initialization                                             *
  **************************************************************************/
 
 /**
@@ -41,15 +41,15 @@ modem_find_t* modem_find_next(modem_find_t* find, usb_device_info_t* mi);
 void modem_find_close(modem_find_t* find);
 
 /***************************************************************************
- * Modem                                                                   *
+ * function for modem handling                                             *
  **************************************************************************/
 
 /**
  * @brief open modem by port and return handle
- * @param port port name
+ * @param port port name (bus-devpath)
  * @return modem handle 
  *
- * Modem handle must be close by modem_close()
+ * Modem handle must be closed by modem_close()
  */
 modem_t* modem_open_by_port(const char* port);
 
@@ -60,6 +60,36 @@ modem_t* modem_open_by_port(const char* port);
 void modem_close(modem_t* modem);
 
 void modem_conf_reload(modem_t* modem);
+
+usb_device_info_t* modem_get_info(modem_t* modem, usb_device_info_t *mi);
+
+/**
+ * @brief return last error on modem
+ * @param modem handle
+ * @return if no errors result is -1
+ */
+int modem_get_last_error(modem_t* modem);
+
+/**
+ * @brief return last registration error on modem
+ * @param modem handle
+ * @return if no errors result is -1
+ */
+int modem_get_last_reg_error(modem_t* modem);
+
+/**
+ * @brief execute AT command on modem
+ * @param modem modem handle
+ * @param query AT query for modem
+ * @return result for command
+ *
+ * After usage must be called free() for result
+ */
+char* modem_at_command(modem_t* modem, const char* query);
+
+/***************************************************************************
+ * functions implemented per modem                                         *
+ **************************************************************************/
 
 /**
  * @brief return IMEI of modem
@@ -100,8 +130,6 @@ int modem_change_pin(modem_t* modem, const char* old_pin, const char* new_pin);
 
 modem_fw_ver_t* modem_get_fw_version(modem_t* modem, modem_fw_ver_t* fw_info);
 
-usb_device_info_t* modem_get_info(modem_t* modem, usb_device_info_t *mi);
-
 /**
  * @brief perform operator scan
  * @param modem modem handle
@@ -111,6 +139,30 @@ usb_device_info_t* modem_get_info(modem_t* modem, usb_device_info_t *mi);
  * After usage must be called free(opers)
  */
 int modem_operator_scan(modem_t* modem, modem_oper_t** opers);
+
+/**
+ * @brief return cell id
+ * @param modem modem handle
+ * @return cell id, if failed 0
+ */
+int modem_get_cell_id(modem_t* modem);
+
+int modem_set_default_profile(modem_data_profile_t* profile);
+
+/**
+ * @brief execute USSD command on modem
+ * @param modem modem handle
+ * @param query USSD query for modem
+ * @return result for command
+ *
+ * Example: *111#
+ * After usage must be called free() for result
+ */
+char* modem_ussd_cmd(modem_t* modem, const char* query);
+
+/***************************************************************************
+ * functions for openrg                                                    *
+ **************************************************************************/
 
 /**
  * @brief perform operator scan and save result in file
@@ -127,35 +179,16 @@ int modem_operator_scan_start(modem_t* modem, const char* file);
  */
 int modem_operator_scan_is_running(modem_t* modem);
 
-/**
- * @brief return cell id
- * @param modem modem handle
- * @return cell id, if failed 0
- */
-int modem_get_cell_id(modem_t* modem);
+/***************************************************************************
+ * functions for wwan                                                      *
+ **************************************************************************/
 
-/**
- * @brief execute AT command on modem
- * @param modem modem handle
- * @param query AT query for modem
- * @return result for command
- *
- * After usage must be called free(opers)
- */
-char* modem_at_command(modem_t* modem, const char* query);
+int modem_set_wwan_profile(modem_t* modem, modem_data_profile_t* profile);
 
-/**
- * @brief return last error on modem
- * @param modem handle
- * @return if no errors result is -1
- */
-int modem_get_last_error(modem_t* modem);
+int modem_start_wwan(modem_t* modem);
 
-/**
- * @brief return last registration error on modem
- * @param modem handle
- * @return if no errors result is -1
- */
-int modem_get_last_reg_error(modem_t* modem);
+int modem_stop_wwan(modem_t* modem);
+
+modem_state_wwan_t modem_state_wwan(modem_t* modem);
 
 #endif /* __MODEM_H */

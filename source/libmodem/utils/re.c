@@ -5,13 +5,20 @@
 
 /*------------------------------------------------------------------------*/
 
+size_t re_strlen(const regmatch_t* re_subs)
+{
+	return(re_subs->rm_eo - re_subs->rm_so);
+}
+
+/*------------------------------------------------------------------------*/
+
 int re_atoi(const char* src, const regmatch_t* re_subs)
 {
 	int res = 0;
 	size_t len;
 	char* buf;
 
-	len = re_subs->rm_eo - re_subs->rm_so;
+	len = re_strlen(re_subs);
 
 	if(!(buf = malloc(len + 1)))
 		return(res);
@@ -32,7 +39,7 @@ char* re_strncpy(char* dst, size_t n, const char* src, const regmatch_t* re_subs
 {
 	size_t len;
 
-	len = re_subs->rm_eo - re_subs->rm_so;
+	len = re_strlen(re_subs);
 	len = (len > n ? n - 1 : len);
 
 	memcpy(dst, src + re_subs->rm_so, len);
@@ -48,7 +55,7 @@ char* re_strdup(const char* src, const regmatch_t* re_subs)
 	size_t len;
 	char* res;
 
-	len = re_subs->rm_eo - re_subs->rm_so;
+	len = re_strlen(re_subs);
 
 	if(!(res = malloc(len + 1)))
 		return(res);

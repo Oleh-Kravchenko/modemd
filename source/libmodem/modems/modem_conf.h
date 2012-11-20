@@ -19,7 +19,7 @@ typedef struct
 
 	int frequency_band;
 	
-	/* time in hours */
+	/** time in hours */
 	int periodical_reset;
 
 	char mcc_lock[4];

@@ -3,6 +3,8 @@
 
 #include <regex.h>
 
+size_t re_strlen(const regmatch_t* re_subs);
+
 int re_atoi(const char* src, const regmatch_t* re_subs);
 
 char* re_strncpy(char* dst, size_t n, const char* src, const regmatch_t* re_subs);

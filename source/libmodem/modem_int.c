@@ -11,6 +11,7 @@
 #include "utils/sysfs.h"
 #include "at/at_common.h"
 #include "at/at_queue.h"
+#include "proto.h"
 
 /*------------------------------------------------------------------------*/
 
@@ -25,7 +26,22 @@ typedef struct modem_list_s
 
 modem_list_t* modems = NULL;
 
-//pthread_mutex_t lock_modems = PTHREAD_MUTEX_INITIALIZER;
+/*------------------------------------------------------------------------*/
+
+void modem_close(modem_t* modem);
+
+typedef struct
+{
+	char file[0x100];
+
+	modem_t* modem;
+} modem_thread_operator_scan_t;
+
+/**
+ * @brief background operator scanner
+ * @remark this function only for openrg
+ */
+static void* modem_thread_operator_scan(void* prm);
 
 /*------------------------------------------------------------------------*/
 
@@ -44,31 +60,18 @@ void modem_cleanup(void)
 
 	/* forced modem close */
 	while(modems)
-	{
-		/* destroing queues */
-		at_queue_destroy((at_queue_t*)(modems->modem->priv));
-		
-		free(modems->modem);
-
-		item = modems->next;
-		free(modems);
-
-		modems = item;
-	}
+		modem_close(modems->modem);
 }
 
 /*------------------------------------------------------------------------*/
 
 modem_t* modem_open_by_port(const char* port)
 {
-	usb_device_info_t mi;
 	modem_t* res = NULL;
-	char tty[0x100];
-	const modem_db_device_t* mdd;
-	int i;
 	modem_list_t* item;
+	void* thread_res;
+	int i;
 
-	/* ==== */
 	/* check if modem is already opened */
 	for(item = modems; item; item = item->next)
 	{
@@ -83,101 +86,86 @@ modem_t* modem_open_by_port(const char* port)
 		}
 	}
 
-	/* TODO: workaround for openrg reset */
-	port_power(port, 0);
-	sleep(5);
+	/* allocating memory for result */
+	res = malloc(sizeof(*res));
+	memset(res, 0, sizeof(*res));
+	strncpy(res->port, port, sizeof(res->port) - 1);
+	res->port[sizeof(res->port) - 1] = 0;
 
-	/* ==== */
 	/* check device present */
-	if(!usb_device_get_info(port, &mi))
+	if(!usb_device_get_info(port, &res->usb))
 	{
 		printf("(DD) Port %s power on..\n", port);
 
 		/* device missing, maybe port power down? */
 		port_power(port, 1);
 
-		/* timeout for modem */
-		i = 10;
-
 		/* waiting for device ready */
-		do
+		for(i = 10; !usb_device_get_info(port, &res->usb) && i > 0; -- i)
 		{
 			printf("(DD) Wait for modem ready..\n");
 
-			sleep(1);
-
-			-- i;
+			sleep(20);
 		}
-		while(!usb_device_get_info(port, &mi) && i > 0);
 
 		if(i == 0)
 		{
 			printf("(EE) Device missing..\n");
 
-			return(res);
+			goto err;
 		}
 	}
 
-
-	/* ==== */
 	/* check driver ready */
-	if((mdd = modem_db_get_info(mi.id_vendor, mi.id_product)) == NULL)
-	{
-		printf("(EE) Device is not supported..\n");
+	if(!(res->mdd = modem_db_get_info(res->usb.vendor, res->usb.product, res->usb.id_vendor, res->usb.id_product)))
+		goto err;
 
-		return(res);
-	}
-
-	for(i = 0; mdd->iface[i].type != MODEM_PROTO_NONE && i < __MODEM_IFACE_MAX; ++ i)
-	{
-		switch(mdd->iface[i].type)
-		{
-			case MODEM_PROTO_WAN:
-				break;
-
-			case MODEM_PROTO_AT:
-			case MODEM_PROTO_CNS:
-				if(modem_get_iface_tty(port, mdd->iface[i].num, tty, sizeof(tty)))
-					break;
-
-			default:
-				printf("(EE) Device driver not loaded..\n");
-
-				return(res);
-		}
-	}
-
-
-	/* ==== */
-	/* allocating memory for modem_t */
-	res = malloc(sizeof(*res));
-	memset(res, 0, sizeof(*res));
-
-	usb_device_get_info(port, &res->usb);
-
-	strncpy(res->port, port, sizeof(res->port) - 1);
-	res->port[sizeof(res->port) - 1] = 0;
-	res->refs = 0;
-	res->reg.terminate = 0;
-	
 	/* creating queues */
-	res->priv = at_queue_open(tty);
-
+	if(modem_queues_init(res))
+		goto err;
 
 	/* starting registration routine */
-	if(mdd->thread_reg)
-		pthread_create(&res->reg.thread, NULL, (pthread_func_t)mdd->thread_reg, res);
+	if(((const modem_info_device_t*)res->mdd)->thread_reg)
+		pthread_create(&res->reg.thread, NULL, (pthread_func_t)((const modem_info_device_t*)res->mdd)->thread_reg, res);
 	else
 		res->reg.thread = 0;
 
-	/* ==== */
 	/* adding modem in pull */
-	item = malloc(sizeof(*item));
+	if(!(item = malloc(sizeof(*item))))
+		goto err_insert;
+
+	/* pointer to modem info */
+	//res->priv = (void*)mdd;
+
 	item->modem = res;
 	item->next = modems;
 	modems = item;
 
 	return(res);
+
+err_insert:
+	/* termination registration routine */
+	if(res->reg.thread)
+	{
+		res->reg.terminate = 1;
+
+		pthread_join(res->reg.thread, &thread_res);
+	}
+
+	/* termination scan routine */
+	if(res->scan.thread)
+		pthread_join(res->scan.thread, &thread_res);
+
+	/* destroying queues */
+	modem_queues_destroy(res);
+
+err:
+	/* cleanup resources */
+	port_power(port, 0);
+
+	free(res);
+
+	return(NULL);
 }
 
 /*------------------------------------------------------------------------*/
@@ -187,8 +175,11 @@ void modem_close(modem_t* modem)
 	modem_list_t* item, *prev;
 	void* thread_res;
 
+	if(!modem)
+		return;
+
 	/* decrements modem clients */
-	if(modem->refs)
+	if(modem->refs > 0)
 	{
 		-- modem->refs;
 
@@ -208,7 +199,7 @@ void modem_close(modem_t* modem)
 		pthread_join(modem->scan.thread, &thread_res);
 
 	/* destroing queues */
-	at_queue_destroy((at_queue_t*)(modem->priv));
+	modem_queues_destroy(modem);
 
 	/* power off modem */
 	port_power(modem->port, 0);
@@ -261,9 +252,12 @@ int modem_get_signal_quality(modem_t* modem, modem_signal_quality_t* sq)
 
 time_t modem_get_network_time(modem_t* modem)
 {
-	at_queue_t* q = modem->priv;
+	const modem_info_device_t* mdd = modem->mdd;
 
-	return(at_get_network_time(q->queue));
+	if(!mdd->functions.get_network_time)
+		return(0);
+
+	return(mdd->functions.get_network_time(modem));
 }
 
 /*------------------------------------------------------------------------*/
@@ -302,10 +296,7 @@ char* modem_get_operator_name(modem_t* modem, char *oper, int len)
 
 modem_network_reg_t modem_network_registration(modem_t* modem)
 {
-//	if(modem->reg.ready)
-		return(modem->reg.state.reg);
-//	else
-//		return(MODEM_NETWORK_REG_SEARCHING);
+	return(modem->reg.state.reg);
 }
 
 /*------------------------------------------------------------------------*/
@@ -325,9 +316,7 @@ char* modem_get_network_type(modem_t* modem, char *network, int len)
 
 int modem_change_pin(modem_t* modem, const char* old_pin, const char* new_pin)
 {
-	at_queue_t* at_q = modem->priv;
-
-	return(at_change_pin(at_q->queue, old_pin, new_pin));
+	return(at_change_pin(modem, old_pin, new_pin));
 }
 
 /*------------------------------------------------------------------------*/
@@ -351,33 +340,32 @@ usb_device_info_t* modem_get_info(modem_t* modem, usb_device_info_t *mi)
 
 int modem_operator_scan(modem_t* modem, modem_oper_t** opers)
 {
-	at_queue_t* q = modem->priv;
+	const modem_info_device_t* mdd = modem->mdd;
 
-	return(at_operator_scan(q->queue, opers));
+	return(mdd->functions.operator_scan(modem, opers));
 }
 
 /*------------------------------------------------------------------------*/
 
 int modem_operator_scan_start(modem_t* modem, const char* file)
 {
-	at_operator_scan_t *at_priv;
-	at_queue_t* at_q = modem->priv;
+	modem_thread_operator_scan_t* priv;
 	int res = 0;
 
 	if(modem->scan.thread)
 		goto exit;
 
-	if(!(at_priv = malloc(sizeof(*at_priv))))
+	if(!(priv = malloc(sizeof(*priv))))
 		goto exit;
 
 	/* filename */
-	strncpy(at_priv->file, file, sizeof(at_priv->file) - 1);
-	at_priv->file[sizeof(at_priv->file) - 1] = 0;
-	at_priv->queue = at_q->queue;
+	strncpy(priv->file, file, sizeof(priv->file) - 1);
+	priv->file[sizeof(priv->file) - 1] = 0;
+	priv->modem = modem;
 
 	/* creating thread with a query AT+COPS=? */
-	if((res = pthread_create(&modem->scan.thread, NULL, at_thread_operator_scan, at_priv)))
-		free(at_priv);
+	if((res = pthread_create(&modem->scan.thread, NULL, modem_thread_operator_scan, priv)))
+		free(priv);
 
 exit:
 	return(res);
@@ -409,16 +397,19 @@ int modem_operator_scan_is_running(modem_t* modem)
 
 int modem_get_cell_id(modem_t* modem)
 {
-	at_queue_t* q = modem->priv;
+	const modem_info_device_t* mdd = modem->mdd;
 
-	return(at_get_cell_id(q->queue));
+	if(!mdd->functions.get_cell_id)
+		return(0);
+
+	return(mdd->functions.get_cell_id(modem));
 }
 
 /*------------------------------------------------------------------------*/
 
 char* modem_at_command(modem_t* modem, const char* query)
 {
-	at_queue_t* at_q = modem->priv;
+	at_queue_t* at_q = modem_proto_get(modem, MODEM_PROTO_AT);
 	at_query_t *q;
 	char *cmd;
 
@@ -459,8 +450,7 @@ int modem_get_last_error(modem_t* modem)
 
 void modem_conf_reload(modem_t* modem)
 {
-	const modem_db_device_t* mdd;
-	usb_device_info_t mi;
+	const modem_info_device_t* mdd = modem->mdd;
 	void* thread_res;
 
 	if(!modem->reg.thread)
@@ -468,9 +458,6 @@ void modem_conf_reload(modem_t* modem)
 
 	modem->reg.terminate = 1;
 	pthread_join(modem->reg.thread, &thread_res);
-
-	usb_device_get_info(modem->port, &mi);
-	mdd = modem_db_get_info(mi.id_vendor, mi.id_product);
 
 	modem->reg.terminate = 0;
 
@@ -485,51 +472,101 @@ void modem_conf_reload(modem_t* modem)
 
 void modem_reset(modem_t* modem)
 {
-	const modem_db_device_t* mdd;
 	void *thread_res;
-	char tty[0x100];
-	at_queue_t* at_q = modem->priv;
-	int i;
 
 	/* termination scan routine */
 	if(modem->scan.thread)
 		pthread_join(modem->scan.thread, &thread_res);
 
-	/* terminating queues */
-//	at_queue_destroy(modem->priv);
-//	queue_busy(at_q->queue, 1);
-//	close(at_q->fd);
-	at_queue_suspend(at_q);
-
+	/* suspend queues */
+	modem_queues_suspend(modem);
 
 	/* reseting modem */
 	port_reset(modem->port);
 
 	sleep(10);
 
-	mdd = modem_db_get_info(modem->usb.id_vendor, modem->usb.id_product);
+	/* resume queues */
+	modem_queues_resume(modem);
+}
 
-	for(i = 0; mdd->iface[i].type != MODEM_PROTO_NONE && i < __MODEM_IFACE_MAX; ++ i)
+/*------------------------------------------------------------------------*/
+
+static void* modem_thread_operator_scan(void* prm)
+{
+	modem_thread_operator_scan_t* priv = prm;
+	modem_oper_t* opers;
+	int nopers, i;
+	FILE *f;
+
+	if((nopers = modem_operator_scan(priv->modem, &opers)) == 0)
+		goto exit;
+
+	if(!(f = fopen(priv->file, "w")))
+		goto err_fopen;
+
+	for(i = 0; i < nopers; ++ i)
 	{
-		switch(mdd->iface[i].type)
-		{
-			case MODEM_PROTO_WAN:
-				break;
-
-			case MODEM_PROTO_AT:
-			case MODEM_PROTO_CNS:
-				if(modem_get_iface_tty(modem->port, mdd->iface[i].num, tty, sizeof(tty)))
-					break;
-
-			default:
-				printf("(EE) Device driver not loaded..\n");
-				exit(1);
-				break;
-		}
+		fprintf(f, "%s,%s,%d\n",
+			opers[i].numeric,
+			*opers[i].shortname ? opers[i].shortname : opers[i].numeric,
+			opers[i].act);
 	}
 
-//	modem->priv = at_queue_open(tty);
-//	at_q->fd = serial_open(tty, O_RDWR);
-//	queue_busy(at_q->queue, 0);
-	at_queue_resume(at_q, tty);
+	fclose(f);
+
+err_fopen:
+	free(opers);
+
+exit:
+	free(priv);
+	return(NULL);
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_set_wwan_profile(modem_t* modem, modem_data_profile_t* profile)
+{
+	const modem_info_device_t* mdd = modem->mdd;
+
+	return(mdd->functions.set_wwan_profile(modem, profile));
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_start_wwan(modem_t* modem)
+{
+	const modem_info_device_t* mdd = modem->mdd;
+
+	return(mdd->functions.start_wwan(modem));
+}
+
+/*------------------------------------------------------------------------*/
+
+int modem_stop_wwan(modem_t* modem)
+{
+	const modem_info_device_t* mdd = modem->mdd;
+
+	return(mdd->functions.stop_wwan(modem));
+}
+
+/*------------------------------------------------------------------------*/
+
+modem_state_wwan_t modem_state_wwan(modem_t* modem)
+{
+	const modem_info_device_t* mdd = modem->mdd;
+
+	return(mdd->functions.state_wwan(modem));
+}
+
+/*------------------------------------------------------------------------*/
+
+char* modem_ussd_cmd(modem_t* modem, const char* query)
+{
+	const modem_info_device_t* mdd = modem->mdd;
+
+	if(mdd->functions.ussd_cmd)
+		return(mdd->functions.ussd_cmd(modem, query));
+
+	return(NULL);
 }
