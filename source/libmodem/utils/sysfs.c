@@ -13,6 +13,10 @@
 
 /*------------------------------------------------------------------------*/
 
+#define __SYS_DEV "^[0-9]-[0-9](\\.[0-9])?$"
+
+/*------------------------------------------------------------------------*/
+
 int modem_is_supported(const char* vendor, const char* product, uint16_t vendor_id, uint16_t product_id)
 {
 	return(!!modem_db_get_info(vendor, product, vendor_id, product_id));
@@ -109,16 +113,16 @@ modem_find_t* modem_find_first(usb_device_info_t* mi)
 	DIR *res;
 
 	if(!(res = opendir("/sys/bus/usb/devices/")))
-		goto failed_open;
+		return(res);
 
 	while((sysfs_item = readdir(res)))
 	{
-		/* directory name must be in format BUS-DEV */
-		if(re_strcmp(sysfs_item->d_name, "^[0-9]-[0-9]$") != 0)
+		/* directory name must be in format __SYS_DEV */
+		if(re_strcmp(sysfs_item->d_name, __SYS_DEV) != 0)
 			continue;
 
 		if(!(usb_device_get_info(sysfs_item->d_name, mi)))
-			goto err;
+			continue;
 
 		/* check device on modem db */
 		if(!modem_is_supported(mi->vendor, mi->product, mi->id_vendor, mi->id_product))
@@ -127,12 +131,10 @@ modem_find_t* modem_find_first(usb_device_info_t* mi)
 		return(res);
 	}
 
-err:
 	closedir(res);
 
 	res = NULL;
 
-failed_open:
 	return(res);
 }
 
@@ -144,12 +146,12 @@ modem_find_t* modem_find_next(modem_find_t* find, usb_device_info_t* mi)
 
 	while((sysfs_item = readdir(find)))
 	{
-		/* directory name must be in format BUS-DEV */
-		if(re_strcmp(sysfs_item->d_name, "^[0-9]-[0-9]$") != 0)
+		/* directory name must be in format __SYS_DEV */
+		if(re_strcmp(sysfs_item->d_name, __SYS_DEV) != 0)
 			continue;
 
 		if(!usb_device_get_info(sysfs_item->d_name, mi))
-			goto err;
+			continue;
 
 		/* check device on modem db */
 		if(!modem_is_supported(mi->vendor, mi->product, mi->id_vendor, mi->id_product))
@@ -160,7 +162,6 @@ modem_find_t* modem_find_next(modem_find_t* find, usb_device_info_t* mi)
 
 	closedir(find);
 
-err:
 	return(NULL);
 }
 
