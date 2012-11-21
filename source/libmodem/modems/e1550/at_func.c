@@ -195,6 +195,8 @@ char* e1550_at_ussd_cmd(modem_t* modem, const char* query)
 	memcpy(res, data, len);
 	res[len] = 0;
 
+	trim(res);
+
 err2:
 	free(data);
 
