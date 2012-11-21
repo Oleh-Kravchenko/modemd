@@ -227,5 +227,8 @@ int main(int argc, char** argv)
 	if(conf.syslog)
 		closelog();
 
+	if(*conf.pid_path)
+		unlink(conf.pid_path);
+
 	return 0;
 }
