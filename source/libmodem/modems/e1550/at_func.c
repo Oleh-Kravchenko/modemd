@@ -177,7 +177,7 @@ char* e1550_at_ussd_cmd(modem_t* modem, const char* query)
 	size_t len;
 	char* reqs;
 	char* resp;
-	char* res;
+	char* res = NULL;
 
 	/* encoding request */
 	if(!(reqs = encode_pdu((uint8_t*)query, strlen(query))))
