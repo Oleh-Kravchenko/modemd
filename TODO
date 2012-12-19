@@ -27,3 +27,7 @@
 	err_sim_busy,
 	err_sim_invalid,
 	err_function_is_not_supported
+
+[ ] добавить поддержку pppd
+	Пример запуска:	pppd -d -detach /dev/ttyUSB1 115200 debug defaultroute lock noauth usepeerdns
+			pppd -d -detach debug defaultroute lock noauth usepeerdns
